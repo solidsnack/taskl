@@ -9,8 +9,6 @@ set -o errtrace
 set -o noglob
 set +o histexpand
 
-spaces='                                        '
-
 declare -A schedule
 notified[$'fs:/usr/foo\nbar']=false
 notified[$'fs/obj:/usr/foo\nbar']=false
