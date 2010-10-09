@@ -135,18 +135,11 @@ function leaf {
       return 0
       ;;
     check|install)
-      if already_handled "$task"
+      if ! checks "$task"
       then
-        ${marked["$task"]} && notify ' ** ' 'Previously marked for change.'
+        messages "$task"
+        [ "$operation" = 'install' ] && actions "$task"
       else
-        if ! checks "$task"
-        then
-          messages "$task"
-          [ "$operation" = 'install' ] && actions "$task"
-          marked["$task"]=true
-        else
-          marked["$task"]=false
-        fi
       fi
       ;;
   esac
