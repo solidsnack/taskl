@@ -1,0 +1,37 @@
+
+  The running script must provide the following information as it runs:
+
+ .  What is being checked/installed.
+
+ .  What the outcome of a test for changes is.
+
+ .  Whether there are any errors or no.
+
+  With this in mind, an approach is to mark each line with a special symbol,
+  as follows:
+
+ .  '>-- <x>'       Starting in on <x>.
+
+ .  '<-- <x>'       Done with <x> having done nothing directly (<x> was an
+                    aggregate).
+
+ .  '->- <msg>'     Starting check.
+
+ .  '-<- <x>'       Done with check and done with <x>.
+
+ .  '--> <msg>'     Check failed, starting install.
+
+ .  '--< <x>'       Done with install and done with <x>.
+
+ .  '!-- <msg>'     Failure while doing nothing.
+
+ .  '-!- <msg>'     Failure during check.
+
+ .  '--! <msg>'     Failure during installation.
+
+ .  '!!! <msg>'     Abort was signalled by controlling application.
+
+ .  '--- <msg>'     Skip was signalled by controlling application.
+
+ .  '*** <msg>'     Informational message.
+
