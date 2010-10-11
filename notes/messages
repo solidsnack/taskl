@@ -16,11 +16,13 @@
 
  .  ' ** <msg>'     Starting check.
 
- .  ' ## <msg>'     Check failed, starting install.
+ .  ' ++ <msg>'     Check failed, starting install.
+
+ .  ' ?? <msg>'     Something unexpected has occurred.
 
  .  ' !! <msg>'     Failure.
 
- .  ' %% <msg>'     Informational message.
+ .  ' ## <msg>'     Informational message.
 
  .  ' @@ <msg>'     Abort was signalled by controlling application.
 
