@@ -3,7 +3,12 @@
            , OverloadedStrings
   #-}
 
-module System.TaskL.IdemShell.Nick where
+module System.TaskL.IdemShell.Nick
+  ( Nick()
+  , check
+  , message
+  , Check
+  ) where
 
 import Control.Monad.Error
 import Data.String
@@ -14,6 +19,11 @@ import Data.Text (Text)
 import Data.Text.EncDec
 
 
+{-| Validated UNIX nick. Neither usernames nor groupnames may begin with @+@,
+    @-@ or the at-sign, due to interference with NIS; they may not contain the
+    @:@ since that is the separator in the @passwd@ DB files. Nicks must be
+    non-empty.
+ -}
 newtype Nick                 =  Nick Text
 deriving instance Eq Nick
 deriving instance Ord Nick
@@ -40,11 +50,11 @@ check t
   | (== ':') `Text.any` t    =  Bad ':'
   | otherwise                =  Ok
 
-
 {-| Characterizes success or failure of username check. 
  -}
 data Check                   =  Ok | Empty | BadLeadingNIS Char | Bad Char
-
+deriving instance Eq Check
+deriving instance Show Check
 
 message                     ::  Check -> Text
 message Ok                   =  "Okay."
