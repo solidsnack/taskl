@@ -5,6 +5,8 @@
 
 module System.TaskL.IdemShell.Nick
   ( Nick()
+  , UNick
+  , GNick
   , check
   , message
   , Check
@@ -19,12 +21,28 @@ import Data.Text (Text)
 import Data.Text.EncDec
 
 
+newtype UNick                =  UNick Nick
+
+newtype GNick                =  GNick Nick
+
 {-| Validated UNIX nick. Neither usernames nor groupnames may begin with @+@,
     @-@ or the at-sign, due to interference with NIS; they may not contain the
     @:@ since that is the separator in the @passwd@ DB files. Nicks must be
     non-empty.
  -}
 newtype Nick                 =  Nick Text
+
+
+deriving instance Eq UNick
+deriving instance Ord UNick
+deriving instance Show UNick
+deriving instance EncDec UNick
+
+deriving instance Eq GNick
+deriving instance Ord GNick
+deriving instance Show GNick
+deriving instance EncDec GNick
+
 deriving instance Eq Nick
 deriving instance Ord Nick
 deriving instance Show Nick

@@ -14,28 +14,13 @@ import qualified Data.Text as Text
 
 import Data.Text.EncDec
 import System.TaskL.IdemShell.Nick
+import System.TaskL.IdemShell.ID
+import System.TaskL.IdemShell.Path
 
 
 data User                    =  Username UNick | UserID UID
 
 data Group                   =  Groupname GNick | GroupID GID
-
-
-newtype UNick                =  UNick Nick
-
-newtype UID                  =  UID ID
-
-newtype GNick                =  GNick Nick
-
-newtype GID                  =  GID ID
-
-
-newtype ID                   =  ID Int32
-fromIntegralMaybe i
-  | i < 0 || i > max         =  Nothing
-  | otherwise                =  Just (ID (fromIntegral i))
- where
-  max                        =  fromIntegral (maxBound :: Int32)
 
 
 data Password                =  Hashed Text | Literal Text
@@ -71,33 +56,4 @@ instance EncDec Group where
   dec t                      =  case Text.stripPrefix "+" t of
                                   Just t'     ->  GroupID `fmap` dec t'
                                   _           ->  Groupname `fmap` dec t
-
-deriving instance Eq UNick
-deriving instance Ord UNick
-deriving instance Show UNick
-deriving instance EncDec UNick
-
-deriving instance Eq UID
-deriving instance Ord UID
-deriving instance Show UID
-deriving instance EncDec UID
-
-deriving instance Eq GNick
-deriving instance Ord GNick
-deriving instance Show GNick
-deriving instance EncDec GNick
-
-deriving instance Eq GID
-deriving instance Ord GID
-deriving instance Show GID
-deriving instance EncDec GID
-
-deriving instance Eq ID
-deriving instance Ord ID
-deriving instance Show ID
-instance EncDec ID where
-  enc (ID n)                 =  Text.pack (show n)
-  dec t                      =  do
-    (i :: Int32)            <-  dec t
-    maybe (throwError "ID not in range.") return (fromIntegralMaybe i)
 
