@@ -55,10 +55,11 @@ instance EncDec Path where
 check t
   | Text.null t              =  Empty
   | Text.any (== '\0') t     =  NoNull
-  | not qualified            =  NoPrefix
+  | (not . under) prefixes   =  NoPrefix
   | otherwise                =  Ok
  where
-  qualified                  =  or (fmap (`Text.isPrefixOf` t) ["./", "/"])
+  prefixes                   =  ["/", "./", "../"]
+  under                      =  or . fmap (`Text.isPrefixOf` t)
 
 {-| Characterizes success or failure of path check.
  -}
@@ -70,5 +71,5 @@ message                     ::  Check -> Text
 message Ok                   =  "Okay."
 message Empty                =  "Empty paths are not allowed."
 message NoNull               =  "UNIX paths may not contain null."
-message NoPrefix             =  "Path should begin with `./' or `/'."
+message NoPrefix             =  "Path should begin with `/', `./' or `../'."
 
