@@ -11,24 +11,40 @@ import Control.Monad.Identity
 import System.TaskL.IdemShell.PasswdDB
 import System.TaskL.IdemShell.Path
 
-data CMD where
-  CHOWN                     ::  Ownership -> CMD
-  CHMOD                     ::  Permissions -> CMD
-  MKNOD                     ::  Layout Identity -> CMD
-  RM                        ::  (Monad m) => Layout m -> CMD
-  USERADD                   ::  User -> CMD
-  USERDEL                   ::  User -> CMD
-  GROUPADD                  ::  Group -> CMD
-  GROUPDEL                  ::  Group -> CMD
+
+data Command                 =  CHOWN Path Ownership
+                             |  CHMOD Path Mode
+                             |  RM Path
+                             |  CP Path Path
+                             |  LN_S Path Path
+                             |  TOUCH Path
+                             |  MKDIR Path
+                             |  USERADD User UserAttrs
+                             |  USERDEL User
+                             |  GROUPADD Group GroupAttrs
+                             |  GROUPDEL Group
 
 
-data Layout m where
-  File                      ::  Path -> Layout Identity
-  Directory                 ::  Path -> Layout Identity
-  Symlink                   ::  (Monad m) => Path -> m Path -> Layout m
+data Check                   =  CHKMOD Path Mode
+                             |  CHKOWN Path Ownership
+                             |  DASHe Path
+                             |  DASH_ Path NodeType
 
 
-data Ownership
+data NodeType                =  File
+                             |  Directory
+                             |  Symlink
 
-data Permissions
+
+data Ownership               =  Both User Group
+                             |  OnlyUser User
+                             |  OnlyGroup Group
+
+
+data Mode
+
+data UserAttrs
+
+data GroupAttrs
+
 
