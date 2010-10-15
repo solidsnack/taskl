@@ -3,7 +3,13 @@
            , OverloadedStrings
   #-}
 
-module System.TaskL.IdemShell.PasswdDB where
+module System.TaskL.IdemShell.PasswdDB
+  ( module System.TaskL.IdemShell.Nick
+  , module System.TaskL.IdemShell.ID
+  , User
+  , Group
+  , Password
+  ) where
 
 import Control.Monad.Error
 import Data.String
