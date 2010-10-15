@@ -66,6 +66,7 @@ check t
   | "+" `Text.isPrefixOf` t  =  BadLeadingNIS '+'
   | "-" `Text.isPrefixOf` t  =  BadLeadingNIS '-'
   | (== ':') `Text.any` t    =  Bad ':'
+  | (== ' ') `Text.any` t    =  Bad ' '
   | otherwise                =  Ok
 
 {-| Characterizes success or failure of username check. 
