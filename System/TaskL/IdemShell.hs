@@ -25,10 +25,13 @@ data Command                 =  CHOWN Path Ownership
                              |  GROUPDEL Group
 
 
-data Check                   =  CHKMOD Path Mode
-                             |  CHKOWN Path Ownership
+data Test                    =  CHKOWN Path Ownership
+                             |  CHKMOD Path Mode
                              |  DASHe Path
-                             |  DASH_ Path NodeType
+                             |  DASH_ NodeType Path
+                             |  DIFF Path Path
+                             |  CHKLN_S Path Path
+                             |  Not Test
 
 
 data NodeType                =  File
@@ -47,4 +50,14 @@ data UserAttrs
 
 data GroupAttrs
 
+
+
+essentialTests              ::  Command -> [Test]
+essentialTests CHOWN p o     =  [CHKOWN p o]
+essentialTests CHMOD p m     =  [CHKMOD p o]
+essentialTests RM p          =  [Not (DASHe p)]
+essentialTests CP p p'       =  [Not (DIFF p p')]
+essentialTests TOUCH p       =  [DASH_ File p]
+essentialTests MKDIR p       =  [DASH_ Directory p]
+essentialTests LN_S p p'     =  [DASH_ Symlink p, CHKLN_S p p']
 
