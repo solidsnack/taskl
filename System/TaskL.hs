@@ -13,10 +13,12 @@ import Control.Monad.Identity
 
 import Data.Text
 
+import System.TaskL.IdemShell
 
-data Task t where
-  Setup         ::  (SystemObject t) => Label t -> Spec t Identity -> Task t
-  Teardown      ::  (Monad m, SystemObject t) => Label t -> Spec t m -> Task t
+
+data Task label              =  Atomic label [Test] Command
+                             |  Aggregate label [Test] [Task label]
+
 
 
 data Tasks where
