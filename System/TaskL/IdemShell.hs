@@ -32,7 +32,7 @@ data Test                    =  CHKOWN Path Ownership
                              |  CHKMOD Path Mode
                              |  DASHe Path
                              |  DASH_ NodeType Path
-                             |  DIFF Path Path
+                             |  DIFFq Path Path
                              |  CHKLN_S Path Path
                              |  GETENT GettableEnt
                              |  Not Test
@@ -61,7 +61,7 @@ essentialTests thing         =  case thing of
    CHOWN p o                ->  [CHKOWN p o]
    CHMOD p m                ->  [CHKMOD p m]
    RM p                     ->  [Not (DASHe p)]
-   CP p p'                  ->  [Not (DIFF p p')]
+   CP p p'                  ->  [Not (DIFFq p p')]
    LN_S p p'                ->  [DASH_ Symlink p, CHKLN_S p p']
    TOUCH p                  ->  [DASH_ File p]
    MKDIR p                  ->  [DASH_ Directory p]
