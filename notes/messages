@@ -10,21 +10,21 @@
   With this in mind, an approach is to mark each line with a special symbol,
   as follows:
 
- .  ' >> <x>'       Starting in on <x>.
+ .  '>>> <x>'       Starting in on <x>.
 
- .  ' << <x>'       Done with <x>.
+ .  '<<< <x>'       Done with <x>.
 
- .  ' ** <msg>'     Starting check.
+ .  '*** <msg>'     Starting check.
 
- .  ' ++ <msg>'     Check failed, starting install.
+ .  '@@@ <msg>'     Check failed, starting install.
 
- .  ' ?? <msg>'     Something unexpected has occurred.
+ .  '??? <msg>'     Warning message.
 
- .  ' !! <msg>'     Failure.
+ .  '!!! <msg>'     Failure.
 
- .  ' ## <msg>'     Informational message.
+ .  '### <msg>'     Informational message.
 
- .  ' @@ <msg>'     Abort was signalled by controlling application.
+ .  '~~~ <msg>'     Abort was signalled by controlling application.
 
- .  ' -- <msg>'     Skip was signalled by controlling application.
+ .  '--- <msg>'     Skip was signalled by controlling application.
 
