@@ -74,6 +74,8 @@ check t
   | (== '\r') `Text.any` t   =  RejectedByTools '\r'
   | (== '\f') `Text.any` t   =  RejectedByTools '\f'
   | otherwise                =  Ok
+--  All bytes except ':' and the ones mark as rejected above are accepted by
+--  `useradd'. This is probably bad.
 --  Characters that are allowed but that should not be: \a \b
 --  Perhaps a patch to `useradd' is in order...
 
