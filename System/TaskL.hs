@@ -11,14 +11,14 @@ import Data.String
 import Control.Applicative
 import Control.Monad.Identity
 
-import Data.Text
+import Data.ByteString
 
 import qualified System.TaskL.IdemShell as IdemShell
 
 
 {-| How this is supposed to work:
 
-* Client generates TaskDAG.
+* Client generates Task DAG.
 
 * Scheduler in TaskL creates schedule. Backends compile schedule.
 
@@ -30,20 +30,21 @@ import qualified System.TaskL.IdemShell as IdemShell
   run in more scenarios (hence we have @[IdemShell.Test]@ terms in all the
   'TaskL' terms); this does not wreck the idempotence.
 
-* This adding more tests business should perhaps be shoved down in to
-  IdemShell; but then how do we add tests to aggregates? It puzzles me.
+* Task\L does not understand character encodings at this level though a future
+  front-end might. Usernames, file paths and similar labels must be converted
+  to bytes at some point; and the ability to set raw bytes seems important (a
+  character interface would not allow this).
 
  -}
 
 
-data TaskL label             =  Atomic label [IdemShell.Test] IdemShell.Command
-                             |  Aggregate label [IdemShell.Test] [Task label]
+data Task = Task ByteString [IdemShell.Test] (Maybe IdemShell.Command) [Task]
 
 
-data Schedule label          =  Enter label
-                             |  Leave label
-                             |  Check label [IdemShell.Test]
-                             |  Perform label [IdemShell.Command]
+data Schedule ByteString     =  Enter ByteString
+                             |  Leave ByteString
+                             |  Check ByteString [IdemShell.Test]
+                             |  Perform ByteString [IdemShell.Command]
 
 
 
