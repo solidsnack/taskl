@@ -4,7 +4,8 @@
 set -o nounset
 
 function addtrial {
-  useradd "$1" || echo '!!' "$2"
+  local id="100${3}"
+  useradd "$1" --uid "$id" --comment "byte $4" || echo '!!' "$2"
 }
 
 function remove_if_exists {
@@ -17,259 +18,258 @@ case "$1" in
   *)      echo 'Argument error; please read sources.' 1>&2 ; exit 2 ;;
 esac
 
-$task           $'ab\x01ba'     $'"\\SOH"'
-$task           $'ab\x02ba'     $'"\\STX"'
-$task           $'ab\x03ba'     $'"\\ETX"'
-$task           $'ab\x04ba'     $'"\\EOT"'
-$task           $'ab\x05ba'     $'"\\ENQ"'
-$task           $'ab\x06ba'     $'"\\ACK"'
-$task           $'ab\aba'       $'"\\a"'
-$task           $'ab\bba'       $'"\\b"'
-$task           $'ab\tba'       $'"\\t"'
-$task           $'ab\nba'       $'"\\n"'
-$task           $'ab\vba'       $'"\\v"'
-$task           $'ab\fba'       $'"\\f"'
-$task           $'ab\rba'       $'"\\r"'
-$task           $'ab\x0Eba'     $'"\\SO"'
-$task           $'ab\x0Fba'     $'"\\SI"'
-$task           $'ab\x10ba'     $'"\\DLE"'
-$task           $'ab\x11ba'     $'"\\DC1"'
-$task           $'ab\x12ba'     $'"\\DC2"'
-$task           $'ab\x13ba'     $'"\\DC3"'
-$task           $'ab\x14ba'     $'"\\DC4"'
-$task           $'ab\x15ba'     $'"\\NAK"'
-$task           $'ab\x16ba'     $'"\\SYN"'
-$task           $'ab\x17ba'     $'"\\ETB"'
-$task           $'ab\x18ba'     $'"\\CAN"'
-$task           $'ab\x19ba'     $'"\\EM"'
-$task           $'ab\x1Aba'     $'"\\SUB"'
-$task           $'ab\eba'       $'"\\ESC"'
-$task           $'ab\x1Cba'     $'"\\FS"'
-$task           $'ab\x1Dba'     $'"\\GS"'
-$task           $'ab\x1Eba'     $'"\\RS"'
-$task           $'ab\x1Fba'     $'"\\US"'
-$task           $'ab ba'        $'" "'
-$task           $'ab!ba'        $'"!"'
-$task           $'ab"ba'        $'"\\""'
-$task           $'ab#ba'        $'"#"'
-$task           $'ab$ba'        $'"$"'
-$task           $'ab%ba'        $'"%"'
-$task           $'ab&ba'        $'"&"'
-$task           $'ab\'ba'       $'"\'"'
-$task           $'ab(ba'        $'"("'
-$task           $'ab)ba'        $'")"'
-$task           $'ab*ba'        $'"*"'
-$task           $'ab+ba'        $'"+"'
-$task           ab,ba           $'","'
-$task           ab-ba           $'"-"'
-$task           ab.ba           $'"."'
-$task           ab/ba           $'"/"'
-$task           ab0ba           $'"0"'
-$task           ab1ba           $'"1"'
-$task           ab2ba           $'"2"'
-$task           ab3ba           $'"3"'
-$task           ab4ba           $'"4"'
-$task           ab5ba           $'"5"'
-$task           ab6ba           $'"6"'
-$task           ab7ba           $'"7"'
-$task           ab8ba           $'"8"'
-$task           ab9ba           $'"9"'
-$task           $'ab:ba'        $'":"'
-$task           $'ab;ba'        $'";"'
-$task           $'ab<ba'        $'"<"'
-$task           $'ab=ba'        $'"="'
-$task           $'ab>ba'        $'">"'
-$task           $'ab?ba'        $'"?"'
-$task           ab@ba           $'"@"'
-$task           abAba           $'"A"'
-$task           abBba           $'"B"'
-$task           abCba           $'"C"'
-$task           abDba           $'"D"'
-$task           abEba           $'"E"'
-$task           abFba           $'"F"'
-$task           abGba           $'"G"'
-$task           abHba           $'"H"'
-$task           abIba           $'"I"'
-$task           abJba           $'"J"'
-$task           abKba           $'"K"'
-$task           abLba           $'"L"'
-$task           abMba           $'"M"'
-$task           abNba           $'"N"'
-$task           abOba           $'"O"'
-$task           abPba           $'"P"'
-$task           abQba           $'"Q"'
-$task           abRba           $'"R"'
-$task           abSba           $'"S"'
-$task           abTba           $'"T"'
-$task           abUba           $'"U"'
-$task           abVba           $'"V"'
-$task           abWba           $'"W"'
-$task           abXba           $'"X"'
-$task           abYba           $'"Y"'
-$task           abZba           $'"Z"'
-$task           $'ab[ba'        $'"["'
-$task           $'ab\\ba'       $'"\\\\"'
-$task           $'ab]ba'        $'"]"'
-$task           $'ab^ba'        $'"^"'
-$task           $'ab_ba'        $'"_"'
-$task           $'ab`ba'        $'"`"'
-$task           ababa           $'"a"'
-$task           abbba           $'"b"'
-$task           abcba           $'"c"'
-$task           abdba           $'"d"'
-$task           abeba           $'"e"'
-$task           abfba           $'"f"'
-$task           abgba           $'"g"'
-$task           abhba           $'"h"'
-$task           abiba           $'"i"'
-$task           abjba           $'"j"'
-$task           abkba           $'"k"'
-$task           ablba           $'"l"'
-$task           abmba           $'"m"'
-$task           abnba           $'"n"'
-$task           aboba           $'"o"'
-$task           abpba           $'"p"'
-$task           abqba           $'"q"'
-$task           abrba           $'"r"'
-$task           absba           $'"s"'
-$task           abtba           $'"t"'
-$task           abuba           $'"u"'
-$task           abvba           $'"v"'
-$task           abwba           $'"w"'
-$task           abxba           $'"x"'
-$task           abyba           $'"y"'
-$task           abzba           $'"z"'
-$task           $'ab{ba'        $'"{"'
-$task           $'ab|ba'        $'"|"'
-$task           $'ab}ba'        $'"}"'
-$task           $'ab~ba'        $'"~"'
-$task           $'ab\x7Fba'     $'"\\DEL"'
-$task           $'ab\x80ba'     $'"\\128"'
-$task           $'ab\x81ba'     $'"\\129"'
-$task           $'ab\x82ba'     $'"\\130"'
-$task           $'ab\x83ba'     $'"\\131"'
-$task           $'ab\x84ba'     $'"\\132"'
-$task           $'ab\x85ba'     $'"\\133"'
-$task           $'ab\x86ba'     $'"\\134"'
-$task           $'ab\x87ba'     $'"\\135"'
-$task           $'ab\x88ba'     $'"\\136"'
-$task           $'ab\x89ba'     $'"\\137"'
-$task           $'ab\x8Aba'     $'"\\138"'
-$task           $'ab\x8Bba'     $'"\\139"'
-$task           $'ab\x8Cba'     $'"\\140"'
-$task           $'ab\x8Dba'     $'"\\141"'
-$task           $'ab\x8Eba'     $'"\\142"'
-$task           $'ab\x8Fba'     $'"\\143"'
-$task           $'ab\x90ba'     $'"\\144"'
-$task           $'ab\x91ba'     $'"\\145"'
-$task           $'ab\x92ba'     $'"\\146"'
-$task           $'ab\x93ba'     $'"\\147"'
-$task           $'ab\x94ba'     $'"\\148"'
-$task           $'ab\x95ba'     $'"\\149"'
-$task           $'ab\x96ba'     $'"\\150"'
-$task           $'ab\x97ba'     $'"\\151"'
-$task           $'ab\x98ba'     $'"\\152"'
-$task           $'ab\x99ba'     $'"\\153"'
-$task           $'ab\x9Aba'     $'"\\154"'
-$task           $'ab\x9Bba'     $'"\\155"'
-$task           $'ab\x9Cba'     $'"\\156"'
-$task           $'ab\x9Dba'     $'"\\157"'
-$task           $'ab\x9Eba'     $'"\\158"'
-$task           $'ab\x9Fba'     $'"\\159"'
-$task           $'ab\xA0ba'     $'"\\160"'
-$task           $'ab\xA1ba'     $'"\\161"'
-$task           $'ab\xA2ba'     $'"\\162"'
-$task           $'ab\xA3ba'     $'"\\163"'
-$task           $'ab\xA4ba'     $'"\\164"'
-$task           $'ab\xA5ba'     $'"\\165"'
-$task           $'ab\xA6ba'     $'"\\166"'
-$task           $'ab\xA7ba'     $'"\\167"'
-$task           $'ab\xA8ba'     $'"\\168"'
-$task           $'ab\xA9ba'     $'"\\169"'
-$task           $'ab\xAAba'     $'"\\170"'
-$task           $'ab\xABba'     $'"\\171"'
-$task           $'ab\xACba'     $'"\\172"'
-$task           $'ab\xADba'     $'"\\173"'
-$task           $'ab\xAEba'     $'"\\174"'
-$task           $'ab\xAFba'     $'"\\175"'
-$task           $'ab\xB0ba'     $'"\\176"'
-$task           $'ab\xB1ba'     $'"\\177"'
-$task           $'ab\xB2ba'     $'"\\178"'
-$task           $'ab\xB3ba'     $'"\\179"'
-$task           $'ab\xB4ba'     $'"\\180"'
-$task           $'ab\xB5ba'     $'"\\181"'
-$task           $'ab\xB6ba'     $'"\\182"'
-$task           $'ab\xB7ba'     $'"\\183"'
-$task           $'ab\xB8ba'     $'"\\184"'
-$task           $'ab\xB9ba'     $'"\\185"'
-$task           $'ab\xBAba'     $'"\\186"'
-$task           $'ab\xBBba'     $'"\\187"'
-$task           $'ab\xBCba'     $'"\\188"'
-$task           $'ab\xBDba'     $'"\\189"'
-$task           $'ab\xBEba'     $'"\\190"'
-$task           $'ab\xBFba'     $'"\\191"'
-$task           $'ab\xC0ba'     $'"\\192"'
-$task           $'ab\xC1ba'     $'"\\193"'
-$task           $'ab\xC2ba'     $'"\\194"'
-$task           $'ab\xC3ba'     $'"\\195"'
-$task           $'ab\xC4ba'     $'"\\196"'
-$task           $'ab\xC5ba'     $'"\\197"'
-$task           $'ab\xC6ba'     $'"\\198"'
-$task           $'ab\xC7ba'     $'"\\199"'
-$task           $'ab\xC8ba'     $'"\\200"'
-$task           $'ab\xC9ba'     $'"\\201"'
-$task           $'ab\xCAba'     $'"\\202"'
-$task           $'ab\xCBba'     $'"\\203"'
-$task           $'ab\xCCba'     $'"\\204"'
-$task           $'ab\xCDba'     $'"\\205"'
-$task           $'ab\xCEba'     $'"\\206"'
-$task           $'ab\xCFba'     $'"\\207"'
-$task           $'ab\xD0ba'     $'"\\208"'
-$task           $'ab\xD1ba'     $'"\\209"'
-$task           $'ab\xD2ba'     $'"\\210"'
-$task           $'ab\xD3ba'     $'"\\211"'
-$task           $'ab\xD4ba'     $'"\\212"'
-$task           $'ab\xD5ba'     $'"\\213"'
-$task           $'ab\xD6ba'     $'"\\214"'
-$task           $'ab\xD7ba'     $'"\\215"'
-$task           $'ab\xD8ba'     $'"\\216"'
-$task           $'ab\xD9ba'     $'"\\217"'
-$task           $'ab\xDAba'     $'"\\218"'
-$task           $'ab\xDBba'     $'"\\219"'
-$task           $'ab\xDCba'     $'"\\220"'
-$task           $'ab\xDDba'     $'"\\221"'
-$task           $'ab\xDEba'     $'"\\222"'
-$task           $'ab\xDFba'     $'"\\223"'
-$task           $'ab\xE0ba'     $'"\\224"'
-$task           $'ab\xE1ba'     $'"\\225"'
-$task           $'ab\xE2ba'     $'"\\226"'
-$task           $'ab\xE3ba'     $'"\\227"'
-$task           $'ab\xE4ba'     $'"\\228"'
-$task           $'ab\xE5ba'     $'"\\229"'
-$task           $'ab\xE6ba'     $'"\\230"'
-$task           $'ab\xE7ba'     $'"\\231"'
-$task           $'ab\xE8ba'     $'"\\232"'
-$task           $'ab\xE9ba'     $'"\\233"'
-$task           $'ab\xEAba'     $'"\\234"'
-$task           $'ab\xEBba'     $'"\\235"'
-$task           $'ab\xECba'     $'"\\236"'
-$task           $'ab\xEDba'     $'"\\237"'
-$task           $'ab\xEEba'     $'"\\238"'
-$task           $'ab\xEFba'     $'"\\239"'
-$task           $'ab\xF0ba'     $'"\\240"'
-$task           $'ab\xF1ba'     $'"\\241"'
-$task           $'ab\xF2ba'     $'"\\242"'
-$task           $'ab\xF3ba'     $'"\\243"'
-$task           $'ab\xF4ba'     $'"\\244"'
-$task           $'ab\xF5ba'     $'"\\245"'
-$task           $'ab\xF6ba'     $'"\\246"'
-$task           $'ab\xF7ba'     $'"\\247"'
-$task           $'ab\xF8ba'     $'"\\248"'
-$task           $'ab\xF9ba'     $'"\\249"'
-$task           $'ab\xFAba'     $'"\\250"'
-$task           $'ab\xFBba'     $'"\\251"'
-$task           $'ab\xFCba'     $'"\\252"'
-$task           $'ab\xFDba'     $'"\\253"'
-$task           $'ab\xFEba'     $'"\\254"'
-$task           $'ab\xFFba'     $'"\\255"'
-
+$task $'ab\x01ba' $'\'\\SOH\'' 001 0x01
+$task $'ab\x02ba' $'\'\\STX\'' 002 0x02
+$task $'ab\x03ba' $'\'\\ETX\'' 003 0x03
+$task $'ab\x04ba' $'\'\\EOT\'' 004 0x04
+$task $'ab\x05ba' $'\'\\ENQ\'' 005 0x05
+$task $'ab\x06ba' $'\'\\ACK\'' 006 0x06
+$task $'ab\aba' $'\'\\a\'' 007 0x07
+$task $'ab\bba' $'\'\\b\'' 008 0x08
+$task $'ab\tba' $'\'\\t\'' 009 0x09
+$task $'ab\nba' $'\'\\n\'' 010 0x0A
+$task $'ab\vba' $'\'\\v\'' 011 0x0B
+$task $'ab\fba' $'\'\\f\'' 012 0x0C
+$task $'ab\rba' $'\'\\r\'' 013 0x0D
+$task $'ab\x0Eba' $'\'\\SO\'' 014 0x0E
+$task $'ab\x0Fba' $'\'\\SI\'' 015 0x0F
+$task $'ab\x10ba' $'\'\\DLE\'' 016 0x10
+$task $'ab\x11ba' $'\'\\DC1\'' 017 0x11
+$task $'ab\x12ba' $'\'\\DC2\'' 018 0x12
+$task $'ab\x13ba' $'\'\\DC3\'' 019 0x13
+$task $'ab\x14ba' $'\'\\DC4\'' 020 0x14
+$task $'ab\x15ba' $'\'\\NAK\'' 021 0x15
+$task $'ab\x16ba' $'\'\\SYN\'' 022 0x16
+$task $'ab\x17ba' $'\'\\ETB\'' 023 0x17
+$task $'ab\x18ba' $'\'\\CAN\'' 024 0x18
+$task $'ab\x19ba' $'\'\\EM\'' 025 0x19
+$task $'ab\x1Aba' $'\'\\SUB\'' 026 0x1A
+$task $'ab\eba' $'\'\\ESC\'' 027 0x1B
+$task $'ab\x1Cba' $'\'\\FS\'' 028 0x1C
+$task $'ab\x1Dba' $'\'\\GS\'' 029 0x1D
+$task $'ab\x1Eba' $'\'\\RS\'' 030 0x1E
+$task $'ab\x1Fba' $'\'\\US\'' 031 0x1F
+$task $'ab ba' $'\' \'' 032 0x20
+$task $'ab!ba' $'\'!\'' 033 0x21
+$task $'ab"ba' $'\'"\'' 034 0x22
+$task $'ab#ba' $'\'#\'' 035 0x23
+$task $'ab$ba' $'\'$\'' 036 0x24
+$task $'ab%ba' $'\'%\'' 037 0x25
+$task $'ab&ba' $'\'&\'' 038 0x26
+$task $'ab\'ba' $'\'\\\'\'' 039 0x27
+$task $'ab(ba' $'\'(\'' 040 0x28
+$task $'ab)ba' $'\')\'' 041 0x29
+$task $'ab*ba' $'\'*\'' 042 0x2A
+$task $'ab+ba' $'\'+\'' 043 0x2B
+$task ab,ba $'\',\'' 044 0x2C
+$task ab-ba $'\'-\'' 045 0x2D
+$task ab.ba $'\'.\'' 046 0x2E
+$task ab/ba $'\'/\'' 047 0x2F
+$task ab0ba $'\'0\'' 048 0x30
+$task ab1ba $'\'1\'' 049 0x31
+$task ab2ba $'\'2\'' 050 0x32
+$task ab3ba $'\'3\'' 051 0x33
+$task ab4ba $'\'4\'' 052 0x34
+$task ab5ba $'\'5\'' 053 0x35
+$task ab6ba $'\'6\'' 054 0x36
+$task ab7ba $'\'7\'' 055 0x37
+$task ab8ba $'\'8\'' 056 0x38
+$task ab9ba $'\'9\'' 057 0x39
+$task $'ab:ba' $'\':\'' 058 0x3A
+$task $'ab;ba' $'\';\'' 059 0x3B
+$task $'ab<ba' $'\'<\'' 060 0x3C
+$task $'ab=ba' $'\'=\'' 061 0x3D
+$task $'ab>ba' $'\'>\'' 062 0x3E
+$task $'ab?ba' $'\'?\'' 063 0x3F
+$task ab@ba $'\'@\'' 064 0x40
+$task abAba $'\'A\'' 065 0x41
+$task abBba $'\'B\'' 066 0x42
+$task abCba $'\'C\'' 067 0x43
+$task abDba $'\'D\'' 068 0x44
+$task abEba $'\'E\'' 069 0x45
+$task abFba $'\'F\'' 070 0x46
+$task abGba $'\'G\'' 071 0x47
+$task abHba $'\'H\'' 072 0x48
+$task abIba $'\'I\'' 073 0x49
+$task abJba $'\'J\'' 074 0x4A
+$task abKba $'\'K\'' 075 0x4B
+$task abLba $'\'L\'' 076 0x4C
+$task abMba $'\'M\'' 077 0x4D
+$task abNba $'\'N\'' 078 0x4E
+$task abOba $'\'O\'' 079 0x4F
+$task abPba $'\'P\'' 080 0x50
+$task abQba $'\'Q\'' 081 0x51
+$task abRba $'\'R\'' 082 0x52
+$task abSba $'\'S\'' 083 0x53
+$task abTba $'\'T\'' 084 0x54
+$task abUba $'\'U\'' 085 0x55
+$task abVba $'\'V\'' 086 0x56
+$task abWba $'\'W\'' 087 0x57
+$task abXba $'\'X\'' 088 0x58
+$task abYba $'\'Y\'' 089 0x59
+$task abZba $'\'Z\'' 090 0x5A
+$task $'ab[ba' $'\'[\'' 091 0x5B
+$task $'ab\\ba' $'\'\\\\\'' 092 0x5C
+$task $'ab]ba' $'\']\'' 093 0x5D
+$task $'ab^ba' $'\'^\'' 094 0x5E
+$task $'ab_ba' $'\'_\'' 095 0x5F
+$task $'ab`ba' $'\'`\'' 096 0x60
+$task ababa $'\'a\'' 097 0x61
+$task abbba $'\'b\'' 098 0x62
+$task abcba $'\'c\'' 099 0x63
+$task abdba $'\'d\'' 100 0x64
+$task abeba $'\'e\'' 101 0x65
+$task abfba $'\'f\'' 102 0x66
+$task abgba $'\'g\'' 103 0x67
+$task abhba $'\'h\'' 104 0x68
+$task abiba $'\'i\'' 105 0x69
+$task abjba $'\'j\'' 106 0x6A
+$task abkba $'\'k\'' 107 0x6B
+$task ablba $'\'l\'' 108 0x6C
+$task abmba $'\'m\'' 109 0x6D
+$task abnba $'\'n\'' 110 0x6E
+$task aboba $'\'o\'' 111 0x6F
+$task abpba $'\'p\'' 112 0x70
+$task abqba $'\'q\'' 113 0x71
+$task abrba $'\'r\'' 114 0x72
+$task absba $'\'s\'' 115 0x73
+$task abtba $'\'t\'' 116 0x74
+$task abuba $'\'u\'' 117 0x75
+$task abvba $'\'v\'' 118 0x76
+$task abwba $'\'w\'' 119 0x77
+$task abxba $'\'x\'' 120 0x78
+$task abyba $'\'y\'' 121 0x79
+$task abzba $'\'z\'' 122 0x7A
+$task $'ab{ba' $'\'{\'' 123 0x7B
+$task $'ab|ba' $'\'|\'' 124 0x7C
+$task $'ab}ba' $'\'}\'' 125 0x7D
+$task $'ab~ba' $'\'~\'' 126 0x7E
+$task $'ab\x7Fba' $'\'\\DEL\'' 127 0x7F
+$task $'ab\x80ba' $'\'\\128\'' 128 0x80
+$task $'ab\x81ba' $'\'\\129\'' 129 0x81
+$task $'ab\x82ba' $'\'\\130\'' 130 0x82
+$task $'ab\x83ba' $'\'\\131\'' 131 0x83
+$task $'ab\x84ba' $'\'\\132\'' 132 0x84
+$task $'ab\x85ba' $'\'\\133\'' 133 0x85
+$task $'ab\x86ba' $'\'\\134\'' 134 0x86
+$task $'ab\x87ba' $'\'\\135\'' 135 0x87
+$task $'ab\x88ba' $'\'\\136\'' 136 0x88
+$task $'ab\x89ba' $'\'\\137\'' 137 0x89
+$task $'ab\x8Aba' $'\'\\138\'' 138 0x8A
+$task $'ab\x8Bba' $'\'\\139\'' 139 0x8B
+$task $'ab\x8Cba' $'\'\\140\'' 140 0x8C
+$task $'ab\x8Dba' $'\'\\141\'' 141 0x8D
+$task $'ab\x8Eba' $'\'\\142\'' 142 0x8E
+$task $'ab\x8Fba' $'\'\\143\'' 143 0x8F
+$task $'ab\x90ba' $'\'\\144\'' 144 0x90
+$task $'ab\x91ba' $'\'\\145\'' 145 0x91
+$task $'ab\x92ba' $'\'\\146\'' 146 0x92
+$task $'ab\x93ba' $'\'\\147\'' 147 0x93
+$task $'ab\x94ba' $'\'\\148\'' 148 0x94
+$task $'ab\x95ba' $'\'\\149\'' 149 0x95
+$task $'ab\x96ba' $'\'\\150\'' 150 0x96
+$task $'ab\x97ba' $'\'\\151\'' 151 0x97
+$task $'ab\x98ba' $'\'\\152\'' 152 0x98
+$task $'ab\x99ba' $'\'\\153\'' 153 0x99
+$task $'ab\x9Aba' $'\'\\154\'' 154 0x9A
+$task $'ab\x9Bba' $'\'\\155\'' 155 0x9B
+$task $'ab\x9Cba' $'\'\\156\'' 156 0x9C
+$task $'ab\x9Dba' $'\'\\157\'' 157 0x9D
+$task $'ab\x9Eba' $'\'\\158\'' 158 0x9E
+$task $'ab\x9Fba' $'\'\\159\'' 159 0x9F
+$task $'ab\xA0ba' $'\'\\160\'' 160 0xA0
+$task $'ab\xA1ba' $'\'\\161\'' 161 0xA1
+$task $'ab\xA2ba' $'\'\\162\'' 162 0xA2
+$task $'ab\xA3ba' $'\'\\163\'' 163 0xA3
+$task $'ab\xA4ba' $'\'\\164\'' 164 0xA4
+$task $'ab\xA5ba' $'\'\\165\'' 165 0xA5
+$task $'ab\xA6ba' $'\'\\166\'' 166 0xA6
+$task $'ab\xA7ba' $'\'\\167\'' 167 0xA7
+$task $'ab\xA8ba' $'\'\\168\'' 168 0xA8
+$task $'ab\xA9ba' $'\'\\169\'' 169 0xA9
+$task $'ab\xAAba' $'\'\\170\'' 170 0xAA
+$task $'ab\xABba' $'\'\\171\'' 171 0xAB
+$task $'ab\xACba' $'\'\\172\'' 172 0xAC
+$task $'ab\xADba' $'\'\\173\'' 173 0xAD
+$task $'ab\xAEba' $'\'\\174\'' 174 0xAE
+$task $'ab\xAFba' $'\'\\175\'' 175 0xAF
+$task $'ab\xB0ba' $'\'\\176\'' 176 0xB0
+$task $'ab\xB1ba' $'\'\\177\'' 177 0xB1
+$task $'ab\xB2ba' $'\'\\178\'' 178 0xB2
+$task $'ab\xB3ba' $'\'\\179\'' 179 0xB3
+$task $'ab\xB4ba' $'\'\\180\'' 180 0xB4
+$task $'ab\xB5ba' $'\'\\181\'' 181 0xB5
+$task $'ab\xB6ba' $'\'\\182\'' 182 0xB6
+$task $'ab\xB7ba' $'\'\\183\'' 183 0xB7
+$task $'ab\xB8ba' $'\'\\184\'' 184 0xB8
+$task $'ab\xB9ba' $'\'\\185\'' 185 0xB9
+$task $'ab\xBAba' $'\'\\186\'' 186 0xBA
+$task $'ab\xBBba' $'\'\\187\'' 187 0xBB
+$task $'ab\xBCba' $'\'\\188\'' 188 0xBC
+$task $'ab\xBDba' $'\'\\189\'' 189 0xBD
+$task $'ab\xBEba' $'\'\\190\'' 190 0xBE
+$task $'ab\xBFba' $'\'\\191\'' 191 0xBF
+$task $'ab\xC0ba' $'\'\\192\'' 192 0xC0
+$task $'ab\xC1ba' $'\'\\193\'' 193 0xC1
+$task $'ab\xC2ba' $'\'\\194\'' 194 0xC2
+$task $'ab\xC3ba' $'\'\\195\'' 195 0xC3
+$task $'ab\xC4ba' $'\'\\196\'' 196 0xC4
+$task $'ab\xC5ba' $'\'\\197\'' 197 0xC5
+$task $'ab\xC6ba' $'\'\\198\'' 198 0xC6
+$task $'ab\xC7ba' $'\'\\199\'' 199 0xC7
+$task $'ab\xC8ba' $'\'\\200\'' 200 0xC8
+$task $'ab\xC9ba' $'\'\\201\'' 201 0xC9
+$task $'ab\xCAba' $'\'\\202\'' 202 0xCA
+$task $'ab\xCBba' $'\'\\203\'' 203 0xCB
+$task $'ab\xCCba' $'\'\\204\'' 204 0xCC
+$task $'ab\xCDba' $'\'\\205\'' 205 0xCD
+$task $'ab\xCEba' $'\'\\206\'' 206 0xCE
+$task $'ab\xCFba' $'\'\\207\'' 207 0xCF
+$task $'ab\xD0ba' $'\'\\208\'' 208 0xD0
+$task $'ab\xD1ba' $'\'\\209\'' 209 0xD1
+$task $'ab\xD2ba' $'\'\\210\'' 210 0xD2
+$task $'ab\xD3ba' $'\'\\211\'' 211 0xD3
+$task $'ab\xD4ba' $'\'\\212\'' 212 0xD4
+$task $'ab\xD5ba' $'\'\\213\'' 213 0xD5
+$task $'ab\xD6ba' $'\'\\214\'' 214 0xD6
+$task $'ab\xD7ba' $'\'\\215\'' 215 0xD7
+$task $'ab\xD8ba' $'\'\\216\'' 216 0xD8
+$task $'ab\xD9ba' $'\'\\217\'' 217 0xD9
+$task $'ab\xDAba' $'\'\\218\'' 218 0xDA
+$task $'ab\xDBba' $'\'\\219\'' 219 0xDB
+$task $'ab\xDCba' $'\'\\220\'' 220 0xDC
+$task $'ab\xDDba' $'\'\\221\'' 221 0xDD
+$task $'ab\xDEba' $'\'\\222\'' 222 0xDE
+$task $'ab\xDFba' $'\'\\223\'' 223 0xDF
+$task $'ab\xE0ba' $'\'\\224\'' 224 0xE0
+$task $'ab\xE1ba' $'\'\\225\'' 225 0xE1
+$task $'ab\xE2ba' $'\'\\226\'' 226 0xE2
+$task $'ab\xE3ba' $'\'\\227\'' 227 0xE3
+$task $'ab\xE4ba' $'\'\\228\'' 228 0xE4
+$task $'ab\xE5ba' $'\'\\229\'' 229 0xE5
+$task $'ab\xE6ba' $'\'\\230\'' 230 0xE6
+$task $'ab\xE7ba' $'\'\\231\'' 231 0xE7
+$task $'ab\xE8ba' $'\'\\232\'' 232 0xE8
+$task $'ab\xE9ba' $'\'\\233\'' 233 0xE9
+$task $'ab\xEAba' $'\'\\234\'' 234 0xEA
+$task $'ab\xEBba' $'\'\\235\'' 235 0xEB
+$task $'ab\xECba' $'\'\\236\'' 236 0xEC
+$task $'ab\xEDba' $'\'\\237\'' 237 0xED
+$task $'ab\xEEba' $'\'\\238\'' 238 0xEE
+$task $'ab\xEFba' $'\'\\239\'' 239 0xEF
+$task $'ab\xF0ba' $'\'\\240\'' 240 0xF0
+$task $'ab\xF1ba' $'\'\\241\'' 241 0xF1
+$task $'ab\xF2ba' $'\'\\242\'' 242 0xF2
+$task $'ab\xF3ba' $'\'\\243\'' 243 0xF3
+$task $'ab\xF4ba' $'\'\\244\'' 244 0xF4
+$task $'ab\xF5ba' $'\'\\245\'' 245 0xF5
+$task $'ab\xF6ba' $'\'\\246\'' 246 0xF6
+$task $'ab\xF7ba' $'\'\\247\'' 247 0xF7
+$task $'ab\xF8ba' $'\'\\248\'' 248 0xF8
+$task $'ab\xF9ba' $'\'\\249\'' 249 0xF9
+$task $'ab\xFAba' $'\'\\250\'' 250 0xFA
+$task $'ab\xFBba' $'\'\\251\'' 251 0xFB
+$task $'ab\xFCba' $'\'\\252\'' 252 0xFC
+$task $'ab\xFDba' $'\'\\253\'' 253 0xFD
+$task $'ab\xFEba' $'\'\\254\'' 254 0xFE
+$task $'ab\xFFba' $'\'\\255\'' 255 0xFF
