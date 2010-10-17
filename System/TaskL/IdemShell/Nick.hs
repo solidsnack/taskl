@@ -65,13 +65,27 @@ check t
   | "@" `Text.isPrefixOf` t  =  BadLeadingNIS '@'
   | "+" `Text.isPrefixOf` t  =  BadLeadingNIS '+'
   | "-" `Text.isPrefixOf` t  =  BadLeadingNIS '-'
-  | (== ':') `Text.any` t    =  Bad ':'
-  | (== ' ') `Text.any` t    =  Bad ' '
+  | (== ':') `Text.any` t    =  ColonsAreBad
+  | (== ',') `Text.any` t    =  CommasConfuseSystem
+  | (== ' ') `Text.any` t    =  RejectedByTools ' '
+  | (== '\v') `Text.any` t   =  RejectedByTools '\v'
+  | (== '\t') `Text.any` t   =  RejectedByTools '\t'
+  | (== '\n') `Text.any` t   =  RejectedByTools '\n'
+  | (== '\r') `Text.any` t   =  RejectedByTools '\r'
+  | (== '\f') `Text.any` t   =  RejectedByTools '\f'
   | otherwise                =  Ok
+--  Characters that are allowed but that should not be: \a \b
+--  Perhaps a patch to `useradd' is in order...
+
 
 {-| Characterizes success or failure of username check. 
  -}
-data Check                   =  Ok | Empty | BadLeadingNIS Char | Bad Char
+data Check                   =  Ok
+                             |  Empty
+                             |  BadLeadingNIS Char
+                             |  ColonsAreBad
+                             |  CommasConfuseSystem
+                             |  RejectedByTools Char
 deriving instance Eq Check
 deriving instance Show Check
 
@@ -81,6 +95,10 @@ message Empty                =  "Empty usernames are not allowed."
 message (BadLeadingNIS c)
   = "Leading `" `Text.snoc` c
                 `Text.append` "' interferes with NIS naming conventions."
-message (Bad c)
-  = "Char `" `Text.snoc` c `Text.append` "' is not allowed in usernames."
+message ColonsAreBad
+  = "Colons are used to separate fields in the passwd DB."
+message CommasConfuseSystem
+  = "Commas are used to separate group members in `/etc/groups'."
+message (RejectedByTools c)
+  = "Char `" `Text.snoc` c `Text.append` "' is rejected by utilities."
 
