@@ -1,7 +1,7 @@
 
 {-# LANGUAGE TypeFamilies
            , EmptyDataDecls
- #-}
+  #-}
 
 
 module System.TaskL.IdemShell where
