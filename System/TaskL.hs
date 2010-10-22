@@ -16,35 +16,35 @@ import Data.ByteString
 import qualified System.TaskL.IdemShell as IdemShell
 
 
-{-| How this is supposed to work:
+{-| The compiler input is this 'TaskGraph', a DAG of tasks. One may attach
+    tests and dependencies to every node.
 
-* Client generates Task DAG.
+    The 'TaskGraph' is reduced to a sequence of operations in the 'Op' type.
+    The schedule is such that each operation on a given system object -- for
+    example, changing permissions or adding a user -- is executed but one
+    time. Packages with overlapping operations are interleaved as necessary.
 
-* Scheduler in TaskL creates schedule. Backends compile schedule.
-
-* The tasks are defined in terms of IdemShell, the idempotent shell, which
-  is also exposed to clients. What does the idempotent have to say to clients?
-  A command has a test. If the test succeeds, the command is not executed.
-  If the command is executed, however, the test definitely will succeed the
-  next time. You can add more tests in a way that causes the command not to
-  run in more scenarios (hence we have @[IdemShell.Test]@ terms in all the
-  'TaskL' terms); this does not wreck the idempotence.
-
-* Task\L does not understand character encodings at this level though a future
-  front-end might. Usernames, file paths and similar labels must be converted
-  to bytes at some point; and the ability to set raw bytes seems important (a
-  character interface would not allow this).
+    TaskL can merge operations that overlap in their effect but do not
+    conflict in order to follow the "only once" rule. For example, if one task
+    specifies the user permissions and another the group permissions, these
+    can be turned in to one operation that sets both. When conflicts between
+    similar operations can not be resolved, the compiler will signal an error.
 
  -}
+data TaskGraph               =  TaskGraph Task [IdemShell.Test] [TaskGraph]
 
+{-| A task may be either a command or a package. Commands provide their own
+    labels. 
+ -}
+data Task                    =  Command IdemShell.Command
+                             |  Package ByteString
 
-data Task = Task ByteString [IdemShell.Test] (Maybe IdemShell.Command) [Task]
-
-
-data Schedule ByteString     =  Enter ByteString
+{-| The operations every backend must support.
+ -}
+data Op                      =  Enter ByteString
                              |  Leave ByteString
                              |  Check ByteString [IdemShell.Test]
-                             |  Perform ByteString [IdemShell.Command]
+                             |  Perform IdemShell.Command
 
 
 
