@@ -1,0 +1,29 @@
+name                          : taskl
+version                       : 0.0.0
+category                      : Text
+license                       : BSD3
+license-file                  : LICENSE
+author                        : Jason Dusek
+maintainer                    : oss@solidsnack.be 
+homepage                      : http://github.com/solidsnack/taskl/
+synopsis                      : Configure UNIX systems.
+description                   : Configure UNIX systems.
+
+
+cabal-version                 : >= 1.2.3
+build-type                    : Simple
+extra-source-files            : README
+                                test/SimpleUnits.hs
+
+
+library
+  build-depends               : base >= 2 && <= 5
+                              , containers
+                              , text >= 0.9
+                              , bytestring >= 0.9
+                              , numbers >= 2007.9.24
+  exposed-modules             : System.TaskL
+  extensions                  : StandaloneDeriving
+                                FlexibleInstances
+                                OverloadedStrings
+
