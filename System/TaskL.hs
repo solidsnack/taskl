@@ -70,15 +70,48 @@ data Task                    =  Command IdemShell.Command [IdemShell.Test]
       dependent is being run for as short a time as is practical.
 
  -}
-schedule                    ::  Tree Task -> Either Error [Op]
+schedule                    ::  Tree Task -> Either Error (Warn, [Op])
 schedule                     =  undefined
 
+
+{-| Check for cycles in a tree of tasks. 
+ -}
+cycles_check                ::  Tree Task -> Maybe Error
+cycles_check                 =  undefined
+
+
+newtype LexicallyLabelledTask = ([Natural], Tree Task)
 
 {-| Labels every node with a sequence of indices into the tree, pairing the
     sequence with the node's subtree.
  -}
-label                       ::  Tree Task -> Tree ([Natural], Tree Task)
+label                       ::  Tree Task -> Tree LexicallyLabelledTask
 label                        =  undefined
+
+
+{-| Chain of dependents leading to a task. The chain always starts immediately
+    below the root.
+ -}
+newtype DependentsChain      =  DependentsChain LexicallyLabelledTask
+                                                   [LexicallyLabelledTask]
+
+{-| Dependent chains for like tasks.
+ -}
+newtype LikeTasks            =  LikeTasks [DependentsChain]
+
+
+{-| Untree the tree in to a list of 'DependentsChain'.
+ -}
+dependents :: Tree LexicallyLabelledTasks -> [DependentsChain]
+dependents                   =  undefined
+
+
+{-| Group the dependents chains of like tasks.
+ -}
+group                       ::  [DependentsChain] -> [LikeTasks]
+group                        =  undefined
+
+
 
 
 {-| A backend supports these operations.
@@ -88,10 +121,5 @@ data Op
   | Leave ByteString                  -- ^ Notify that task is complete.
   | Check ByteString [IdemShell.Test] -- ^ Perform check for labelled task.
   | Perform IdemShell.Command         -- ^ Execute command if necessary. 
-
-
-
-
-
 
 
