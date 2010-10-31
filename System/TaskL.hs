@@ -3,6 +3,7 @@
            , EmptyDataDecls
            , OverloadedStrings
            , StandaloneDeriving
+           , ParallelListComp
  #-}
 
 {-| The Task\\L system provides a language for configuring Linux machines (and
@@ -50,12 +51,12 @@ data Task                    =  Command IdemShell.Command [IdemShell.Test]
 
 
 {-| The script backend consumes a schedule, a list of basic operations, which
-    is constructed from a tree of 'Task' nodes. The tree structure encodes
+    is constructed from a forest of 'Task' nodes. The forest encodes
     dependencies among tasks.
 
-    The tree is first translated to a tree in which every task is labelled
-    with its position in the tree, giving a notion of the desired ordering.
-    The tree is then collapsed to a list in which like tasks are merged and
+    The forest is first translated to a forest in which every task is labelled
+    with its position in the forest, giving a notion of the desired ordering.
+    The forest is then collapsed to a list in which like tasks are merged and
     paired with their collective dependents. At this stage, contradictions are
     detected; unmergeable operations result in an error.
 
@@ -70,23 +71,20 @@ data Task                    =  Command IdemShell.Command [IdemShell.Test]
       dependent is being run for as short a time as is practical.
 
  -}
-schedule                    ::  Tree Task -> Either Error (Warn, [Op])
+schedule                    ::  Forest Task -> Either Error (Warn, [Op])
 schedule                     =  undefined
 
-
-{-| Check for cycles in a tree of tasks. 
- -}
-cycles_check                ::  Tree Task -> Maybe Error
-cycles_check                 =  undefined
-
-
-newtype LexicallyLabelledTask = ([Natural], Tree Task)
 
 {-| Labels every node with a sequence of indices into the tree, pairing the
     sequence with the node's subtree.
  -}
-label                       ::  Tree Task -> Tree LexicallyLabelledTask
-label                        =  undefined
+label                       ::  Forest Task -> Forest ([Natural], Task)
+label                        =  fmap (fmap (first reverse)) . label'' []
+
+label'' path forest =
+ [ Node (path', x) (label'' path' forest') | Node x forest' <- forest,
+                                           | n <- [0..], let path' = n:path ]
+
 
 
 {-| Chain of dependents leading to a task. The chain always starts immediately
