@@ -11,7 +11,7 @@ import Data.String
 import Control.Monad.Error
 
 import Data.ByteString (ByteString)
-import qualified Data.ByteString as ByteString
+import qualified Data.ByteString.Char8 as ByteString
 
 
 class EncDec t where

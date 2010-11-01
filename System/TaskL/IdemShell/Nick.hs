@@ -12,13 +12,17 @@ module System.TaskL.IdemShell.Nick
   , Check
   ) where
 
+import Prelude hiding (any, null)
 import Control.Monad.Error
 import Data.String
 
-import qualified Data.Text as Text
 import Data.Text (Text)
+import qualified Data.Text as Text
+import qualified Data.Text.Encoding as Text
+import Data.ByteString (ByteString)
+import Data.ByteString.Char8
 
-import Data.Text.EncDec
+import Data.ByteString.EncDec
 
 
 newtype UNick                =  UNick Nick
@@ -30,7 +34,7 @@ newtype GNick                =  GNick Nick
     @:@ since that is the separator in the @passwd@ DB files. Nicks must be
     non-empty.
  -}
-newtype Nick                 =  Nick Text
+newtype Nick                 =  Nick ByteString
 
 
 deriving instance Eq UNick
@@ -47,33 +51,33 @@ deriving instance Eq Nick
 deriving instance Ord Nick
 deriving instance Show Nick
 instance IsString Nick where
-  fromString s               =  case dec (Text.pack s) of
-                                  Right nick  ->  nick
-                                  Left msg    ->  error (Text.unpack msg)
+  fromString s               =  case dec (Text.encodeUtf8 $ Text.pack s) of
+    Right nick              ->  nick
+    Left msg                ->  error (Text.unpack $ Text.decodeUtf8 msg)
 instance EncDec Nick where
-  enc (Nick t)               =  t
-  dec t                      =  case check t of
-                                  Ok          ->  return (Nick t)
+  enc (Nick b)               =  b
+  dec b                      =  case check b of
+                                  Ok          ->  return (Nick b)
                                   err         ->  throwError (message err)
 
 
 {-| Check if text is an acceptable UNIX username.
  -}
-check                       ::  Text -> Check
-check t
-  | Text.null t              =  Empty
-  | "@" `Text.isPrefixOf` t  =  BadLeadingNIS '@'
-  | "+" `Text.isPrefixOf` t  =  BadLeadingNIS '+'
-  | "-" `Text.isPrefixOf` t  =  BadLeadingNIS '-'
-  | (== '\0') `Text.any` t   =  NullsAreBad
-  | (== ':') `Text.any` t    =  ColonsAreBad
-  | (== ',') `Text.any` t    =  CommasConfuseSystem
-  | (== ' ') `Text.any` t    =  RejectedByTools ' '
-  | (== '\v') `Text.any` t   =  RejectedByTools '\v'
-  | (== '\t') `Text.any` t   =  RejectedByTools '\t'
-  | (== '\n') `Text.any` t   =  RejectedByTools '\n'
-  | (== '\r') `Text.any` t   =  RejectedByTools '\r'
-  | (== '\f') `Text.any` t   =  RejectedByTools '\f'
+check                       ::  ByteString -> Check
+check b
+  | null b                   =  Empty
+  | "@" `isPrefixOf` b       =  BadLeadingNIS '@'
+  | "+" `isPrefixOf` b       =  BadLeadingNIS '+'
+  | "-" `isPrefixOf` b       =  BadLeadingNIS '-'
+  | (== '\0') `any` b        =  NullsAreBad
+  | (== ':') `any` b         =  ColonsAreBad
+  | (== ',') `any` b         =  CommasConfuseSystem
+  | (== ' ') `any` b         =  RejectedByTools ' '
+  | (== '\v') `any` b        =  RejectedByTools '\v'
+  | (== '\t') `any` b        =  RejectedByTools '\t'
+  | (== '\n') `any` b        =  RejectedByTools '\n'
+  | (== '\r') `any` b        =  RejectedByTools '\r'
+  | (== '\f') `any` b        =  RejectedByTools '\f'
   | otherwise                =  Ok
 --  All bytes except ':' and the ones mark as rejected above are accepted by
 --  `useradd'. This is probably bad.
@@ -93,12 +97,11 @@ data Check                   =  Ok
 deriving instance Eq Check
 deriving instance Show Check
 
-message                     ::  Check -> Text
+message                     ::  Check -> ByteString
 message Ok                   =  "Okay."
 message Empty                =  "Empty usernames are not allowed."
 message (BadLeadingNIS c)
-  = "Leading `" `Text.snoc` c
-                `Text.append` "' interferes with NIS naming conventions."
+  = "Leading `" `snoc` c `append` "' interferes with NIS naming conventions."
 message ColonsAreBad
   = "Nulls will doubtless confuse all C programs managing the passwd DB."
 message ColonsAreBad
@@ -106,5 +109,5 @@ message ColonsAreBad
 message CommasConfuseSystem
   = "Commas are used to separate group members in `/etc/groups'."
 message (RejectedByTools c)
-  = "Char `" `Text.snoc` c `Text.append` "' is rejected by utilities."
+  = "Char `" `snoc` c `append` "' is rejected by utilities."
 
