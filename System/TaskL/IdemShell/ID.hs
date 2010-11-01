@@ -14,10 +14,11 @@ import Control.Monad.Error
 import Data.String
 import Data.Int
 
+import qualified Data.ByteString.Char8 as ByteString
 import Data.Text (Text)
 import qualified Data.Text as Text
 
-import Data.Text.EncDec
+import Data.ByteString.EncDec
 
 
 {-| IDs that are specifically User IDs. 
@@ -71,17 +72,17 @@ instance Num ID where
   signum                     =  undefined -- Definitely fail if called.
   fromInteger i              =  case fromIntegralMaybe i of
                                   Just id     ->  id
-                                  Nothing     ->  error (Text.unpack msg)
+                                  Nothing     ->  error (ByteString.unpack msg)
 instance EncDec ID where
-  enc (ID n)                 =  Text.pack (show n)
-  dec t                      =  do
-    (i :: Int32)            <-  dec t
+  enc (ID n)                 =  ByteString.pack (show n)
+  dec b                      =  do
+    (i :: Int32)            <-  dec b
     maybe (throwError msg) return (fromIntegralMaybe i)
 
 
 polyMax                      =  fromIntegral (maxBound :: Int32)
 
-msg = Text.concat [ "UIDs and GIDs must be in the range 0.."
-                  , enc (maxBound :: ID)
-                  , ", inclusive." ]
+msg = ByteString.concat [ "UIDs and GIDs must be in the range 0.."
+                        , enc (maxBound :: ID)
+                        , ", inclusive." ]
 

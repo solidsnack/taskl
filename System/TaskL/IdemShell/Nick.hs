@@ -102,7 +102,7 @@ message Ok                   =  "Okay."
 message Empty                =  "Empty usernames are not allowed."
 message (BadLeadingNIS c)
   = "Leading `" `snoc` c `append` "' interferes with NIS naming conventions."
-message ColonsAreBad
+message NullsAreBad
   = "Nulls will doubtless confuse all C programs managing the passwd DB."
 message ColonsAreBad
   = "Colons are used to separate fields in the passwd DB."

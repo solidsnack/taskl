@@ -11,14 +11,16 @@ module System.TaskL.IdemShell.PasswdDB
   , Password
   ) where
 
+import Prelude hiding (tail)
 import Control.Monad.Error
 import Data.String
 import Data.Int
 
 import Data.Text (Text)
 import qualified Data.Text as Text
+import Data.ByteString.Char8
 
-import Data.Text.EncDec
+import Data.ByteString.EncDec
 import System.TaskL.IdemShell.Nick
 import System.TaskL.IdemShell.ID
 import System.TaskL.IdemShell.Path
@@ -48,18 +50,18 @@ deriving instance Ord User
 deriving instance Show User
 instance EncDec User where
   enc (Username nick)        =  enc nick
-  enc (UserID id)            =  '+' `Text.cons` enc id
-  dec t                      =  case Text.stripPrefix "+" t of
-                                  Just t'     ->  UserID `fmap` dec t'
-                                  _           ->  Username `fmap` dec t
+  enc (UserID id)            =  '+' `cons` enc id
+  dec                        =  chownStyle UserID Username
 
 deriving instance Eq Group
 deriving instance Ord Group
 deriving instance Show Group
 instance EncDec Group where
   enc (Groupname nick)       =  enc nick
-  enc (GroupID id)           =  '+' `Text.cons` enc id
-  dec t                      =  case Text.stripPrefix "+" t of
-                                  Just t'     ->  GroupID `fmap` dec t'
-                                  _           ->  Groupname `fmap` dec t
+  enc (GroupID id)           =  '+' `cons` enc id
+  dec                        =  chownStyle GroupID Groupname
+
+chownStyle consID consNick b
+    | "+" `isPrefixOf` b     =  consID `fmap` dec (tail b)
+    | otherwise              =  consNick `fmap` dec b
 
