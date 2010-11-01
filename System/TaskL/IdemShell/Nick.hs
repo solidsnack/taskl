@@ -65,6 +65,7 @@ check t
   | "@" `Text.isPrefixOf` t  =  BadLeadingNIS '@'
   | "+" `Text.isPrefixOf` t  =  BadLeadingNIS '+'
   | "-" `Text.isPrefixOf` t  =  BadLeadingNIS '-'
+  | (== '\0') `Text.any` t   =  NullsAreBad
   | (== ':') `Text.any` t    =  ColonsAreBad
   | (== ',') `Text.any` t    =  CommasConfuseSystem
   | (== ' ') `Text.any` t    =  RejectedByTools ' '
@@ -85,6 +86,7 @@ check t
 data Check                   =  Ok
                              |  Empty
                              |  BadLeadingNIS Char
+                             |  NullsAreBad
                              |  ColonsAreBad
                              |  CommasConfuseSystem
                              |  RejectedByTools Char
@@ -97,6 +99,8 @@ message Empty                =  "Empty usernames are not allowed."
 message (BadLeadingNIS c)
   = "Leading `" `Text.snoc` c
                 `Text.append` "' interferes with NIS naming conventions."
+message ColonsAreBad
+  = "Nulls will doubtless confuse all C programs managing the passwd DB."
 message ColonsAreBad
   = "Colons are used to separate fields in the passwd DB."
 message CommasConfuseSystem
