@@ -81,13 +81,13 @@ essentialTests thing         =  case thing of
 
 label                       ::  Command -> ByteString
 label thing                  =  case thing of
-   CHOWN p _                ->  "fs:" `append` enc p
-   CHMOD p _                ->  "fs:" `append` enc p
-   RM p                     ->  "fs:" `append` enc p
-   CP _ p                   ->  "fs:" `append` enc p
-   LN_S _ p                 ->  "fs:" `append` enc p
-   TOUCH p                  ->  "fs:" `append` enc p
-   MKDIR p                  ->  "fs:" `append` enc p
+   CHOWN p _                ->  "fs/o:" `append` enc p
+   CHMOD p _                ->  "fs/m:" `append` enc p
+   RM p                     ->  "fs/s:" `append` enc p
+   CP _ p                   ->  "fs/s:" `append` enc p
+   LN_S _ p                 ->  "fs/s:" `append` enc p
+   TOUCH p                  ->  "fs/s:" `append` enc p
+   MKDIR p                  ->  "fs/s:" `append` enc p
    USERADD nick _           ->  "pw/u:" `append` enc nick
    USERDEL nick             ->  "pw/u:" `append` enc nick
    GROUPADD nick _          ->  "pw/g:" `append` enc nick
