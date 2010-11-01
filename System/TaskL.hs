@@ -107,10 +107,10 @@ group                        =  groupBy comparingLabel
 {-| A backend supports these operations.
  -}
 data Op
-  = Enter ByteString                  -- ^ Notify that task is starting.
-  | Leave ByteString                  -- ^ Notify that task is complete.
-  | Check ByteString [IdemShell.Test] -- ^ Perform check for labelled task.
-  | Perform IdemShell.Command         -- ^ Execute command if necessary. 
+  = Enter (Tree Task)                 -- ^ Notify that task is starting.
+  | Leave (Tree Task)                 -- ^ Notify that task is complete.
+  | Check (Tree Task)                 -- ^ Perform check for labelled task.
+  | Perform (Tree Task)               -- ^ Execute command if necessary. 
 
 
 data Error
