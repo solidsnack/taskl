@@ -97,11 +97,9 @@ trees :: Forest ([Natural], Task) -> [Tree ([Natural], Task)]
 trees forest = concat (forest : fmap (trees . subForest) forest)
 
 
-group :: [Tree ([Natural], Task)] -> [[Tree ([Natural], Task)]]
-group                        =  groupBy comparingLabel
- where
-  labelNode                  =  label . snd . rootLabel
-  comparingLabel a b         =  labelNode a == labelNode b
+{-| Merge like tasks. 
+ -}
+merge :: [Tree ([Natural], Task)] -> [Tree ([Natural], Task)]
 
 
 {-| A backend supports these operations.
