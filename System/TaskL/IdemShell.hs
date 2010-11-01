@@ -1,6 +1,7 @@
 
 {-# LANGUAGE TypeFamilies
            , EmptyDataDecls
+           , OverloadedStrings
   #-}
 
 
@@ -9,8 +10,11 @@ module System.TaskL.IdemShell where
 import Control.Applicative
 import Control.Monad.Identity
 
+import Data.ByteString
+
 import System.TaskL.IdemShell.PasswdDB
 import System.TaskL.IdemShell.Path
+import Data.ByteString.EncDec
 
 
 data Command                 =  CHOWN Path Ownership
@@ -26,6 +30,7 @@ data Command                 =  CHOWN Path Ownership
                              |  GROUPDEL GNick
                              |  GPASSWDa GNick UNick
                              |  GPASSWDd GNick UNick
+
 
 
 data Test                    =  CHKOWN Path Ownership
@@ -56,6 +61,7 @@ data UserAttrs
 
 data GroupAttrs
 
+
 essentialTests              ::  Command -> [Test]
 essentialTests thing         =  case thing of
    CHOWN p o                ->  [CHKOWN p o]
@@ -71,4 +77,21 @@ essentialTests thing         =  case thing of
    GROUPDEL nick            ->  [(Not . GETENT . Group) nick]
    GPASSWDa gNick uNick     ->  []
    GPASSWDd gNick uNick     ->  []
+
+
+label                       ::  Command -> ByteString
+label thing                  =  case thing of
+   CHOWN p _                ->  "fs:" `append` enc p
+   CHMOD p _                ->  "fs:" `append` enc p
+   RM p                     ->  "fs:" `append` enc p
+   CP _ p                   ->  "fs:" `append` enc p
+   LN_S _ p                 ->  "fs:" `append` enc p
+   TOUCH p                  ->  "fs:" `append` enc p
+   MKDIR p                  ->  "fs:" `append` enc p
+   USERADD nick _           ->  "pw/u:" `append` enc nick
+   USERDEL nick             ->  "pw/u:" `append` enc nick
+   GROUPADD nick _          ->  "pw/g:" `append` enc nick
+   GROUPDEL nick            ->  "pw/g:" `append` enc nick
+   GPASSWDa nick _          ->  "pw/g:" `append` enc nick
+   GPASSWDd nick _          ->  "pw/g:" `append` enc nick
 
