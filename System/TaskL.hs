@@ -15,11 +15,11 @@
     a classic UNIX command (see the @IdemShell@ docs to find out more about
     these commands).
 
-    The input to the Task\\L system is a 'Tree' of 'Task' items, specifying
-    operations and their dependencies. Multiple declarations of the same task
-    are merged and contradictions checked for before the whole structure is
-    flattened into a linear schedule in which each attribute -- a file's
-    permissions, a group's membership list -- is touched but one time.
+    The input to the Task\\L system is a list of 'Tree' of 'Task' items,
+    specifying operations and their dependencies. Multiple declarations of the
+    same task are merged and contradictions checked for before the whole
+    structure is flattened into a linear schedule in which each attribute -- a
+    file's permissions, a group's membership list -- is touched but one time.
 
     The schedule is compiled to a Bash script which may then be executed to
     instantiate the configuration. As it runs, the script gives notes which
@@ -31,12 +31,15 @@
 
 module System.TaskL where
 
+import Data.List (groupBy)
 import Data.Tree
 import Data.String
 import Control.Applicative
+import Control.Arrow (first, second)
 import Control.Monad.Identity
 
-import Data.ByteString
+import Data.ByteString (ByteString)
+import qualified Data.ByteString as ByteString
 import Data.Number.Natural
 
 import qualified System.TaskL.IdemShell as IdemShell
@@ -48,6 +51,10 @@ import qualified System.TaskL.IdemShell as IdemShell
  -}
 data Task                    =  Command IdemShell.Command [IdemShell.Test]
                              |  Package ByteString [IdemShell.Test]
+
+label                       ::  Task -> ByteString
+label (Command c _)          =  IdemShell.label c
+label (Package b _)          =  "task:" `ByteString.append` b
 
 
 {-| The script backend consumes a schedule, a list of basic operations, which
@@ -78,38 +85,23 @@ schedule                     =  undefined
 {-| Labels every node with a sequence of indices into the tree, pairing the
     sequence with the node's subtree.
  -}
-label                       ::  Forest Task -> Forest ([Natural], Task)
-label                        =  fmap (fmap (first reverse)) . label'' []
+dPath                       ::  Forest Task -> Forest ([Natural], Task)
+dPath                        =  fmap (fmap (first reverse)) . dPath'' []
 
-label'' path forest =
- [ Node (path', x) (label'' path' forest') | Node x forest' <- forest,
+dPath'' path forest =
+ [ Node (path', x) (dPath'' path' forest') | Node x forest' <- forest
                                            | n <- [0..], let path' = n:path ]
 
 
-
-{-| Chain of dependents leading to a task. The chain always starts immediately
-    below the root.
- -}
-newtype DependentsChain      =  DependentsChain LexicallyLabelledTask
-                                                   [LexicallyLabelledTask]
-
-{-| Dependent chains for like tasks.
- -}
-newtype LikeTasks            =  LikeTasks [DependentsChain]
+trees :: Forest ([Natural], Task) -> [Tree ([Natural], Task)]
+trees forest = concat (forest : fmap (trees . subForest) forest)
 
 
-{-| Untree the tree in to a list of 'DependentsChain'.
- -}
-dependents :: Tree LexicallyLabelledTasks -> [DependentsChain]
-dependents                   =  undefined
-
-
-{-| Group the dependents chains of like tasks.
- -}
-group                       ::  [DependentsChain] -> [LikeTasks]
-group                        =  undefined
-
-
+group :: [Tree ([Natural], Task)] -> [[Tree ([Natural], Task)]]
+group                        =  groupBy comparingLabel
+ where
+  labelNode                  =  label . snd . rootLabel
+  comparingLabel a b         =  labelNode a == labelNode b
 
 
 {-| A backend supports these operations.
@@ -121,3 +113,5 @@ data Op
   | Perform IdemShell.Command         -- ^ Execute command if necessary. 
 
 
+data Error
+data Warn
