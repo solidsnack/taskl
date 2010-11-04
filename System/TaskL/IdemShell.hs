@@ -8,6 +8,7 @@
 module System.TaskL.IdemShell where
 
 import qualified Data.List as List
+import Control.Applicative
 
 import Data.ByteString
 
@@ -32,13 +33,14 @@ data Command                 =  CHOWN Path Ownership
 deriving instance Eq Command
 
 
-data Test                    =  CHKOWN Path Ownership
-                             |  CHKMOD Path Mode
+data Test                    =  LSo Path Ownership
+                             |  LSm Path Mode
                              |  DASHe Path
                              |  DASH_ NodeType Path
                              |  DIFFq Path Path
                              |  CHKLN_S Path Path
                              |  GETENT GettableEnt
+                             |  GROUPS UNick GNick
                              |  Not Test
 
 
@@ -85,10 +87,12 @@ deriving instance Eq GroupAttrs
 deriving instance Show GroupAttrs
 
 
+{-| Test commands that will assuredly exit 0 after the command is run.
+ -}
 essentialTests              ::  Command -> [Test]
 essentialTests thing         =  case thing of
-   CHOWN p o                ->  [CHKOWN p o]
-   CHMOD p m                ->  [CHKMOD p m]
+   CHOWN p o                ->  [LSo p o]
+   CHMOD p m                ->  [LSm p m]
    RM p                     ->  [Not (DASHe p)]
    CP p' p                  ->  [Not (DIFFq p' p)]
    LN_S p' p                ->  [DASH_ Symlink p, CHKLN_S p' p]
@@ -98,8 +102,8 @@ essentialTests thing         =  case thing of
    USERDEL nick             ->  [(Not . GETENT . User) nick]
    GROUPADD nick _          ->  [(GETENT . Group) nick]
    GROUPDEL nick            ->  [(Not . GETENT . Group) nick]
-   GPASSWDa gNick uNicks    ->  []
-   GPASSWDd gNick uNicks    ->  []
+   GPASSWDa gNick uNicks    ->  flip GROUPS gNick <$> uNicks
+   GPASSWDd gNick uNicks    ->  Not . flip GROUPS gNick <$> uNicks
 
 
 label                       ::  Command -> ByteString
