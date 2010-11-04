@@ -21,7 +21,7 @@ data Command                 =  CHOWN Path Ownership
                              |  CHMOD Path Mode
                              |  RM Path
                              |  CP Path Path
-                             |  LN_S Path Path
+                             |  LNs Path Path
                              |  TOUCH Path
                              |  MKDIR Path
                              |  USERADD UNick UserAttrs
@@ -38,7 +38,7 @@ data Test                    =  LSo Path Ownership
                              |  DASHe Path
                              |  DASH_ NodeType Path
                              |  DIFFq Path Path
-                             |  CHKLN_S Path Path
+                             |  LSl Path Path
                              |  GETENT GettableEnt
                              |  GROUPS UNick GNick
                              |  Not Test
@@ -95,7 +95,7 @@ essentialTests thing         =  case thing of
    CHMOD p m                ->  [LSm p m]
    RM p                     ->  [Not (DASHe p)]
    CP p' p                  ->  [Not (DIFFq p' p)]
-   LN_S p' p                ->  [DASH_ Symlink p, CHKLN_S p' p]
+   LNs p' p                 ->  [DASH_ Symlink p, LSl p' p]
    TOUCH p                  ->  [DASH_ File p]
    MKDIR p                  ->  [DASH_ Directory p]
    USERADD nick _           ->  [(GETENT . User) nick]
@@ -112,7 +112,7 @@ label thing                  =  case thing of
    CHMOD p _                ->  "fs/m:" `append` enc p
    RM p                     ->  "fs/s:" `append` enc p
    CP _ p                   ->  "fs/s:" `append` enc p
-   LN_S _ p                 ->  "fs/s:" `append` enc p
+   LNs _ p                  ->  "fs/s:" `append` enc p
    TOUCH p                  ->  "fs/s:" `append` enc p
    MKDIR p                  ->  "fs/s:" `append` enc p
    USERADD nick _           ->  "pw/u:" `append` enc nick
@@ -144,7 +144,7 @@ merge'' a@(CHMOD p0 _) b     =  case b of
   CHMOD p1 _                ->  if p0 == p1 then Contradictory a b
                                             else Separate a b
   RM _                      ->  merge b a
-  LN_S _ p1                 ->  if p0 == p1 then Contradictory a b
+  LNs _ p1                  ->  if p0 == p1 then Contradictory a b
                                             else Separate a b
   _                         ->  Separate a b
 merge'' a@(RM p0) b          =  case b of
@@ -154,7 +154,7 @@ merge'' a@(RM p0) b          =  case b of
                                             else Separate a b
   CP _ p1                   ->  if p0 == p1 then Contradictory a b
                                             else Separate a b
-  LN_S p' p1                ->  if p0 == p1 || p0 == p' then Contradictory a b
+  LNs p' p1                 ->  if p0 == p1 || p0 == p' then Contradictory a b
                                                         else Separate a b
   TOUCH p1                  ->  if p0 == p1 then Contradictory a b
                                             else Separate a b
@@ -166,8 +166,8 @@ merge'' a@(CP _ p0) b        =  case b of
                                             else Separate a b
   RM _                      ->  merge b a
   _                         ->  Separate a b
-merge'' a@(LN_S _ p0) b      =  case b of
-  LN_S _ p1                 ->  if p0 == p1 then Contradictory a b
+merge'' a@(LNs _ p0) b       =  case b of
+  LNs _ p1                  ->  if p0 == p1 then Contradictory a b
                                             else Separate a b
   RM _                      ->  merge b a
   _                         ->  Separate a b
