@@ -2,6 +2,7 @@
 {-# LANGUAGE TypeFamilies
            , EmptyDataDecls
            , OverloadedStrings
+           , StandaloneDeriving
   #-}
 
 
