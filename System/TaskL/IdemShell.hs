@@ -15,6 +15,7 @@ import Data.ByteString
 
 import System.TaskL.IdemShell.PasswdDB
 import System.TaskL.IdemShell.Path
+import System.TaskL.Combination
 import Data.ByteString.EncDec
 
 
@@ -124,18 +125,12 @@ label thing                  =  case thing of
    GPASSWDd nick _          ->  "pw/g:" `append` enc nick
 
 
-data Combination             =  Contradictory Command Command
-                             |  Combined Command
-                             |  Separate Command Command
-deriving instance Eq Combination
-
-
-merge                       ::  Command -> Command -> Combination
+merge                       ::  Command -> Command -> Combination Command
 merge a b                    =  if a == b then Combined a
                                           else merge'' a b
 
 --  Use GADTs for this later.
-merge''                     ::  Command -> Command -> Combination
+merge''                     ::  Command -> Command -> Combination Command
 merge'' a@(CHOWN p0 _) b     =  case b of
   CHOWN p1 _                ->  if p0 == p1 then Contradictory a b
                                             else Separate a b
