@@ -125,25 +125,24 @@ label thing                  =  case thing of
    GPASSWDd nick _          ->  "pw/g:" `append` enc nick
 
 
-merge                       ::  Command -> Command -> Combination Command
-merge a b                    =  if a == b then Combined a
-                                          else merge'' a b
+instance Combine Command where
+  combine a b                =  if a == b then Combined a
+                                          else merge a b
 
 --  Use GADTs for this later.
-merge''                     ::  Command -> Command -> Combination Command
-merge'' a@(CHOWN p0 _) b     =  case b of
+merge a@(CHOWN p0 _) b       =  case b of
   CHOWN p1 _                ->  if p0 == p1 then Contradictory a b
                                             else Separate a b
   RM _                      ->  merge b a
   _                         ->  Separate a b
-merge'' a@(CHMOD p0 _) b     =  case b of
+merge a@(CHMOD p0 _) b       =  case b of
   CHMOD p1 _                ->  if p0 == p1 then Contradictory a b
                                             else Separate a b
   RM _                      ->  merge b a
   LNs _ p1                  ->  if p0 == p1 then Contradictory a b
                                             else Separate a b
   _                         ->  Separate a b
-merge'' a@(RM p0) b          =  case b of
+merge a@(RM p0) b            =  case b of
   CHOWN p1 _                ->  if p0 == p1 then Contradictory a b
                                             else Separate a b
   CHMOD p1 _                ->  if p0 == p1 then Contradictory a b
@@ -157,49 +156,49 @@ merge'' a@(RM p0) b          =  case b of
   MKDIR p1                  ->  if p0 == p1 then Contradictory a b
                                             else Separate a b
   _                         ->  Separate a b
-merge'' a@(CP _ p0) b        =  case b of
+merge a@(CP _ p0) b          =  case b of
   CP _ p1                   ->  if p0 == p1 then Contradictory a b
                                             else Separate a b
   RM _                      ->  merge b a
   _                         ->  Separate a b
-merge'' a@(LNs _ p0) b       =  case b of
+merge a@(LNs _ p0) b         =  case b of
   LNs _ p1                  ->  if p0 == p1 then Contradictory a b
                                             else Separate a b
   RM _                      ->  merge b a
   _                         ->  Separate a b
-merge'' a@(TOUCH p0) b       =  case b of
+merge a@(TOUCH p0) b         =  case b of
   TOUCH p1                  ->  if p0 == p1 then Contradictory a b
                                             else Separate a b
   MKDIR p1                  ->  if p0 == p1 then Contradictory a b
                                             else Separate a b
   RM _                      ->  merge b a
   _                         ->  Separate a b
-merge'' a@(MKDIR p0) b       =  case b of
+merge a@(MKDIR p0) b         =  case b of
   TOUCH p1                  ->  if p0 == p1 then Contradictory a b
                                             else Separate a b
   MKDIR p1                  ->  if p0 == p1 then Contradictory a b
                                             else Separate a b
   RM _                      ->  merge b a
   _                         ->  Separate a b
-merge'' a@(USERADD u0 _) b   =  case b of
+merge a@(USERADD u0 _) b     =  case b of
   USERADD u1 _              ->  if u0 == u1 then Contradictory a b
                                             else Separate a b
   USERDEL u1                ->  if u0 == u1 then Contradictory a b
                                             else Separate a b
   _                         ->  Separate a b
-merge'' a@(USERDEL u0) b     =  case b of
+merge a@(USERDEL u0) b       =  case b of
   USERADD u1 _              ->  if u0 == u1 then Contradictory a b
                                          else Separate a b
   USERDEL u1                ->  if u0 == u1 then Contradictory a b
                                          else Separate a b
   _                         ->  Separate a b
-merge'' a@(GROUPADD g0 _) b  =  case b of
+merge a@(GROUPADD g0 _) b    =  case b of
   GROUPADD g1 _             ->  if g0 == g1 then Contradictory a b
                                             else Separate a b
   GROUPDEL g1               ->  if g0 == g1 then Contradictory a b
                                             else Separate a b
   _                         ->  Separate a b
-merge'' a@(GROUPDEL g0) b    =  case b of
+merge a@(GROUPDEL g0) b      =  case b of
   GROUPADD g1 _             ->  if g0 == g1 then Contradictory a b
                                             else Separate a b
   GROUPDEL g1               ->  if g0 == g1 then Contradictory a b
@@ -209,7 +208,7 @@ merge'' a@(GROUPDEL g0) b    =  case b of
   GPASSWDd g1 _             ->  if g0 == g1 then Contradictory a b
                                             else Separate a b
   _                         ->  Separate a b
-merge'' a@(GPASSWDa g0 u0) b =  case b of
+merge a@(GPASSWDa g0 u0) b   =  case b of
   GPASSWDa g1 u1            ->  if g0 == g1
                                   then  Combined (GPASSWDa g0 all)
                                   else  Separate a b
@@ -221,7 +220,7 @@ merge'' a@(GPASSWDa g0 u0) b =  case b of
                                  where
                                   overlap = List.intersect u0 u1
   _                         ->  Separate a b
-merge'' a@(GPASSWDd g0 u0) b =  case b of
+merge a@(GPASSWDd g0 u0) b   =  case b of
   GPASSWDa g1 u1            ->  if g0 == g1 && (not . List.null) overlap
                                   then  Contradictory a b
                                   else  Separate a b
