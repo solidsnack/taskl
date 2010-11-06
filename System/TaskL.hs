@@ -108,7 +108,6 @@ instance Monoid Index where
   Index f0 `mappend` Index f1 = Index (mergeF f0 f1)
 
 
-
 trees                       ::  Forest (Index, Task) -> [Tree (Index, Task)]
 trees forest = concat (forest : fmap (trees . subForest) forest)
 
