@@ -33,6 +33,7 @@ data Command                 =  CHOWN Path Ownership
                              |  GPASSWDa GNick [UNick]
                              |  GPASSWDd GNick [UNick]
 deriving instance Eq Command
+deriving instance Show Command
 
 
 data Test                    =  LSo Path Ownership
@@ -44,14 +45,20 @@ data Test                    =  LSo Path Ownership
                              |  GETENT GettableEnt
                              |  GROUPS UNick GNick
                              |  Not Test
+deriving instance Eq Test
+deriving instance Show Test
 
 
 data NodeType                =  File
                              |  Directory
                              |  Symlink
+deriving instance Eq NodeType
+deriving instance Show NodeType
 
 data GettableEnt             =  User UNick
                              |  Group GNick
+deriving instance Eq GettableEnt
+deriving instance Show GettableEnt
 
 data Ownership               =  Both User Group
                              |  OnlyUser User

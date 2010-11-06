@@ -31,18 +31,22 @@
 
 module System.TaskL where
 
-import Data.List (groupBy)
+import qualified Data.List as List
 import Data.Tree
 import Data.String
 import Control.Applicative
 import Control.Arrow (first, second)
 import Control.Monad.Identity
+import Control.Monad.State
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as ByteString
 import Data.Number.Natural
+import Data.Monoid
 
 import qualified System.TaskL.IdemShell as IdemShell
+import System.TaskL.Combination
+import System.TaskL.Forest
 
 
 {-| A task may be either a command or a named package. Commands provide their
@@ -51,6 +55,7 @@ import qualified System.TaskL.IdemShell as IdemShell
  -}
 data Task                    =  Command IdemShell.Command [IdemShell.Test]
                              |  Package ByteString [IdemShell.Test]
+deriving instance Eq Task
 
 label                       ::  Task -> ByteString
 label (Command c _)          =  IdemShell.label c
@@ -85,21 +90,43 @@ schedule                     =  undefined
 {-| Labels every node with a sequence of indices into the tree, pairing the
     sequence with the node's subtree.
  -}
-dPath                       ::  Forest Task -> Forest ([Natural], Task)
-dPath                        =  fmap (fmap (first reverse)) . dPath'' []
+dPath                       ::  Forest Task -> Forest (Index, Task)
+dPath                        =  fmap (fmap index) . dPath'' []
+ where
+  index                      =  first (Index . reverse)
 
+dPath'' :: Forest Natural -> Forest Task -> Forest (Forest Natural, Task)
 dPath'' path forest =
  [ Node (path', x) (dPath'' path' forest') | Node x forest' <- forest
-                                           | n <- [0..], let path' = n:path ]
+                                           | n <- [0..],
+                                             let path' = [Node n path] ]
+
+newtype Index                =  Index (Forest Natural)
+deriving instance Eq Index
+instance Monoid Index where
+  mempty                     =  Index []
+  Index f0 `mappend` Index f1 = Index (mergeF f0 f1)
 
 
-trees :: Forest ([Natural], Task) -> [Tree ([Natural], Task)]
+
+trees                       ::  Forest (Index, Task) -> [Tree (Index, Task)]
 trees forest = concat (forest : fmap (trees . subForest) forest)
 
 
-{-| Merge like tasks. 
- -}
-merge :: [Tree ([Natural], Task)] -> [Tree ([Natural], Task)]
+instance Combine Task where
+  combine a@(Command c0 t0) b@(Command c1 t1)
+    | c0 == c1               =  Combined (Command c0 (t0 ++ t1))
+    | otherwise              =  Separate a b
+  combine a@(Package l0 t0) b@(Package l1 t1)
+    | l0 == l1               =  Combined (Package l0 (t0 ++ t1))
+    | otherwise              =  Separate a b
+  combine a b                =  Separate a b
+
+instance Combine (Tree (Index, Task)) where
+  combine a@(Node (i0, t0) d0) b@(Node (i1, t1) d1) = case combine t0 t1 of
+    Combined c              ->  Combined (Node (mappend i0 i1, c) (d0 ++ d1))
+    Separate _ _            ->  Separate a b
+    Contradictory _ _       ->  Contradictory a b -- Never happens.
 
 
 {-| A backend supports these operations.
@@ -111,5 +138,10 @@ data Op
   | Perform (Tree Task)               -- ^ Execute command if necessary. 
 
 
-data Error
-data Warn
+data Error = Conflict (Tree ([Natural], Task)) (Tree ([Natural], Task))
+
+data Warn = Overlap (Tree ([Natural], Task)) (Tree ([Natural], Task))
+
+
+
+
