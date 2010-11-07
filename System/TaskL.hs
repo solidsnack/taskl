@@ -57,9 +57,10 @@ data Task                    =  Command IdemShell.Command [IdemShell.Test]
                              |  Package ByteString [IdemShell.Test]
 deriving instance Eq Task
 instance Combine Task where
-  combine a@(Command c0 t0) b@(Command c1 t1)
-    | c0 == c1               =  Combined (Command c0 (t0 ++ t1))
-    | otherwise              =  Separate a b
+  combine a@(Command c0 t0) b@(Command c1 t1) = case IdemShell.merge c0 c1 of
+    Combined c              ->  Combined (Command c (t0 ++ t1))
+    Separate _ _            ->  Separate a b
+    Contradictory _ _       ->  Contradictory a b
   combine a@(Package l0 t0) b@(Package l1 t1)
     | l0 == l1               =  Combined (Package l0 (t0 ++ t1))
     | otherwise              =  Separate a b
@@ -125,7 +126,22 @@ instance Combine (Tree (Index, Task)) where
   combine a@(Node (i0, t0) d0) b@(Node (i1, t1) d1) = case combine t0 t1 of
     Combined c              ->  Combined (Node (mappend i0 i1, c) (d0 ++ d1))
     Separate _ _            ->  Separate a b
-    Contradictory _ _       ->  Contradictory a b -- Never happens.
+    Contradictory _ _       ->  Contradictory a b
+
+
+merge :: [Tree (Index, Task)] -> ([Tree (Index, Task)], [Error], [Warn])
+merge                        =  foldr mergeOne ([], [], [])
+
+
+mergeOne                    ::  Tree (Index, Task)
+                            ->  ([Tree (Index, Task)], [Error], [Warn])
+                            ->  ([Tree (Index, Task)], [Error], [Warn])
+mergeOne node x@(nodes, _, _) = (foldr place x . map (combine node)) nodes
+ where
+  place result (tasks, errors, warns) = case result of
+    Contradictory a b       ->  (tasks, (Conflict a b):errors, warns)
+    Separate a b            ->  (b:tasks, errors, warns)
+    Combined c              ->  (c:tasks, errors, warns)
 
 
 {-| A backend supports these operations.
@@ -137,9 +153,9 @@ data Op
   | Perform (Tree Task)               -- ^ Execute command if necessary. 
 
 
-data Error = Conflict (Tree ([Natural], Task)) (Tree ([Natural], Task))
+data Error = Conflict (Tree (Index, Task)) (Tree (Index, Task))
 
-data Warn = Overlap (Tree ([Natural], Task)) (Tree ([Natural], Task))
+data Warn = Overlap (Tree (Index, Task)) (Tree (Index, Task))
 
 
 
