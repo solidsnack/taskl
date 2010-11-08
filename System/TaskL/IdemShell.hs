@@ -34,6 +34,12 @@ data Command                 =  CHOWN Path Ownership
                              |  GPASSWDd GNick [UNick]
 deriving instance Eq Command
 deriving instance Show Command
+instance Combine Command where
+  combine a b
+    | a == b                 =  Combined a
+    | conflictDirFile a b    =  Contradictory a b
+    | conflictDirFile b a    =  Contradictory a b
+    | otherwise              =  merge a b
 
 
 data Test                    =  LSo Path Ownership
@@ -131,13 +137,6 @@ label thing                  =  case thing of
    GPASSWDa nick _          ->  "pw/g:" `append` enc nick
    GPASSWDd nick _          ->  "pw/g:" `append` enc nick
 
-
-instance Combine Command where
-  combine a b
-    | a == b                 =  Combined a
-    | conflictDirFile a b    =  Contradictory a b
-    | conflictDirFile b a    =  Contradictory a b
-    | otherwise              =  merge a b
 
 --  Use GADTs for this later.
 merge a@(CHOWN p0 _) b       =  case b of
