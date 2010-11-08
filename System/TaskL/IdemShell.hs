@@ -152,18 +152,20 @@ merge a@(CHMOD p0 _) b       =  case b of
                                             else Separate a b
   _                         ->  Separate a b
 merge a@(RM p0) b            =  case b of
-  CHOWN p1 _                ->  if p0 == p1 then Contradictory a b
-                                            else Separate a b
-  CHMOD p1 _                ->  if p0 == p1 then Contradictory a b
-                                            else Separate a b
-  CP _ p1                   ->  if p0 == p1 then Contradictory a b
-                                            else Separate a b
-  LNs p' p1                 ->  if p0 == p1 || p0 == p' then Contradictory a b
-                                                        else Separate a b
-  TOUCH p1                  ->  if p0 == p1 then Contradictory a b
-                                            else Separate a b
-  MKDIR p1                  ->  if p0 == p1 then Contradictory a b
-                                            else Separate a b
+  CHOWN p1 _                ->  if p0 </? p1 then Contradictory a b
+                                             else Separate a b
+  CHMOD p1 _                ->  if p0 </? p1 then Contradictory a b
+                                             else Separate a b
+  CP s1 p1                  ->  if p0 </? p1 || p0 </? s1
+                                  then Contradictory a b
+                                  else Separate a b
+  LNs p' p1                 ->  if p0 </? p1 || p0 </? p'
+                                  then  Contradictory a b
+                                  else  Separate a b
+  TOUCH p1                  ->  if p0 </? p1 then Contradictory a b
+                                             else Separate a b
+  MKDIR p1                  ->  if p0 </? p1 then Contradictory a b
+                                             else Separate a b
   _                         ->  Separate a b
 merge a@(CP _ p0) b          =  case b of
   CP _ p1                   ->  if p0 == p1 then Contradictory a b
