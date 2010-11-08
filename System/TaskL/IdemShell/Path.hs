@@ -11,7 +11,7 @@ module System.TaskL.IdemShell.Path
   , Check
   ) where
 
-import Prelude hiding (break, concat, null, last, any)
+import Prelude hiding (break, concat, null, last, any, init)
 import Control.Monad.Error
 import Data.String
 
@@ -37,6 +37,14 @@ Path a </> Path b            =  (Path . concat) [a, shim, b']
   b'                         =  snd (break (== '/') b)
   shim | last a == '/'       =  ""
        | otherwise           =  "/"
+
+{-| Is the second path syntactically below or equal to the first one?
+ -}
+(</?)                       ::  Path -> Path -> Bool
+Path a </? Path b            =  a' `isPrefixOf` b
+ where
+  a' | last a == '/'         =  init a
+     | otherwise             =  a
 
 
 deriving instance Eq Path
