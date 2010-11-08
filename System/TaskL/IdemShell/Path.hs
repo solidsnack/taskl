@@ -6,19 +6,20 @@
 module System.TaskL.IdemShell.Path
   ( Path()
   , (</>)
+  , (</?)
   , message
   , check
   , Check
   ) where
 
-import Prelude hiding (break, concat, null, last, any, init)
+import Prelude hiding ( init, null, concat, break,
+                        drop, head, length, last, any )
 import Control.Monad.Error
 import Data.String
 
 import Data.ByteString.Char8
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
-import Data.Text (Text)
 
 import Data.ByteString.EncDec
 
@@ -28,23 +29,18 @@ import Data.ByteString.EncDec
  -}
 newtype Path                 =  Path ByteString
 
-{-| Join two UNIX paths. An additional @/@ is introduced between the paths if
-    necessary. Multiple @/@ are not collapsed.
+{-| Join two UNIX paths. An additional @/@ is introduced between the paths.
  -}
 (</>)                       ::  Path -> Path -> Path
-Path a </> Path b            =  (Path . concat) [a, shim, b']
+Path a </> Path b            =  Path (a `snoc` '/' `append` b')
  where
   b'                         =  snd (break (== '/') b)
-  shim | last a == '/'       =  ""
-       | otherwise           =  "/"
 
 {-| Is the second path syntactically below or equal to the first one?
  -}
 (</?)                       ::  Path -> Path -> Bool
-Path a </? Path b            =  a' `isPrefixOf` b
- where
-  a' | last a == '/'         =  init a
-     | otherwise             =  a
+Path a </? Path b            =  a `isPrefixOf` b
+                            &&  head (drop (length a) b) == '/'
 
 
 deriving instance Eq Path
@@ -56,17 +52,31 @@ instance IsString Path where
     Left msg                ->  error (Text.unpack $ Text.decodeUtf8 msg)
 instance EncDec Path where
   enc (Path b)               =  b
-  dec b                      =  case check b of
-                                  Ok          ->  return (Path b)
+  dec b                      =  case check b' of
+                                  Ok          ->  return (Path b')
                                   err         ->  throwError (message err)
+                                 where
+                                  b'           =  norm b
+
+{-| Normalize a path, removing trailing slashes and collapsing slash runs.
+ -}
+norm                        ::  ByteString -> ByteString
+norm                         =  snd . foldl' (<<) (False, "")
+ where
+  (_    , bytes) << '/'      =  (True , bytes)
+  (True , bytes) << c        =  (False, bytes `snoc` '/' `snoc` c)
+  (False, bytes) << c        =  (False, bytes `snoc` c)
 
 
 {-| Check if text is an acceptable UNIX path.
  -}
+check                       ::  ByteString -> Check
 check b
   | null b                   =  Empty
   | any (== '\0') b          =  NoNull
-  | (not . under) prefixes   =  NoPrefix
+  | last b == '/'            =  NoFinalSlash
+  | "//" `isInfixOf` b       =  NoSlashRuns
+  | (not . under) prefixes   =  MustHavePrefix
   | otherwise                =  Ok
  where
   prefixes                   =  ["/", "./", "../"]
@@ -74,7 +84,7 @@ check b
 
 {-| Characterizes success or failure of path check.
  -}
-data Check                   =  Ok | Empty | NoNull | NoPrefix
+data Check = Ok | Empty | NoNull | NoFinalSlash | NoSlashRuns | MustHavePrefix
 deriving instance Eq Check
 deriving instance Show Check
 
@@ -82,5 +92,7 @@ message                     ::  Check -> ByteString
 message Ok                   =  "Okay."
 message Empty                =  "Empty paths are not allowed."
 message NoNull               =  "UNIX paths may not contain null."
-message NoPrefix             =  "Path should begin with `/', `./' or `../'."
+message NoFinalSlash         =  "Don't create paths with final slashes."
+message NoSlashRuns          =  "Don't create paths with runs of slashes."
+message MustHavePrefix       =  "Path should begin with `/', `./' or `../'."
 
