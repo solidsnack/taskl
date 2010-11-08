@@ -183,8 +183,7 @@ merge a@(TOUCH p0) b         =  case b of
   RM _                      ->  merge b a
   _                         ->  Separate a b
 merge a@(MKDIR p0) b         =  case b of
-  TOUCH p1                  ->  if p0 == p1 then Contradictory a b
-                                            else Separate a b
+  TOUCH _                   ->  merge b a
   MKDIR p1                  ->  if p0 == p1 then Contradictory a b
                                             else Separate a b
   RM _                      ->  merge b a
