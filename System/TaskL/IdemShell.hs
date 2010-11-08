@@ -133,8 +133,11 @@ label thing                  =  case thing of
 
 
 instance Combine Command where
-  combine a b                =  if a == b then Combined a
-                                          else merge a b
+  combine a b
+    | a == b                 =  Combined a
+    | conflictDirFile a b    =  Contradictory a b
+    | conflictDirFile b a    =  Contradictory a b
+    | otherwise              =  merge a b
 
 --  Use GADTs for this later.
 merge a@(CHOWN p0 _) b       =  case b of
@@ -239,4 +242,26 @@ merge a@(GPASSWDd g0 u0) b   =  case b of
                                  where
                                   all = List.union u0 u1
   _                         ->  Separate a b
+
+
+impliedDirectories          ::  Command -> [Path]
+impliedDirectories thing     =  case thing of
+   CHOWN p _                ->  [(p -/)]
+   CHMOD p _                ->  [(p -/)]
+   CP p' p                  ->  [(p -/), (p' -/)]
+   LNs p' p                 ->  [(p -/), (p' -/)]
+   TOUCH p                  ->  [(p -/)]
+   MKDIR p                  ->  [p]
+   _                        ->  []
+
+impliedFiles                ::  Command -> [Path]
+impliedFiles thing           =  case thing of
+   CP p' p                  ->  [p', p]
+   TOUCH p                  ->  [p]
+   _                        ->  []
+
+conflictDirFile             ::  Command -> Command -> Bool
+conflictDirFile a b = List.any (`List.any` impliedDirectories b) filesAbove
+ where
+  filesAbove                 =  (</?) <$> impliedFiles a
 
