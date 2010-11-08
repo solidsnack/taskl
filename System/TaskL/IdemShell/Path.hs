@@ -28,7 +28,7 @@ import Data.ByteString.EncDec
  -}
 newtype Path                 =  Path ByteString
 
-{-| Join two UNIX paths. An addition @/@ is introduced between the paths if 
+{-| Join two UNIX paths. An additional @/@ is introduced between the paths if
     necessary. Multiple @/@ are not collapsed.
  -}
 (</>)                       ::  Path -> Path -> Path
