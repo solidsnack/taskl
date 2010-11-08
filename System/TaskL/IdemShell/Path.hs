@@ -61,7 +61,10 @@ instance EncDec Path where
 {-| Normalize a path, removing trailing slashes and collapsing slash runs.
  -}
 norm                        ::  ByteString -> ByteString
-norm                         =  snd . foldl' (<<) (False, "")
+norm "/"                     =  "/"
+norm "./"                    =  "."
+norm "../"                   =  ".."
+norm b                       =  (snd . foldl' (<<) (False, "")) b
  where
   (_    , bytes) << '/'      =  (True , bytes)
   (True , bytes) << c        =  (False, bytes `snoc` '/' `snoc` c)
@@ -74,6 +77,7 @@ check                       ::  ByteString -> Check
 check b
   | null b                   =  Empty
   | any (== '\0') b          =  NoNull
+  | b == "/"                 =  Ok
   | last b == '/'            =  NoFinalSlash
   | "//" `isInfixOf` b       =  NoSlashRuns
   | (not . under) prefixes   =  MustHavePrefix
@@ -92,7 +96,7 @@ message                     ::  Check -> ByteString
 message Ok                   =  "Okay."
 message Empty                =  "Empty paths are not allowed."
 message NoNull               =  "UNIX paths may not contain null."
-message NoFinalSlash         =  "Don't create paths with final slashes."
+message NoFinalSlash         =  "Only the root path may have a final slash."
 message NoSlashRuns          =  "Don't create paths with runs of slashes."
 message MustHavePrefix       =  "Path should begin with `/', `./' or `../'."
 
