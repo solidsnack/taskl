@@ -1,12 +1,15 @@
 
 {-# LANGUAGE StandaloneDeriving
            , OverloadedStrings
+           , PostfixOperators
   #-}
 
 module System.TaskL.IdemShell.Path
   ( Path()
   , (</>)
   , (</?)
+  , (-/)
+  , (/-)
   , message
   , check
   , Check
@@ -41,6 +44,18 @@ Path a </> Path b            =  Path (a `snoc` '/' `append` b')
 (</?)                       ::  Path -> Path -> Bool
 Path a </? Path b            =  a `isPrefixOf` b
                             &&  head (drop (length a) b) == '/'
+
+{-| Obtain dirname.
+ -}
+(-/)                        ::  Path -> Path
+(-/) (Path a)                =  case breakEnd (== '/') a of
+                                  ("/", _)    ->  Path "/"
+                                  (d,   _)    ->  Path (init d)
+
+{-| Obtain basename.
+ -}
+(/-)                        ::  Path -> Path
+(/-) (Path a)                =  (Path . snd . breakEnd (== '/')) a
 
 
 deriving instance Eq Path
