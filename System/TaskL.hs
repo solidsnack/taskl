@@ -46,7 +46,7 @@ import Data.Monoid
 
 import qualified System.TaskL.IdemShell as IdemShell
 import System.TaskL.Combination
-import System.TaskL.Forest
+import System.TaskL.IndexForest
 import System.TaskL.Task
 
 
@@ -88,12 +88,6 @@ dPath'' path forest =
  [ Node (path', x) (dPath'' path' forest') | Node x forest' <- forest
                                            | n <- [0..],
                                              let path' = [Node n path] ]
-
-newtype Index                =  Index (Forest Natural)
-deriving instance Eq Index
-instance Monoid Index where
-  mempty                     =  Index []
-  Index f0 `mappend` Index f1 = Index (mergeF f0 f1)
 
 
 trees                       ::  Forest (Index, Task) -> [Tree (Index, Task)]
