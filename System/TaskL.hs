@@ -48,6 +48,7 @@ import qualified System.TaskL.IdemShell as IdemShell
 import System.TaskL.Combination
 import System.TaskL.IndexForest
 import System.TaskL.Task
+import System.TaskL.Op
 
 
 {-| The script backend consumes a schedule, a list of basic operations, which
@@ -114,15 +115,6 @@ mergeOne node x@(nodes, _, _) = (foldr place x . map (combine node)) nodes
     Contradictory a b       ->  (tasks, (Conflict a b):errors, warns)
     Separate a b            ->  (b:tasks, errors, warns)
     Combined c              ->  (c:tasks, errors, warns)
-
-
-{-| A backend supports these operations.
- -}
-data Op
-  = Enter (Tree Task)                 -- ^ Notify that task is starting.
-  | Leave (Tree Task)                 -- ^ Notify that task is complete.
-  | Check (Tree Task)                 -- ^ Perform check for labelled task.
-  | Perform (Tree Task)               -- ^ Execute command if necessary. 
 
 
 data Error = Conflict (Tree (Index, Task)) (Tree (Index, Task))
