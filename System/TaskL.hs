@@ -72,23 +72,23 @@ import System.TaskL.Op
       dependent is being run for as short a time as is practical.
 
  -}
-schedule                    ::  Forest Task -> Either Error (Warn, [Op])
-schedule                     =  undefined
+schedule                    ::  [Tree Task] -> ([Op], [Error], [Warn])
+schedule                     =  operations . merge . trees . indexed
 
 
 {-| Labels every node with a sequence of indices into the tree, pairing the
     sequence with the node's subtree.
  -}
-dPath                       ::  Forest Task -> Forest (Index, Task)
-dPath                        =  fmap (fmap index) . dPath'' []
+indexed                     ::  Forest Task -> Forest (Index, Task)
+indexed                      =  fmap (fmap index) . indexed'' []
  where
   index                      =  first (Index . reverse)
 
-dPath'' :: Forest Natural -> Forest Task -> Forest (Forest Natural, Task)
-dPath'' path forest =
- [ Node (path', x) (dPath'' path' forest') | Node x forest' <- forest
-                                           | n <- [0..],
-                                             let path' = [Node n path] ]
+indexed'' :: Forest Natural -> Forest Task -> Forest (Forest Natural, Task)
+indexed'' path forest =
+ [ Node (path', x) (indexed'' path' forest') | Node x forest' <- forest
+                                             | n <- [0..],
+                                               let path' = [Node n path] ]
 
 
 trees                       ::  Forest (Index, Task) -> [Tree (Index, Task)]
@@ -106,6 +106,11 @@ merge :: [Tree (Index, Task)] -> ([Tree (Index, Task)], [Error], [Warn])
 merge                        =  foldr mergeOne ([], [], [])
 
 
+data Error = Conflict (Tree (Index, Task)) (Tree (Index, Task))
+
+data Warn = Overlap (Tree (Index, Task)) (Tree (Index, Task))
+
+
 mergeOne                    ::  Tree (Index, Task)
                             ->  ([Tree (Index, Task)], [Error], [Warn])
                             ->  ([Tree (Index, Task)], [Error], [Warn])
@@ -113,14 +118,11 @@ mergeOne node x@(nodes, _, _) = (foldr place x . map (combine node)) nodes
  where
   place result (tasks, errors, warns) = case result of
     Contradictory a b       ->  (tasks, (Conflict a b):errors, warns)
-    Separate a b            ->  (b:tasks, errors, warns)
+    Separate _ b            ->  (b:tasks, errors, warns)
     Combined c              ->  (c:tasks, errors, warns)
 
 
-data Error = Conflict (Tree (Index, Task)) (Tree (Index, Task))
-
-data Warn = Overlap (Tree (Index, Task)) (Tree (Index, Task))
-
-
-
+operations                  ::  ([Tree (Index, Task)], [Error], [Warn])
+                            ->  ([Op], [Error], [Warn])
+operations (tasks, e, w)     =  ((List.sort . concatMap ops) tasks, e, w)
 
