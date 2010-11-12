@@ -4,7 +4,7 @@
            , OverloadedStrings
            , StandaloneDeriving
            , ParallelListComp
- #-}
+  #-}
 
 {-| The Task\\L system provides a language for configuring Linux machines (and
     it probably works on other UNIX-alikes, provided the GNU core-utils are
