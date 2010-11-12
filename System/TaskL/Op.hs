@@ -16,3 +16,12 @@ data Op = Enter  (Tree (Index, Task))        -- ^ Notify of task start.
         | Check  (Tree (Index, Task))        -- ^ Perform checks for task.
         | Exec   (Tree (Index, Task))        -- ^ Apply configuration.
 
+ops                         ::  Tree (Index, Task) -> [Op]
+ops t                        =  case t of
+  Node (_, Package _ _)     ->  [Enter t, Check t, Enable t, Leave t]
+  Node (_, Command _ _)     ->  [Enter t, Check t, Enable t, Exec t, Leave t]
+
+
+
+
+
