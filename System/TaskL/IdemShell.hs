@@ -139,6 +139,7 @@ label thing                  =  case thing of
 
 
 --  Use GADTs for this later.
+merge                       ::  Command -> Command -> Combination Command
 merge a@(CHOWN p0 _) b       =  case b of
   CHOWN p1 _                ->  if p0 == p1 then Contradictory a b
                                             else Separate a b
