@@ -81,8 +81,10 @@ merge                        =  foldr mergeOne ([], [], [])
 
 
 data Error = Conflict (Tree (Index, Task)) (Tree (Index, Task))
+deriving instance Show Error
 
 data Warn = Overlap (Tree (Index, Task)) (Tree (Index, Task))
+deriving instance Show Warn
 
 
 mergeOne                    ::  Tree (Index, Task)
