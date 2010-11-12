@@ -1,3 +1,5 @@
+{-# LANGUAGE StandaloneDeriving
+  #-}
 
 module System.TaskL.IndexForest where
 
@@ -11,6 +13,7 @@ import Data.Number.Natural
 
 newtype Index                =  Index (Forest Natural)
 deriving instance Eq Index
+deriving instance Show Index
 instance Ord Index where
   Index a `compare` Index b  =  a `compareF` b
 instance Monoid Index where
