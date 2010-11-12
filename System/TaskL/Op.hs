@@ -15,6 +15,8 @@ data Op = Enter  (Tree (Index, Task))        -- ^ Notify of task start.
         | Enable (Tree (Index, Task))        -- ^ Enable immediate subtasks.
         | Check  (Tree (Index, Task))        -- ^ Perform checks for task.
         | Exec   (Tree (Index, Task))        -- ^ Apply configuration.
+deriving instance Eq Op
+deriving instance Show Op
 
 ops                         ::  Tree (Index, Task) -> [Op]
 ops t                        =  case t of
