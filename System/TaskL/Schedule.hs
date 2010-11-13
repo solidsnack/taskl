@@ -14,7 +14,7 @@ module System.TaskL.Schedule where
 
 import qualified Data.List as List
 import Data.Tree
-import Control.Arrow (first)
+import Control.Arrow
 
 import Data.Number.Natural
 import Data.Monoid
@@ -56,13 +56,13 @@ schedule                     =  operations . merge . trees . indexed
 indexed                     ::  Forest Task -> Forest (Index, Task)
 indexed                      =  fmap (fmap index) . indexed'' []
  where
-  index                      =  first (Index . reverse)
+  index                      =  first (Index . (:[]) . unfold . reverse)
+  unfold = unfoldTree (head &&& (filter (/=[]) . (:[]) . tail))
 
-indexed'' :: Forest Natural -> Forest Task -> Forest (Forest Natural, Task)
+indexed'' :: [Natural] -> Forest Task -> Forest ([Natural], Task)
 indexed'' path forest =
  [ Node (path', x) (indexed'' path' forest') | Node x forest' <- forest
-                                             | n <- [0..],
-                                               let path' = [Node n path] ]
+                                             | n <- [0..], let path' = n:path ]
 
 
 trees                       ::  Forest (Index, Task) -> [Tree (Index, Task)]
