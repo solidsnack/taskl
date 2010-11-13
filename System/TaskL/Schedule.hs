@@ -90,11 +90,12 @@ deriving instance Show Warn
 mergeOne                    ::  Tree (Index, Task)
                             ->  ([Tree (Index, Task)], [Error], [Warn])
                             ->  ([Tree (Index, Task)], [Error], [Warn])
+mergeOne node ([], e, w)     =  ([node], e, w)
 mergeOne node x@(nodes, _, _) = (foldr place x . map (combine node)) nodes
  where
   place result (tasks, errors, warns) = case result of
     Contradictory a b       ->  (tasks, (Conflict a b):errors, warns)
-    Separate _ b            ->  (b:tasks, errors, warns)
+    Separate a _            ->  (a:tasks, errors, warns)
     Combined c              ->  (c:tasks, errors, warns)
 
 
