@@ -22,7 +22,7 @@ data Task                    =  Command IdemShell.Command [IdemShell.Test]
 deriving instance Eq Task
 deriving instance Show Task
 instance Combine Task where
-  combine a@(Command c0 t0) b@(Command c1 t1) = case IdemShell.merge c0 c1 of
+  combine a@(Command c0 t0) b@(Command c1 t1) = case combine c0 c1 of
     Combined c              ->  Combined (Command c (t0 ++ t1))
     Separate _ _            ->  Separate a b
     Contradictory _ _       ->  Contradictory a b
