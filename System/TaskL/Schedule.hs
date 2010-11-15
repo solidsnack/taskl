@@ -91,12 +91,15 @@ mergeOne                    ::  Tree (Index, Task)
                             ->  ([Tree (Index, Task)], [Error], [Warn])
                             ->  ([Tree (Index, Task)], [Error], [Warn])
 mergeOne node ([], e, w)     =  ([node], e, w)
-mergeOne node x@(nodes, _, _) = (foldr place x . map (combine node)) nodes
+mergeOne node (nodes, e, w)  =  (rollUp . fold . map (combine node)) nodes
  where
-  place result (tasks, errors, warns) = case result of
-    Contradictory a b       ->  (tasks, (Conflict a b):errors, warns)
-    Separate a _            ->  (a:tasks, errors, warns)
-    Combined c              ->  (c:tasks, errors, warns)
+  fold                       =  foldr place (([], e, w), False)
+  rollUp ((tasks, e, w), True) = (tasks, e, w)
+  rollUp ((tasks, e, w), False) = (node:tasks, e, w)
+  place result ((tasks, errors, warns), flag) = case result of
+    Contradictory a b       ->  ((tasks, (Conflict a b):errors, warns), flag)
+    Separate a b            ->  ((b:tasks, errors, warns),              flag)
+    Combined c              ->  ((c:tasks, errors, warns),              True)
 
 
 operations                  ::  ([Tree (Index, Task)], [Error], [Warn])
