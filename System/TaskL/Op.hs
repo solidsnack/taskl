@@ -10,6 +10,7 @@ module System.TaskL.Op where
 
 import Data.Ord
 import Data.Tree
+import Data.ByteString (ByteString, append)
 
 import System.TaskL.IndexForest
 import System.TaskL.Task
@@ -67,4 +68,15 @@ instance Ord OpCode where
 
 
 Node _ f `dependsOn` Node t _ = (any (== t) . concatMap flatten) f
+
+
+display                     ::  Op -> ByteString
+display (Op (code, t))       =  lead `append` (label . snd . rootLabel) t
+ where
+  lead                       =  case code of
+    Enter                   ->  " >> "
+    Leave                   ->  " << "
+    Check                   ->  " ** "
+    Enable                  ->  " @@ "
+    Exec                    ->  " ++ "
 
