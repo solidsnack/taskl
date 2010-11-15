@@ -47,8 +47,9 @@ import System.TaskL.Op
 
  -}
 schedule                    ::  [Tree Task] -> ([Op], [Error], [Warn])
-schedule                     =  operations . merge . trees . indexed
-
+schedule                     =  sortFst . operations . merge . trees . indexed
+ where
+  sortFst (a, b, c)          =  (List.sort a, b, c)
 
 {-| Labels every node with a sequence of indices into the tree, pairing the
     sequence with the node's subtree.
@@ -104,5 +105,5 @@ mergeOne node (nodes, e, w)  =  (rollUp . fold . map (combine node)) nodes
 
 operations                  ::  ([Tree (Index, Task)], [Error], [Warn])
                             ->  ([Op], [Error], [Warn])
-operations (tasks, e, w)     =  ((List.sort . concatMap ops) tasks, e, w)
+operations (tasks, e, w)     =  (concatMap ops tasks, e, w)
 

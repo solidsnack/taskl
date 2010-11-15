@@ -39,8 +39,8 @@ instance Ord Op where
                                           Enable ->  GT
                                           Exec   ->  LT
                                           Leave  ->  LT
-    | t == t'                =  compare c c'
-    | otherwise              =  comparing (fst . rootLabel) t t'
+    | c == c'                =  comparing (fst . rootLabel) t t'
+    | otherwise              =  compare c c'
 
 
 data OpCode  =  Enter  -- ^ Publish notification that a task is starting.
