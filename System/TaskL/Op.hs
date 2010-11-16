@@ -23,6 +23,14 @@ ops t                        =  map (Op . (,t)) $ case t of
 
 
 {-| A backend supports these operations.
+
+    The 'Ord' instance for 'Op' encodes the rule for ordering of operations:
+
+* 'Enter', 'Check' and 'Enable' for a dependent go before that of a
+  dependency.
+
+* 'Exec' and 'Leave' for a dependent go after that of a dependency.
+
  -}
 newtype Op                   =  Op (OpCode, (Tree (Index, Task)))
 deriving instance Eq Op
@@ -34,13 +42,9 @@ instance Ord Op where
                                           Enable ->  LT
                                           Exec   ->  GT
                                           Leave  ->  GT
-    | t' `dependsOn` t       =  case c of Enter  ->  GT
-                                          Check  ->  GT
-                                          Enable ->  GT
-                                          Exec   ->  LT
-                                          Leave  ->  LT
-    | c == c'                =  comparing (fst . rootLabel) t t'
-    | otherwise              =  compare c c'
+    | t' `dependsOn` t       =  Op (c', t') `compare` Op (c, t)
+    | t == t'                =  compare c c'
+    | otherwise              =  comparing (fst . rootLabel) t t'
 
 
 data OpCode  =  Enter  -- ^ Publish notification that a task is starting.
