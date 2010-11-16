@@ -26,4 +26,12 @@ tasks1 =
   , Node (Command (TOUCH "/x/b") []) [Node (Command (MKDIR "/x") []) []]
   ]
 
+tasks2 =
+  [ Node (Command (TOUCH "/q/a") []) [Node (Command (MKDIR "/q")
+                                       [DIFFq "./a" "./b"]) []]
+  , Node (Command (TOUCH "/q/b") []) [ Node (Command (MKDIR "/q")
+                                        [DIFFq "./c" "./d"]) []
+                                     , Node (Command (MKDIR "/q/p") []) []
+                                     ]
+  ]
 
