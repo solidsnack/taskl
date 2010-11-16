@@ -74,17 +74,30 @@ instance Ord OpCode where
   compare Leave  _           =  GT
 
 
-Node _ f `dependsOn` Node t _ = (any (== snd t) . concatMap rawTasks) f
+-- TODO  Destroy all this and move to using a topological sort for scheduling.
+
+dependsOn :: Tree (Index, Task) -> Tree (Index, Task) -> Bool
+Node _ f `dependsOn` t       =  (any (== lbR t) . concatMap lbF) f
 
 
-t `sharesDeps` t'            =  any (`elem` rawTasks t) (rawTasks t')
+sharesDeps :: Tree (Index, Task) -> Tree (Index, Task) -> Bool
+t `sharesDeps` t'            =  any (`elem` lbF t) (lbF t')
 
 
-rawTasks                   =  flatten . fmap snd
+lb                          ::  (Index, Task) -> ByteString
+lb                           =  label . snd
+
+
+lbR                         ::  Tree (Index, Task) -> ByteString
+lbR                          =  lb . rootLabel
+
+
+lbF                         ::  Tree (Index, Task) -> [ByteString]
+lbF                          =  map lb . flatten
 
 
 display                     ::  Op -> ByteString
-display (Op (code, t))       =  lead `append` (label . snd . rootLabel) t
+display (Op (code, t))       =  lead `append` lbR t
  where
   lead                       =  case code of
     Enter                   ->  " >> "
