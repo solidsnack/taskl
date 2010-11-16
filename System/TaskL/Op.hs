@@ -44,7 +44,10 @@ instance Ord Op where
                                           Leave  ->  GT
     | t' `dependsOn` t       =  Op (c', t') `compare` Op (c, t)
     | t == t'                =  compare c c'
-    | otherwise              =  comparing (fst . rootLabel) t t'
+    | t `sharesDeps` t'      =  if c == c' then lexicalOrder else compare c c'
+    | otherwise              =  lexicalOrder
+   where
+    lexicalOrder             =  comparing (fst . rootLabel) t t'
 
 
 data OpCode  =  Enter  -- ^ Publish notification that a task is starting.
@@ -71,7 +74,13 @@ instance Ord OpCode where
   compare Leave  _           =  GT
 
 
-Node _ f `dependsOn` Node t _ = (any (== t) . concatMap flatten) f
+Node _ f `dependsOn` Node t _ = (any (== snd t) . concatMap rawTasks) f
+
+
+t `sharesDeps` t'            =  any (`elem` rawTasks t) (rawTasks t')
+
+
+rawTasks                   =  flatten . fmap snd
 
 
 display                     ::  Op -> ByteString
