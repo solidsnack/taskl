@@ -4,25 +4,25 @@
 
 if false; true
 then
-  echo then
+  echo ok
 else
-  echo else
+  echo failed
 fi
 
 if false
    true
 then
-  echo then
+  echo ok
 else
-  echo else
+  echo failed
 fi
 
 if { false
      true ;}
 then
-  echo then
+  echo ok
 else
-  echo else
+  echo failed
 fi
 
 
