@@ -35,4 +35,12 @@ else
   echo failed
 fi
 
+if false
+   true
+then
+  echo ok
+else
+  echo failed
+fi | xargs echo
+
 
