@@ -1,4 +1,5 @@
 {-# LANGUAGE StandaloneDeriving
+           , OverloadedStrings
            , TupleSections
   #-}
 
@@ -6,7 +7,15 @@
     Task\\L program executes for each task.
  -}
 
-module System.TaskL.Op where
+module System.TaskL.Op
+  ( Op
+  , OpCode
+  , ops
+  , dependsOn
+  , sharesDeps
+  , labelTask
+  , display
+  ) where
 
 import Data.Ord
 import Data.Tree
@@ -105,4 +114,9 @@ display (Op (code, t))       =  lead `append` lbR t
     Check                   ->  " ** "
     Enable                  ->  " @@ "
     Exec                    ->  " ++ "
+
+
+labelTask                   ::  Op -> ByteString
+labelTask (Op (code, t))     =  lbR t
+
 
