@@ -91,7 +91,9 @@ function interact {
 function msg_enter    {  ${enabled["$1"]} && message P '>>' "$1" && interact  }
 function msg_check    {  ${enabled["$1"]} && message G '**' "$1" && interact  }
 function msg_enable   {  ${enabled["$1"]} && message P '++' "$1" && interact  }
-function msg_exec     {  ${enabled["$1"]} && message G '@@' "$1" && interact  }
+function msg_exec     {
+  ${enabled["$1"]} && check_state && message G '@@' "$1" && interact
+}
 function msg_leave    {  ${enabled["$1"]} && message P '<<' "$1" && interact  }
 function msg_info     {                      message B '##' "$1"              }
 function msg_abort    {                      message Y '~~' "$1" ;  exit 0    }
@@ -136,54 +138,54 @@ declare -A enabled=(
 
 ##  Installation code.
 
-enter_notify $'task:pg'
+msg_enter $'task:pg'
 check_state=true ## No check.
 { ${enabled[$'task:pg']}
   ${check_state}
   enabled[$'fs:/etc/postgres.conf']=true
   enabled[$'fs:/etc/hosts']=true }
-enter_notify $'fs:/etc/postgres.conf'
-check_notify $'fs:/etc/postgres.conf'
+msg_enter $'fs:/etc/postgres.conf'
+msg_check $'fs:/etc/postgres.conf'
 { ${enabled[$'fs:/etc/postgres.conf']}
   check_state=false
   ! diff -q ./etc/postgres.conf "$T"/etc/postgres.conf
   check_state=true }
-exec_notify $'fs:/etc/postgres.conf'
+msg_exec $'fs:/etc/postgres.conf'
 { ${enabled[$'fs:/etc/postgres.conf']}
   ${check_state}
-  exec_notify $'fs:/etc/postgres.conf'
+  msg_exec $'fs:/etc/postgres.conf'
   cp -a ./etc/postgres.conf "$T"/etc/postgres.conf }
-leave_notify $'fs:/etc/postgres.conf'
-enter_notify $'task:postfix'
+msg_leave $'fs:/etc/postgres.conf'
+msg_enter $'task:postfix'
 check_state=true ## No check.
 { ${enabled[$'task:postfix']}
   ${check_state}
   enabled[$'fs:/etc/postgres.conf']=true
   enabled[$'fs:/etc/hosts']=true }
-enter_notify $'fs:/etc/hosts'
-check_notify $'fs:/etc/hosts'
+msg_enter $'fs:/etc/hosts'
+msg_check $'fs:/etc/hosts'
 { ${enabled[$'fs:/etc/hosts']}
   check_state=false
   ! diff -q ./etc/hosts "$T"/etc/hosts
   check_state=true }
-exec_notify $'fs:/etc/hosts'
+msg_exec $'fs:/etc/hosts'
 { ${enabled[$'fs:/etc/hosts']}
   ${check_state}
-  exec_notify $'fs:/etc/hosts'
+  msg_exec $'fs:/etc/hosts'
   cp -a ./etc/hosts "$T"/etc/hosts }
-leave_notify $'fs:/etc/hosts'
-leave_notify $'task:pg'
-enter_notify $'fs:/etc/postfix.conf'
-check_notify $'fs:/etc/postfix.conf'
+msg_leave $'fs:/etc/hosts'
+msg_leave $'task:pg'
+msg_enter $'fs:/etc/postfix.conf'
+msg_check $'fs:/etc/postfix.conf'
 { ${enabled[$'fs:/etc/postfix.conf']}
   check_state=false
   ! diff -q ./etc/postfix.conf "$T"/etc/postfix.conf
   check_state=true }
-exec_notify $'fs:/etc/postfix.conf'
+msg_exec $'fs:/etc/postfix.conf'
 { ${enabled[$'fs:/etc/postfix.conf']}
   ${check_state}
-  exec_notify $'fs:/etc/postfix.conf'
+  msg_exec $'fs:/etc/postfix.conf'
   cp -a ./etc/postfix.conf "$T"/etc/postfix.conf }
-leave_notify $'fs:/etc/postfix.conf'
-leave_notify $'task:postfix'
+msg_leave $'fs:/etc/postfix.conf'
+msg_leave $'task:postfix'
 
