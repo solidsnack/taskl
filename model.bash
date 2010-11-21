@@ -88,13 +88,14 @@ function interact {
   fi
 }
 
-function check_notify {  ${enabled["$1"]} && message G '**' "$1" && interact  }
-function exec_notify  {  ${enabled["$1"]} && message G '@@' "$1" && interact  }
-function enter_notify {  ${enabled["$1"]} && message P '>>' "$1" && interact  }
-function leave_notify {  ${enabled["$1"]} && message P '<<' "$1" && interact  }
-function info_notify  {                      message B '##' "$1"              }
-function abort_notify {                      message Y '~~' "$1" ; exit 0     }
-function error_notify {                      message R '!!' "$1" ; exit 1     }
+function msg_enter    {  ${enabled["$1"]} && message P '>>' "$1" && interact  }
+function msg_check    {  ${enabled["$1"]} && message G '**' "$1" && interact  }
+function msg_enable   {  ${enabled["$1"]} && message P '++' "$1" && interact  }
+function msg_exec     {  ${enabled["$1"]} && message G '@@' "$1" && interact  }
+function msg_leave    {  ${enabled["$1"]} && message P '<<' "$1" && interact  }
+function msg_info     {                      message B '##' "$1"              }
+function msg_abort    {                      message Y '~~' "$1" ;  exit 0    }
+function msg_error    {                      message R '!!' "$1" ;  exit 1    }
 
 
 

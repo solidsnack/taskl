@@ -115,8 +115,8 @@ display (Op (code, t))       =  lead `append` lbR t
     Enter                   ->  " >> "
     Leave                   ->  " << "
     Check                   ->  " ** "
-    Enable                  ->  " @@ "
-    Exec                    ->  " ++ "
+    Enable                  ->  " ++ "
+    Exec                    ->  " @@ "
 
 
 labelTask                   ::  Op -> ByteString
