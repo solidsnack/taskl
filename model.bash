@@ -40,7 +40,6 @@ USAGE
 }
 
 
-
 # Note that `-o' means enable while `+o' means disable.
 set -o errexit
 set -o nounset
@@ -63,11 +62,6 @@ declare -A options=(
 [dest]=/
 [wait]=false
 [action]=install
-)
-
-declare -A enabled=(
-[$'task:pg_conf']=false
-[$'task:my_conf']=false
 )
 
 
@@ -126,6 +120,16 @@ do
   esac
   shift
 done
+
+
+
+########################################
+# Generated Code
+
+declare -A enabled=(
+[$'task:pg_conf']=false
+[$'task:my_conf']=false
+)
 
 
 
