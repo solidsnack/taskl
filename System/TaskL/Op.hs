@@ -18,6 +18,7 @@ module System.TaskL.Op
   ) where
 
 import Data.Ord
+import Data.Maybe
 import Data.Tree
 import Data.ByteString (ByteString, append)
 
@@ -26,10 +27,12 @@ import System.TaskL.Task
 
 
 ops                         ::  Tree (Index, Task) -> [Op]
-ops t                        =  map (Op . (,t)) $ case t of
-  Node (_, Package _ _) _   ->  [Enter, Check, Enable, Leave]
-  Node (_, Command _ _) _   ->  [Enter, Check, Enable, Exec, Leave]
-
+ops t@(Node (_, task) sub)   =  (map (Op . (,t)) .  catMaybes)
+  [Just Enter, Check !? tests, Enable !? sub, exec, Just Leave]
+ where
+  (tests, exec)              =  case task of Command _ x    ->  (x, Just Exec)
+                                             Package _ x    ->  (x, Nothing)
+  k !? list                  =  if null list then Nothing else Just k
 
 {-| A backend supports these operations.
 
