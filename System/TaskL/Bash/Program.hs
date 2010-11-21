@@ -14,14 +14,33 @@ module System.TaskL.Bash.Program where
                              |  <term> || <term>
                              |  <term> | <term>
                              |  <term> ; <term>
+                             |  <term> & <term>
                              |  { <term>+ ;}
                              |  ( <term>+ )
-                             |  if <term> then <term>+ else <term>+
-                             |  if <term> then <term>+
+                             |  if <term>+ then <term>+ else <term>+
+                             |  if <term>+ then <term>+
 @
  -}
-data Term
+data Term                    =  SimpleCommand ARGV
+                             |  Empty
+                             |  Bang Term
+                             |  And Term Term
+                             |  Or Term Term
+                             |  Pipe Term Term
+                             |  Sequence Term Term
+                             |  Background Term Term
+                             |  Group [Term]
+                             |  Subshell [Term]
+                             |  IfThen [Term] [Term]
+                             |  IfThenElse [Term] [Term] [Term]
+deriving instance Eq Term
+deriving instance Ord Term
+deriving instance Show Term
 
 
-newtype SimpleCommand = SimpleCommand [ByteString]
+newtype ARGV                 =  ARGV [ByteString]
+deriving instance Eq ARGV
+deriving instance Ord ARGV
+deriving instance Show ARGV
+
 
