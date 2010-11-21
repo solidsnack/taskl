@@ -44,3 +44,15 @@ else
 fi | xargs echo
 
 
+if if true
+   then
+     true
+   else
+     false
+   fi
+then
+  echo ok
+else
+  echo failed
+fi
+
