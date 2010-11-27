@@ -33,6 +33,9 @@ data Term                    =  SimpleCommand ARGV
                              |  Subshell [Term]
                              |  IfThen [Term] [Term]
                              |  IfThenElse [Term] [Term] [Term]
+                             |  VarAssign ByteString ByteString
+                             |  DictDecl ByteString [(ByteString, ByteString)]
+                             |  DictAssign ByteString ByteString ByteString
 deriving instance Eq Term
 deriving instance Ord Term
 deriving instance Show Term
@@ -42,23 +45,5 @@ newtype ARGV                 =  ARGV [ByteString]
 deriving instance Eq ARGV
 deriving instance Ord ARGV
 deriving instance Show ARGV
-
-
-data VarAssignment           =  VarAssignment ByteString ByteString
-deriving instance Eq VarAssignment
-deriving instance Ord VarAssignment
-deriving instance Show VarAssignment
-
-
-data DictDecl                =  DictDecl ByteString [(ByteString, ByteString)]
-deriving instance Eq DictDecl
-deriving instance Ord DictDecl
-deriving instance Show DictDecl
-
-
-data DictAssignment          =  DictAssignment ByteString ByteString
-deriving instance Eq DictAssignment
-deriving instance Ord DictAssignment
-deriving instance Show DictAssignment
 
 
