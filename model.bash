@@ -92,7 +92,14 @@ function msg_enter    {  ${enabled["$1"]} && message P '>>' "$1" && interact  }
 function msg_check    {  ${enabled["$1"]} && message G '**' "$1" && interact  }
 function msg_enable   {  ${enabled["$1"]} && message P '++' "$1" && interact  }
 function msg_exec     {
-  ${enabled["$1"]} && check_state && message G '@@' "$1" && interact
+  ${enabled["$1"]} && check_state && message G '@@' "$1" &&
+    if [ 'check' = ${options[action]} ]
+    then
+      msg_info 'Not running: dry-run mode.'
+      false
+    else
+      true
+    fi
 }
 function msg_leave    {  ${enabled["$1"]} && message P '<<' "$1" && interact  }
 function msg_info     {                      message B '##' "$1"              }
@@ -143,49 +150,37 @@ check_state=true ## No check.
 { ${enabled[$'task:pg']}
   ${check_state}
   enabled[$'fs:/etc/postgres.conf']=true
-  enabled[$'fs:/etc/hosts']=true }
+  enabled[$'fs:/etc/hosts']=true ;}
 msg_enter $'fs:/etc/postgres.conf'
-msg_check $'fs:/etc/postgres.conf'
-{ ${enabled[$'fs:/etc/postgres.conf']}
-  check_state=false
+msg_check $'fs:/etc/postgres.conf' &&
+{ check_state=false
   ! diff -q ./etc/postgres.conf "$T"/etc/postgres.conf
-  check_state=true }
-msg_exec $'fs:/etc/postgres.conf'
-{ ${enabled[$'fs:/etc/postgres.conf']}
-  ${check_state}
-  msg_exec $'fs:/etc/postgres.conf'
-  cp -a ./etc/postgres.conf "$T"/etc/postgres.conf }
+  check_state=true ;}
+msg_exec $'fs:/etc/postgres.conf' &&
+{ cp -a ./etc/postgres.conf "$T"/etc/postgres.conf ;}
 msg_leave $'fs:/etc/postgres.conf'
 msg_enter $'task:postfix'
 check_state=true ## No check.
 { ${enabled[$'task:postfix']}
   ${check_state}
   enabled[$'fs:/etc/postgres.conf']=true
-  enabled[$'fs:/etc/hosts']=true }
+  enabled[$'fs:/etc/hosts']=true ;}
 msg_enter $'fs:/etc/hosts'
-msg_check $'fs:/etc/hosts'
-{ ${enabled[$'fs:/etc/hosts']}
-  check_state=false
+msg_check $'fs:/etc/hosts' &&
+{ check_state=false
   ! diff -q ./etc/hosts "$T"/etc/hosts
-  check_state=true }
+  check_state=true ;}
 msg_exec $'fs:/etc/hosts'
-{ ${enabled[$'fs:/etc/hosts']}
-  ${check_state}
-  msg_exec $'fs:/etc/hosts'
-  cp -a ./etc/hosts "$T"/etc/hosts }
+{ cp -a ./etc/hosts "$T"/etc/hosts ;}
 msg_leave $'fs:/etc/hosts'
 msg_leave $'task:pg'
 msg_enter $'fs:/etc/postfix.conf'
-msg_check $'fs:/etc/postfix.conf'
-{ ${enabled[$'fs:/etc/postfix.conf']}
-  check_state=false
+msg_check $'fs:/etc/postfix.conf' &&
+{ check_state=false
   ! diff -q ./etc/postfix.conf "$T"/etc/postfix.conf
-  check_state=true }
-msg_exec $'fs:/etc/postfix.conf'
-{ ${enabled[$'fs:/etc/postfix.conf']}
-  ${check_state}
-  msg_exec $'fs:/etc/postfix.conf'
-  cp -a ./etc/postfix.conf "$T"/etc/postfix.conf }
+  check_state=true ;}
+msg_exec $'fs:/etc/postfix.conf' &&
+{ cp -a ./etc/postfix.conf "$T"/etc/postfix.conf ;}
 msg_leave $'fs:/etc/postfix.conf'
 msg_leave $'task:postfix'
 
