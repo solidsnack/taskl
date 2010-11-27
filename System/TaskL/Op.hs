@@ -8,8 +8,8 @@
  -}
 
 module System.TaskL.Op
-  ( Op
-  , OpCode
+  ( Op(..)
+  , OpCode(..)
   , ops
   , dependsOn
   , sharesDeps
