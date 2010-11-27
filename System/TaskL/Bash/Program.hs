@@ -44,3 +44,21 @@ deriving instance Ord ARGV
 deriving instance Show ARGV
 
 
+data VarAssignment           =  VarAssignment ByteString ByteString
+deriving instance Eq VarAssignment
+deriving instance Ord VarAssignment
+deriving instance Show VarAssignment
+
+
+data DictDecl                =  DictDecl ByteString [(ByteString, ByteString)]
+deriving instance Eq DictDecl
+deriving instance Ord DictDecl
+deriving instance Show DictDecl
+
+
+data DictAssignment          =  DictAssignment ByteString ByteString
+deriving instance Eq DictAssignment
+deriving instance Ord DictAssignment
+deriving instance Show DictAssignment
+
+
