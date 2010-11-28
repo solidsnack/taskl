@@ -5,6 +5,8 @@
 
 module System.TaskL.Bash.Program where
 
+import Data.ByteString
+
 
 {-| Terms that can be combined with one another.
 @
