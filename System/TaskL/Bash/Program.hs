@@ -16,9 +16,12 @@ module System.TaskL.Bash.Program where
                              |  <term> ; <term>
                              |  <term> & <term>
                              |  { <term>+ ;}
-                             |  ( <term>+ )
+                             |  '(' <term>+ ')'
                              |  if <term>+ then <term>+ else <term>+
                              |  if <term>+ then <term>+
+                             |  <name>=<text>
+                             |  declare -A <name>='('([<name>]=<text>)*')'
+                             |  <name>[<name>]=<text>
 @
  -}
 data Term                    =  SimpleCommand ARGV
