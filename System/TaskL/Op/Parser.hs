@@ -21,7 +21,6 @@ pCode                       ::  OpCode -> OpParser Op
 pCode code                   =  pSym (test, s, auto)
  where
   test (Op (code', _))       =  code == code'
-  s                         ::  String
   s                          =  show code ++ ", _"
   auto                       =  Op (code, (Node (Index [], Package "" [])[]))
 
