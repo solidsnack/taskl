@@ -14,35 +14,32 @@ module System.TaskL.Bash.Codegen where
 
 import Data.List (sort, nub)
 
-import Text.ShellEscape
+import qualified Text.ShellEscape as Esc
 
+import System.TaskL.IdemShell
 import System.TaskL.Op
 import System.TaskL.Task
 import System.TaskL.Bash.Program
 
 
-arrayKeys                   ::  [Op] -> [Bash]
+arrayKeys                   ::  [Op] -> [Esc.Bash]
 arrayKeys                    =  map bash . sort . nub . map labelTask
-
-
-enabledArray                ::  [Bash] -> ArrayDecl
-enabledArray                 =  undefined
 
 
 main                        ::  [Op] -> Term
 main                         =  undefined
 
 
-code                        ::  Op -> Program
+code                        ::  Op -> Term
 code op@(Op (code, (_, t))   =  case code of
   Enter                     ->  msg op
-  Check                     ->  msg op
+  Check                     ->  msg op `And` foldr
   Enable                    ->  msg op
   Exec                      ->  msg op
   Leave                     ->  msg op
 
 
-msg op@(Op (code, (_, t))    =  SimpleCommand (ARGV [f, labelTask op])
+msg op@(Op (code, (_, t))    =  Bash.SimpleCommand (ARGV [f, labelTask op])
  where
   f                          =  case code of
     Enter                   ->  SimpleCommand (ARGV ["msg_enter",  label])
@@ -52,6 +49,13 @@ msg op@(Op (code, (_, t))    =  SimpleCommand (ARGV [f, labelTask op])
     Leave                   ->  SimpleCommand (ARGV ["msg_leave",  label])
 
 
-data ArrayDecl
+checkCode                   ::  Task -> Term
+checkCode task = checkSet False `Sequence` foldr And (checkSet True) testCode
+ where
+  tests                      =  case task of
+    Command c l             ->  essentialTests c ++ l
+    Package _ l             ->  l
+  testCode                   =  map codeGen tests
+  checkSet b = VarAssign "check_state" (if b then "true" else "false")
 
 
