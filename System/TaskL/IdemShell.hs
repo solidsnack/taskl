@@ -61,6 +61,12 @@ data NodeType                =  File
 deriving instance Eq NodeType
 deriving instance Show NodeType
 
+nodeTest                    ::  NodeType -> ByteString
+nodeTest File                =  "-f"
+nodeTest Directory           =  "-d"
+nodeTest Symlink             =  "-L"
+
+
 data GettableEnt             =  User UNick
                              |  Group GNick
 deriving instance Eq GettableEnt
