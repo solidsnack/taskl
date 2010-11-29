@@ -52,3 +52,7 @@ deriving instance Ord ARGV
 deriving instance Show ARGV
 
 
+cmd                         ::  [ByteString] -> Term
+cmd                          =  SimpleCommand . ARGV
+
+

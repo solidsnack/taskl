@@ -14,6 +14,7 @@ import Data.ByteString.EncDec
 import System.TaskL.IdemShell
 import System.TaskL.IdemShell.Path
 import System.TaskL.Bash.Program
+import System.TaskL.Bash.Codegen.Utils
 
 
 {-| Class of objects that may be translated to Bash programs. Both 'Command'
@@ -42,15 +43,17 @@ instance CodeGen Test where
   codeGen test               =  case collapse test of
     LSo p o                 ->  undefined
     LSm p m                 ->  undefined
-    DASHe p                 ->  fileTest "-e" p
-    DASH_ node p            ->  fileTest (nodeTest node) p
+    DASHe p                 ->  testFS "-e" p
+    DASH_ node p            ->  testFS (nodeTest node) p
     DIFFq p' p              ->  undefined
-    LSl p' p                ->  undefined
+    LSl p' p                ->  readlinkEq p p'
     GETENT ent              ->  undefined
     GROUPS u g              ->  undefined
     Not t                   ->  Bang (codeGen t)
    where
-    fileTest t p = SimpleCommand (ARGV ["[", t, escapePath p, "]"])
+    readlinkEq p p' =
+      Sequence (VarAssign "link_" (escEnc p))
+               (cmd ["[", "`readlink -- \"$link_\"`", "=", escEnc p', "]"])
 
 
 {-| Remove redundant negations.
@@ -58,9 +61,5 @@ instance CodeGen Test where
 collapse                    ::  Test -> Test
 collapse (Not (Not test))    =  collapse test
 collapse test                =  test
-
-
-escapePath                  ::  Path -> ByteString
-escapePath                   =  Esc.bytes . Esc.bash . enc
 
 
