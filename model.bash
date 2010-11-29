@@ -120,7 +120,7 @@ do
     --help|-h|'-?')             usage ; exit 0 ;;
     install|check|list)         options[action]=$1 ;;
     ./*|/*)                     options[dest]="$1" ;;
-    fs:*|task:*|pw:*)           if [ ${enabled["$1"]:-x} != x ]
+    fs/*:*|pw/*:*|task:*)       if [ ${enabled["$1"]:-x} != x ]
                                 then
                                   enabled["$1"]=true
                                 else

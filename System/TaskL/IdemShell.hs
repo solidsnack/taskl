@@ -129,19 +129,19 @@ essentialTests thing         =  case thing of
 
 label                       ::  Command -> ByteString
 label thing                  =  case thing of
-   CHOWN p _                ->  "fs/o:" `append` enc p
-   CHMOD p _                ->  "fs/m:" `append` enc p
-   RM p                     ->  "fs/s:" `append` enc p
-   CP _ p                   ->  "fs/s:" `append` enc p
-   LNs _ p                  ->  "fs/s:" `append` enc p
-   TOUCH p                  ->  "fs/s:" `append` enc p
-   MKDIR p                  ->  "fs/s:" `append` enc p
-   USERADD nick _           ->  "pw/u:" `append` enc nick
-   USERDEL nick             ->  "pw/u:" `append` enc nick
-   GROUPADD nick _          ->  "pw/g:" `append` enc nick
-   GROUPDEL nick            ->  "pw/g:" `append` enc nick
-   GPASSWDa nick _          ->  "pw/g:" `append` enc nick
-   GPASSWDd nick _          ->  "pw/g:" `append` enc nick
+   CHOWN p _                ->  "fs/own:" `append` enc p
+   CHMOD p _                ->  "fs/mode:" `append` enc p
+   RM p                     ->  "fs/node:" `append` enc p
+   CP _ p                   ->  "fs/node:" `append` enc p
+   LNs _ p                  ->  "fs/node:" `append` enc p
+   TOUCH p                  ->  "fs/node:" `append` enc p
+   MKDIR p                  ->  "fs/node:" `append` enc p
+   USERADD nick _           ->  "pw/user:" `append` enc nick
+   USERDEL nick             ->  "pw/user:" `append` enc nick
+   GROUPADD nick _          ->  "pw/group:" `append` enc nick
+   GROUPDEL nick            ->  "pw/group:" `append` enc nick
+   GPASSWDa nick _          ->  "pw/group:" `append` enc nick
+   GPASSWDd nick _          ->  "pw/group:" `append` enc nick
 
 
 --  Use GADTs for this later.
