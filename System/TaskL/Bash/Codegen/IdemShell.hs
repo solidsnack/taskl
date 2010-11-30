@@ -45,7 +45,7 @@ instance CodeGen Test where
     LSm p m                 ->  undefined
     DASHe p                 ->  testFS "-e" p
     DASH_ node p            ->  testFS (nodeTest node) p
-    DIFFq p' p              ->  undefined
+    DIFFq p' p              ->  cmd ["diff", "-q", escEnc p, escEnc p']
     LSl p' p                ->  readlinkEq p p'
     GETENT ent              ->  undefined
     GROUPS u g              ->  undefined
