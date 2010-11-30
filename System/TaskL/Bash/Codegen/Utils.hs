@@ -9,16 +9,20 @@ import qualified Text.ShellEscape as Esc
 import Data.ByteString.EncDec
 import System.TaskL.IdemShell
 import System.TaskL.IdemShell.Path
-import System.TaskL.Bash.Program
+import System.TaskL.Bash.Program (cmd)
+import qualified System.TaskL.Bash.Program as Program
 
 
-testFS                      ::  ByteString -> Path -> Term
+testFS                      ::  ByteString -> Path -> Program.Term
 testFS t p                   =  cmd ["[", t, escEnc p, "]"]
 
 
-readLink p                   =  "`readlink " `append` escEnc p `append` "`"
+getent                      ::  GettableEnt -> Program.Term
+getent (User nick)           =  cmd ["getent", "passwd", escEnc nick]
+getent (Group nick)          =  cmd ["getent", "group", escEnc nick]
 
 
+escEnc                      ::  (EncDec t) => t -> ByteString
 escEnc                       =  Esc.bytes . Esc.bash . enc
 
 
