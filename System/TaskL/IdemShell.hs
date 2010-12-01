@@ -10,6 +10,7 @@ module System.TaskL.IdemShell where
 
 import qualified Data.List as List
 import Control.Applicative
+import Data.Monoid
 
 import Data.ByteString
 
@@ -51,8 +52,15 @@ data Test                    =  LSo Path Ownership
                              |  GETENT GettableEnt
                              |  GROUPS UNick GNick
                              |  Not Test
+                             |  And Test Test
+                             |  Or Test Test
+                             |  TRUE
+                             |  FALSE
 deriving instance Eq Test
 deriving instance Show Test
+instance Monoid Test where
+  mempty                     =  FALSE
+  mappend                    =  Or
 
 
 data NodeType                =  File
