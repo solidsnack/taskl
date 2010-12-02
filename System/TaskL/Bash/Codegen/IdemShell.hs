@@ -51,8 +51,8 @@ instance CodeGen Test where
     GETENT ent              ->  getent ent
     GROUPS u g              ->  undefined
     Not t                   ->  Program.Bang (codeGen t)
-    And t t'                ->  (codeGen t) `Program.And` (codeGen t')
-    Or t t'                 ->  (codeGen t) `Program.Or` (codeGen t')
+    And t t'                ->  codeGen t `Program.And` codeGen t'
+    Or t t'                 ->  codeGen t `Program.Or` codeGen t'
     TRUE                    ->  cmd ["true"]
     FALSE                   ->  cmd ["false"]
    where
