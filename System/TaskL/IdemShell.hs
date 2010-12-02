@@ -118,21 +118,23 @@ deriving instance Show GroupAttrs
 
 {-| Test commands that will assuredly exit 0 after the command is run.
  -}
-essentialTests              ::  Command -> [Test]
+essentialTests              ::  Command -> Test
 essentialTests thing         =  case thing of
-   CHOWN p o                ->  [LSo p o]
-   CHMOD p m                ->  [LSm p m]
-   RM p                     ->  [Not (DASHe p)]
-   CP p' p                  ->  [Not (DIFFq p' p)]
-   LNs p' p                 ->  [DASH_ Symlink p, LSl p' p]
-   TOUCH p                  ->  [DASH_ File p]
-   MKDIR p                  ->  [DASH_ Directory p]
-   USERADD nick _           ->  [(GETENT . User) nick]
-   USERDEL nick             ->  [(Not . GETENT . User) nick]
-   GROUPADD nick _          ->  [(GETENT . Group) nick]
-   GROUPDEL nick            ->  [(Not . GETENT . Group) nick]
-   GPASSWDa gNick uNicks    ->  flip GROUPS gNick <$> uNicks
-   GPASSWDd gNick uNicks    ->  Not . flip GROUPS gNick <$> uNicks
+  CHOWN p o                 ->  LSo p o
+  CHMOD p m                 ->  LSm p m
+  RM p                      ->  Not (DASHe p)
+  CP p' p                   ->  Not (DIFFq p' p)
+  LNs p' p                  ->  DASH_ Symlink p `And` LSl p' p
+  TOUCH p                   ->  DASH_ File p
+  MKDIR p                   ->  DASH_ Directory p
+  USERADD nick _            ->  (GETENT . User) nick
+  USERDEL nick              ->  (Not . GETENT . User) nick
+  GROUPADD nick _           ->  (GETENT . Group) nick
+  GROUPDEL nick             ->  (Not . GETENT . Group) nick
+  GPASSWDa gNick uNicks     ->  catTests (flip GROUPS gNick <$> uNicks)
+  GPASSWDd gNick uNicks     ->  catTests (Not . flip GROUPS gNick <$> uNicks)
+ where
+  catTests                   =  List.foldr And TRUE
 
 
 label                       ::  Command -> ByteString
@@ -148,8 +150,8 @@ label thing                  =  case thing of
    USERDEL nick             ->  "pw/user:" `append` enc nick
    GROUPADD nick _          ->  "pw/group:" `append` enc nick
    GROUPDEL nick            ->  "pw/group:" `append` enc nick
-   GPASSWDa nick _          ->  "pw/group:" `append` enc nick
-   GPASSWDd nick _          ->  "pw/group:" `append` enc nick
+   GPASSWDa nick _          ->  "pw/members:" `append` enc nick
+   GPASSWDd nick _          ->  "pw/members:" `append` enc nick
 
 
 --  Use GADTs for this later.
