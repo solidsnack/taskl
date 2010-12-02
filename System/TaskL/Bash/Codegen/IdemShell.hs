@@ -13,7 +13,8 @@ import qualified Text.ShellEscape as Esc
 import Data.ByteString.EncDec
 import System.TaskL.IdemShell
 import System.TaskL.IdemShell.Path
-import System.TaskL.Bash.Program
+import System.TaskL.Bash.Program (cmd)
+import qualified System.TaskL.Bash.Program as Program
 import System.TaskL.Bash.Codegen.Utils
 
 
@@ -21,7 +22,7 @@ import System.TaskL.Bash.Codegen.Utils
     and 'Test' can have code generated from them.
  -}
 class CodeGen t where
-  codeGen                   ::  t -> Term
+  codeGen                   ::  t -> Program.Term
 
 instance CodeGen Command where
   codeGen command            =  case command of
@@ -49,11 +50,15 @@ instance CodeGen Test where
     LSl p' p                ->  readlinkEq p p'
     GETENT ent              ->  getent ent
     GROUPS u g              ->  undefined
-    Not t                   ->  Bang (codeGen t)
+    Not t                   ->  Program.Bang (codeGen t)
+    And t t'                ->  (codeGen t) `Program.And` (codeGen t')
+    Or t t'                 ->  (codeGen t) `Program.Or` (codeGen t')
+    TRUE                    ->  cmd ["true"]
+    FALSE                   ->  cmd ["false"]
    where
-    readlinkEq p p' =
-      Sequence (VarAssign "link_" (escEnc p))
-               (cmd ["[", "`readlink -- \"$link_\"`", "=", escEnc p', "]"])
+    readlinkEq p p'          =  Program.Sequence
+      (Program.VarAssign "link_" (escEnc p))
+      (cmd ["[", "`readlink -- \"$link_\"`", "=", escEnc p', "]"])
 
 
 {-| Remove redundant negations.
