@@ -3,6 +3,7 @@
 
 module System.TaskL.Bash.Codegen.Utils where
 
+import qualified Data.List as List
 import Data.ByteString
 import qualified Text.ShellEscape as Esc
 
@@ -23,8 +24,16 @@ getent (Group nick)          =  cmd ["getent", "group", escEnc nick]
 
 
 escEnc                      ::  (EncDec t) => t -> ByteString
-escEnc                       =  Esc.bytes . Esc.bash . enc
+escEnc                       =  esc . enc
 
 
+esc                         ::  ByteString -> ByteString
+esc                          =  Esc.bytes . Esc.bash
+
+
+pipeline                    ::  [Program.Term] -> Program.Term
+pipeline []                  =  cmd ["true"]
+pipeline [term]              =  term
+pipeline (a:b:terms)         =  List.foldr Program.Pipe a (b:terms)
 
 

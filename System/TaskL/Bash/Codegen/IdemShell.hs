@@ -49,7 +49,11 @@ instance CodeGen Test where
     DIFFq p' p              ->  cmd ["diff", "-q", escEnc p, escEnc p']
     LSl p' p                ->  readlinkEq p p'
     GETENT ent              ->  getent ent
-    GROUPS u g              ->  undefined
+    GROUPS u g              ->  (pipeline . fmap cmd)
+                                 [["groups", "--", escEnc u]
+                                 ,["xargs", "printf", esc "%s\\n"]
+                                 ,["sed", esc "1,2 d"]
+                                 ,["fgrep", "--line-regexp", "--", escEnc g]]
     Not t                   ->  Program.Bang (codeGen t)
     And t t'                ->  codeGen t `Program.And` codeGen t'
     Or t t'                 ->  codeGen t `Program.Or` codeGen t'
