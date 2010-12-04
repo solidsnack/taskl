@@ -21,7 +21,7 @@ cat <<USAGE
   Specifying tasks not in the script will cause it to fail immediately. To
   specify tasks, use strings of the form:
 
-    (fs|pw|task):.*
+    (fs/.*|pw/.*|task):.*
 
   The script may be run with nulls between each output message, with newlines
   (the default) or with nulls and newlines.
