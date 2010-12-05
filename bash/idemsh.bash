@@ -29,18 +29,18 @@ function idem_MKDIR {
   mkdir -p "$1"
 }
 function idem_USERADD {
-  getent passwd "$1" && userdel "$1"
+  idem_USERDEL "$1"
   useradd "$@" 
 }
 function idem_USERDEL {
-  userdel "$1"
+  getent passwd "$1" && userdel "$1"
 }
 function idem_GROUPADD {
-  getent group "$1" && groupdel "$1"
+  idem_GROUPDEL "$1"
   groupadd "$@" 
 }
 function idem_GROUPDEL {
-  groupdel "$1"
+  getent group "$1" && groupdel "$1"
 }
 function idem_GPASSWDa {
   gpasswd "$1" -a "$2" 1>/dev/null
