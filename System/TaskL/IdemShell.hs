@@ -31,8 +31,8 @@ data Command                 =  CHOWN Path Ownership
                              |  USERDEL UNick
                              |  GROUPADD GNick GroupAttrs
                              |  GROUPDEL GNick
-                             |  GPASSWDa GNick [UNick]
-                             |  GPASSWDd GNick [UNick]
+                             |  GPASSWDa GNick UNick
+                             |  GPASSWDd GNick UNick
 deriving instance Eq Command
 deriving instance Show Command
 instance Combine Command where
@@ -49,7 +49,8 @@ data Test                    =  LSo Path Ownership
                              |  DASH_ NodeType Path
                              |  DIFFq Path Path
                              |  LSl Path Path
-                             |  GETENT GettableEnt
+                             |  GETENTu UNick
+                             |  GETENTg GNick
                              |  GROUPS UNick GNick
                              |  Not Test
                              |  And Test Test
@@ -127,12 +128,12 @@ essentialTests thing         =  case thing of
   LNs p' p                  ->  DASH_ Symlink p `And` LSl p' p
   TOUCH p                   ->  DASH_ File p
   MKDIR p                   ->  DASH_ Directory p
-  USERADD nick _            ->  (GETENT . User) nick
-  USERDEL nick              ->  (Not . GETENT . User) nick
-  GROUPADD nick _           ->  (GETENT . Group) nick
-  GROUPDEL nick             ->  (Not . GETENT . Group) nick
-  GPASSWDa gNick uNicks     ->  catTests (flip GROUPS gNick <$> uNicks)
-  GPASSWDd gNick uNicks     ->  catTests (Not . flip GROUPS gNick <$> uNicks)
+  USERADD nick _            ->  GETENTu nick
+  USERDEL nick              ->  (Not . GETENTu) nick
+  GROUPADD nick _           ->  GETENTg nick
+  GROUPDEL nick             ->  (Not . GETENTg) nick
+  GPASSWDa gNick uNick      ->  flip GROUPS gNick uNick
+  GPASSWDd gNick uNick      ->  (Not . flip GROUPS gNick) uNick
  where
   catTests                   =  List.foldr And TRUE
 
