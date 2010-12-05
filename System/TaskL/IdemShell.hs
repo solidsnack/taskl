@@ -76,11 +76,6 @@ nodeTest Directory           =  "-d"
 nodeTest Symlink             =  "-L"
 
 
-data GettableEnt             =  User UNick
-                             |  Group GNick
-deriving instance Eq GettableEnt
-deriving instance Show GettableEnt
-
 data Ownership               =  Both User Group
                              |  OnlyUser User
                              |  OnlyGroup Group
