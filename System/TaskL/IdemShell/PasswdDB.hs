@@ -62,6 +62,6 @@ instance EncDec Group where
   dec                        =  chownStyle GroupID Groupname
 
 chownStyle consID consNick b
-    | "+" `isPrefixOf` b     =  consID `fmap` dec (tail b)
-    | otherwise              =  consNick `fmap` dec b
+  | "+" `isPrefixOf` b       =  consID `fmap` dec (tail b)
+  | otherwise                =  consNick `fmap` dec b
 
