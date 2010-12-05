@@ -42,20 +42,20 @@ instance CodeGen Command where
 
 instance CodeGen Test where
   codeGen test               =  case collapse test of
-    LSo p o                 ->  undefined
-    LSm p m                 ->  undefined
-    DASHe p                 ->  undefined
-    DASH_ node p            ->  undefined
-    DIFFq p' p              ->  undefined
-    LSl p' p                ->  undefined
-    GETENTu u               ->  undefined
-    GETENTg g               ->  undefined
-    GROUPS u g              ->  undefined
-    Not t                   ->  undefined
-    And t t'                ->  undefined
-    Or t t'                 ->  undefined
-    TRUE                    ->  undefined
-    FALSE                   ->  undefined
+    LSo p o                 ->  cmd ["idem_LSo",     escEnc p,   chownStyle o]
+    LSm p m                 ->  cmd ["idem_LSm",     escEnc p,   fullModeRE m]
+    DASHe p                 ->  cmd ["idem_DASHe",   escEnc p]
+    DASH_ node p            ->  cmd ["idem_DASH_",   nodeTest node, escEnc p]
+    DIFFq p' p              ->  cmd ["idem_DIFFq",   escEnc p',  escEnc p]
+    LSl p' p                ->  cmd ["idem_LSl",     escEnc p',  escEnc p]
+    GETENTu u               ->  cmd ["idem_GETENTu", escEnc u]
+    GETENTg g               ->  cmd ["idem_GETENTg", escEnc g]
+    GROUPS u g              ->  cmd ["idem_GROUPS",  escEnc u,   escEnc g]
+    Not t                   ->  Program.Bang (codeGen t)
+    And t t'                ->  codeGen t `Program.And` codeGen t'
+    Or t t'                 ->  codeGen t `Program.Or` codeGen t'
+    TRUE                    ->  cmd ["true"]
+    FALSE                   ->  cmd ["false"]
 
 
 {-| Remove redundant negations.
