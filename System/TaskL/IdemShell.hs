@@ -237,28 +237,20 @@ merge a@(GROUPDEL g0) b      =  case b of
                                             else Separate a b
   _                         ->  Separate a b
 merge a@(GPASSWDa g0 u0) b   =  case b of
-  GPASSWDa g1 u1            ->  if g0 == g1
-                                  then  Combined (GPASSWDa g0 all)
-                                  else  Separate a b
-                                 where
-                                  all = List.union u0 u1
-  GPASSWDd g1 u1            ->  if g0 == g1 && (not . List.null) overlap
+  GPASSWDa g1 u1            ->  if g0 == g1 && u0 == u1
                                   then  Contradictory a b
                                   else  Separate a b
-                                 where
-                                  overlap = List.intersect u0 u1
+  GPASSWDd g1 u1            ->  if g0 == g1 && u0 == u1
+                                  then  Contradictory a b
+                                  else  Separate a b
   _                         ->  Separate a b
 merge a@(GPASSWDd g0 u0) b   =  case b of
-  GPASSWDa g1 u1            ->  if g0 == g1 && (not . List.null) overlap
+  GPASSWDa g1 u1            ->  if g0 == g1 && u0 == u1
                                   then  Contradictory a b
                                   else  Separate a b
-                                 where
-                                  overlap = List.intersect u0 u1
-  GPASSWDd g1 u1            ->  if g0 == g1
-                                  then  Combined (GPASSWDd g0 all)
+  GPASSWDd g1 u1            ->  if g0 == g1 && u0 == u1
+                                  then  Contradictory a b
                                   else  Separate a b
-                                 where
-                                  all = List.union u0 u1
   _                         ->  Separate a b
 
 
