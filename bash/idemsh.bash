@@ -49,6 +49,12 @@ function idem_GPASSWDd {
   gpasswd "$1" -d "$2" 1>/dev/null
 }
 
+function idem_LSo {
+  local user="${2%:*}"
+  local group="${2#*:}"
+  { [ "$user" = "" ]  || idem_helper_LSo "$1" ":$user"  } &&
+  { [ "$group" = "" ] || idem_helper_LSo "$1" "$group:" }
+}
 function idem_helper_LSo {
   local awk_script
   local name
@@ -65,16 +71,8 @@ function idem_helper_LSo {
     ls -nd "$1"
   fi | awk "$awk_script" | fgrep -x -- "$normed"
 }
-function idem_LSo {
-  local path="$1"
-  local user="${2%:*}"
-  local group="${2#*:}"
-  { [ "$user" = "" ]  || idem_helper_LSo "$1" ":$user"  } &&
-  { [ "$group" = "" ] || idem_helper_LSo "$1" "$group:" }
-}
-function idem_LSm { Path Mode
-  local path="$1"
-  local mode="$2"
+function idem_LSm {
+  ls -ld "$1" | awk '{print $1}' | egrep ".$2"
 }
 function idem_DASHe {
   [ -e "$1" ]
@@ -112,29 +110,4 @@ function idem_TRUE {
 function idem_FALSE {
   ! echo 'Unimplemented IdemShell primitive should not be called!' 1>&2
 }
-
-
-#nstance CodeGen Test where
-# codeGen test               =  case collapse test of
-#   LSo p o                 ->  undefined
-#   LSm p m                 ->  undefined
-#   DASHe p                 ->  testFS "-e" p
-#   DASH_ node p            ->  testFS (nodeTest node) p
-#   DIFFq p' p              ->  cmd ["diff", "-q", escEnc p, escEnc p']
-#   LSl p' p                ->  readlinkEq p p'
-#   GETENT ent              ->  getent ent
-#   GROUPS u g              ->  (pipeline . fmap cmd)
-#                                [["groups", "--", escEnc u]
-#                                ,["xargs", "printf", esc "%s\\n"]
-#                                ,["sed", esc "1,2 d"]
-#                                ,["fgrep", "--line-regexp", "--", escEnc g]]
-#   Not t                   ->  Program.Bang (codeGen t)
-#   And t t'                ->  codeGen t `Program.And` codeGen t'
-#   Or t t'                 ->  codeGen t `Program.Or` codeGen t'
-#   TRUE                    ->  cmd ["true"]
-#   FALSE                   ->  cmd ["false"]
-#  where
-#   readlinkEq p p'          =  Program.Sequence
-#     (Program.VarAssign "link_" (escEnc p))
-#     (cmd ["[", "`readlink -- \"$link_\"`", "=", escEnc p', "]"])
 
