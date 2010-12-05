@@ -12,7 +12,7 @@ import qualified Data.List as List
 import Control.Applicative
 import Data.Monoid
 
-import Data.ByteString
+import Data.ByteString.Char8
 
 import System.TaskL.IdemShell.PasswdDB
 import System.TaskL.IdemShell.Path
@@ -82,6 +82,12 @@ data Ownership               =  Both User Group
 deriving instance Eq Ownership
 deriving instance Show Ownership
 
+-- |    This is actually wrong; final colon means something to @chown@.
+chownStyle                  ::  Ownership -> ByteString
+chownStyle (Both u g)        =  enc u `append` ":" `append` enc g
+chownStyle (OnlyUser u)      =  enc u `append` ":"
+chownStyle (OnlyGroup g)     =                 ":" `append` enc g
+
 
 data Mode                    =  Mode TriState -- ^ User read bit.
                                      TriState -- ^ User write bit.
@@ -129,8 +135,6 @@ essentialTests thing         =  case thing of
   GROUPDEL nick             ->  (Not . GETENTg) nick
   GPASSWDa gNick uNick      ->  flip GROUPS gNick uNick
   GPASSWDd gNick uNick      ->  (Not . flip GROUPS gNick) uNick
- where
-  catTests                   =  List.foldr And TRUE
 
 
 label                       ::  Command -> ByteString
