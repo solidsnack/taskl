@@ -42,11 +42,13 @@ deriving instance Eq UNick
 deriving instance Ord UNick
 deriving instance Show UNick
 deriving instance EncDec UNick
+deriving instance IsString UNick
 
 deriving instance Eq GNick
 deriving instance Ord GNick
 deriving instance Show GNick
 deriving instance EncDec GNick
+deriving instance IsString GNick
 
 deriving instance Eq Nick
 deriving instance Ord Nick
