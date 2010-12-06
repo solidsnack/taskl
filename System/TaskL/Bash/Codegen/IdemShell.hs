@@ -157,6 +157,7 @@ modeSymbolic (Mode ur uw ux us gr gw gx gs or ow ox ot) = concatModes $
                                                            , showMode 'g' g
                                                            , showMode 'o' o ]
 
+
 modeSymbol                  ::  Three -> Four -> Char
 modeSymbol Three0 Four0      =  'r'
 modeSymbol Three0 Four1      =  'w'
