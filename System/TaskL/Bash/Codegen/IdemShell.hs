@@ -74,6 +74,9 @@ fullModeRE (Mode ur uw ux us gr gw gx gs or ow ox ot) =
          modeRE idx ur  uw  ux  us  gr  gw  gx  gs  or  ow  ox  ot
 
 
+data ModeIdx = Idx0 | Idx1 | Idx2 | Idx3 | Idx4 | Idx5 | Idx6 | Idx7 | Idx8
+
+
 modeRE :: ModeIdx -> TriState -> TriState -> TriState -> TriState
                   -> TriState -> TriState -> TriState -> TriState
                   -> TriState -> TriState -> TriState -> TriState -> ByteString
@@ -116,8 +119,5 @@ modeRE    Idx8    _   _   _   _    _   _   _   _    _   _   Off On  =  "T"
 modeRE    Idx8    _   _   _   _    _   _   _   _    _   _   Off Off =  "-"
 modeRE    Idx8    _   _   _   _    _   _   _   _    _   _   Off _   =  "[tT]"
 modeRE    Idx8    _   _   _   _    _   _   _   _    _   _   _   _   =  "."
-
-
-data ModeIdx = Idx0 | Idx1 | Idx2 | Idx3 | Idx4 | Idx5 | Idx6 | Idx7 | Idx8
 
 
