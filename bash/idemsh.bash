@@ -52,8 +52,8 @@ function idem_GPASSWDd {
 function idem_LSo {
   local user="${2%:*}"
   local group="${2#*:}"
-  { [ "$user" = "" ]  || idem_helper_LSo "$1" ":$user"  } &&
-  { [ "$group" = "" ] || idem_helper_LSo "$1" "$group:" }
+  { [ "$user" = "" ]  || idem_helper_LSo "$1" ":$user"  ;} &&
+  { [ "$group" = "" ] || idem_helper_LSo "$1" "$group:" ;}
 }
 function idem_helper_LSo {
   local awk_script
