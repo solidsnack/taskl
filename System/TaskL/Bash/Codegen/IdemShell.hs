@@ -6,7 +6,7 @@
 module System.TaskL.Bash.Codegen.IdemShell where
 
 import Prelude hiding (concat)
-import Data.List (sort, nub, foldl')
+import Data.List (sort, foldl')
 
 import Data.ByteString.Char8 hiding (map, foldl', filter)
 import qualified Text.ShellEscape as Esc
@@ -27,31 +27,31 @@ class CodeGen t where
 
 instance CodeGen Command where
   codeGen command            =  case command of
-    CHOWN p o               ->  undefined
-    CHMOD p m               ->  undefined
-    RM p                    ->  undefined
-    CP p' p                 ->  undefined
-    LNs p' p                ->  undefined
-    TOUCH p                 ->  undefined
-    MKDIR p                 ->  undefined
-    USERADD u attrs         ->  undefined
-    USERDEL u               ->  undefined
-    GROUPADD g attrs        ->  undefined
-    GROUPDEL g              ->  undefined
-    GPASSWDa g users        ->  undefined
-    GPASSWDd g users        ->  undefined
+    CHOWN p o               ->  cmd ["idem_CHOWN",    escEnc p,  chownStyle o]
+    CHMOD p m               ->  cmd ["idem_CHMOD",    escEnc p, modeSymbolic m]
+    RM p                    ->  cmd ["idem_RM",       escEnc p]
+    CP p' p                 ->  cmd ["idem_CP",       escEnc p', escEnc p]
+    LNs p' p                ->  cmd ["idem_LNs",      escEnc p', escEnc p]
+    TOUCH p                 ->  cmd ["idem_TOUCH",    escEnc p]
+    MKDIR p                 ->  cmd ["idem_MKDIR",    escEnc p]
+    USERADD u attrs         ->  cmd ["idem_USERADD",  escEnc u]--,  attrs]
+    USERDEL u               ->  cmd ["idem_USERDEL",  escEnc u]
+    GROUPADD g attrs        ->  cmd ["idem_GROUPADD", escEnc g]--,  attrs]
+    GROUPDEL g              ->  cmd ["idem_GROUPDEL", escEnc g]
+    GPASSWDa g user         ->  cmd ["idem_GPASSWDa", escEnc g,  escEnc user]
+    GPASSWDd g user         ->  cmd ["idem_GPASSWDd", escEnc g,  escEnc user]
 
 instance CodeGen Test where
   codeGen test               =  case collapse test of
-    LSo p o                 ->  cmd ["idem_LSo",     escEnc p,   chownStyle o]
-    LSm p m                 ->  cmd ["idem_LSm",     escEnc p,   fullModeRE m]
-    DASHe p                 ->  cmd ["idem_DASHe",   escEnc p]
-    DASH_ node p            ->  cmd ["idem_DASH_",   nodeTest node, escEnc p]
-    DIFFq p' p              ->  cmd ["idem_DIFFq",   escEnc p',  escEnc p]
-    LSl p' p                ->  cmd ["idem_LSl",     escEnc p',  escEnc p]
-    GETENTu u               ->  cmd ["idem_GETENTu", escEnc u]
-    GETENTg g               ->  cmd ["idem_GETENTg", escEnc g]
-    GROUPS u g              ->  cmd ["idem_GROUPS",  escEnc u,   escEnc g]
+    LSo p o                 ->  cmd ["idem_LSo",      escEnc p,  chownStyle o]
+    LSm p m                 ->  cmd ["idem_LSm",      escEnc p,  fullModeRE m]
+    DASHe p                 ->  cmd ["idem_DASHe",    escEnc p]
+    DASH_ node p            ->  cmd ["idem_DASH_",    nodeTest node, escEnc p]
+    DIFFq p' p              ->  cmd ["idem_DIFFq",    escEnc p', escEnc p]
+    LSl p' p                ->  cmd ["idem_LSl",      escEnc p', escEnc p]
+    GETENTu u               ->  cmd ["idem_GETENTu",  escEnc u]
+    GETENTg g               ->  cmd ["idem_GETENTg",  escEnc g]
+    GROUPS u g              ->  cmd ["idem_GROUPS",   escEnc u,  escEnc g]
     Not t                   ->  Program.Bang (codeGen t)
     And t t'                ->  codeGen t `Program.And` codeGen t'
     Or t t'                 ->  codeGen t `Program.Or` codeGen t'
@@ -145,7 +145,7 @@ modeSymbolic (Mode ur uw ux us gr gw gx gs or ow ox ot) = concatModes $
     Three0 -> ( (u', u_ `snoc` c), (g', g_),          (o', o_) )
     Three1 -> ( (u', u_),          (g', g_ `snoc` c), (o', o_) )
     Three2 -> ( (u', u_),          (g', g_),          (o', o_ `snoc` c) )
-  appendModeBit  Indifferent ugo strings _ = strings
+  appendModeBit  Indifferent _   strings _ = strings
   showMode ugoC pair = concat $ case pair of
     ("","")                 ->  []
     (p ,"")                 ->  [ugo', p]
