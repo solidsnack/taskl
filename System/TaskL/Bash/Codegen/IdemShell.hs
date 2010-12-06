@@ -1,13 +1,14 @@
 {-# LANGUAGE OverloadedStrings
+           , ParallelListComp
   #-}
 
 
 module System.TaskL.Bash.Codegen.IdemShell where
 
 import Prelude hiding (concat)
-import Data.List (sort, nub)
+import Data.List (sort, nub, foldl')
 
-import Data.ByteString hiding (map)
+import Data.ByteString.Char8 hiding (map, foldl', filter)
 import qualified Text.ShellEscape as Esc
 
 import Data.ByteString.EncDec
@@ -121,5 +122,53 @@ modeRE    Nine8    _   _   _   _    _   _   _   _    _   _   Off Off =  "-"
 modeRE    Nine8    _   _   _   _    _   _   _   _    _   _   Off _   =  "[tT]"
 modeRE    Nine8    _   _   _   _    _   _   _   _    _   _   _   _   =  "."
 
+
+data Four                    =  Four0 | Four1 | Four2 | Four3
+
+data Three                   =  Three0 | Three1 | Three2
+
+
+modeSymbolic                ::  Mode -> ByteString
+modeSymbolic (Mode ur uw ux us gr gw gx gs or ow ox ot) = concatModes $
+  foldl' f (("",""),("",""),("",""))
+           [ (st, (ugo, bit)) | st <- [ur,uw,ux,us,gr,gw,gx,gs,or,ow,ox,ot]
+                              | ugo <- [Three0,Three1,Three2]
+                              , bit <- [Four0,Four1,Four2,Four3]            ]
+ where
+  f strings (st, (ugo, bit)) =
+    appendModeBit st ugo strings (modeSymbol ugo bit)
+  appendModeBit  On  ugo ( (u', u_), (g', g_), (o', o_) ) c = case ugo of
+    Three0 -> ( (u' `snoc` c, u_), (g', g_),          (o', o_) )
+    Three1 -> ( (u', u_),          (g' `snoc` c, g_), (o', o_) )
+    Three2 -> ( (u', u_),          (g', g_),          (o' `snoc` c, o_) )
+  appendModeBit  Off ugo ( (u', u_), (g', g_), (o', o_) ) c = case ugo of
+    Three0 -> ( (u', u_ `snoc` c), (g', g_),          (o', o_) )
+    Three1 -> ( (u', u_),          (g', g_ `snoc` c), (o', o_) )
+    Three2 -> ( (u', u_),          (g', g_),          (o', o_ `snoc` c) )
+  appendModeBit  Indifferent ugo strings _ = strings
+  showMode ugoC pair = concat $ case pair of
+    ("","")                 ->  []
+    (p ,"")                 ->  [ugo', p]
+    ("", n)                 ->  [ugo_ , n]
+    (p , n)                 ->  [ugo', p, ",", ugo_, n]
+   where
+    (ugo', ugo_)             =  (ugoC `cons` "+", ugoC `cons` "-")
+  concatModes (u,g,o) = (intercalate "," . filter (/= "")) [ showMode 'u' u
+                                                           , showMode 'g' g
+                                                           , showMode 'o' o ]
+
+modeSymbol                  ::  Three -> Four -> Char
+modeSymbol Three0 Four0      =  'r'
+modeSymbol Three0 Four1      =  'w'
+modeSymbol Three0 Four2      =  'x'
+modeSymbol Three0 Four3      =  's'
+modeSymbol Three1 Four0      =  'r'
+modeSymbol Three1 Four1      =  'w'
+modeSymbol Three1 Four2      =  'x'
+modeSymbol Three1 Four3      =  's'
+modeSymbol Three2 Four0      =  'r'
+modeSymbol Three2 Four1      =  'w'
+modeSymbol Three2 Four2      =  'x'
+modeSymbol Three2 Four3      =  't'
 
 
