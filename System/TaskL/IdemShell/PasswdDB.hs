@@ -12,18 +12,13 @@ module System.TaskL.IdemShell.PasswdDB
   ) where
 
 import Prelude hiding (tail)
-import Control.Monad.Error
-import Data.String
-import Data.Int
 
 import Data.Text (Text)
-import qualified Data.Text as Text
 import Data.ByteString.Char8
 
 import Data.ByteString.EncDec
 import System.TaskL.IdemShell.Nick
 import System.TaskL.IdemShell.ID
-import System.TaskL.IdemShell.Path
 
 
 data User                    =  Username UNick | UserID UID
