@@ -26,7 +26,7 @@ cat <<USAGE
   The script may be run with nulls between each output message, with newlines
   (the default) or with nulls and newlines.
 
-    --nl  --0  --0nl
+    --nl  --0  -0  --0nl
 
   Options also control whether the script can be controlled by user (or
   machine) input. (The default is not to wait.)
@@ -116,7 +116,8 @@ do
   case "$1"
     --no-wait)                  options[wait]=false ;;
     --wait)                     options[wait]=true ;;
-    --0|--nl|--0nl)             options[sep]=$1 ;;
+    --nl|--0nl)                 options[sep]=$1 ;;
+    -0|--0)                     options[sep]='--0' ;;
     --help|-h|'-?')             usage ; exit 0 ;;
     install|check|list)         options[action]=$1 ;;
     ./*|/*)                     options[dest]="$1" ;;
