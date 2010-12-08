@@ -41,6 +41,8 @@ data Term                    =  SimpleCommand ARGV
                              |  VarAssign ByteString ByteString
                              |  DictDecl ByteString [(ByteString, ByteString)]
                              |  DictUpdate ByteString ByteString ByteString
+                             |  DictAssign ByteString
+                                           [(ByteString, ByteString)]
 deriving instance Eq Term
 deriving instance Ord Term
 deriving instance Show Term
