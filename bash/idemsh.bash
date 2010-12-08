@@ -4,8 +4,8 @@
 function idem_CHOWN {
   local user="${2%:*}"
   local group="${2#*:}"
-  chown "$user" "$1"
-  chown :"$group" "$1"
+  [ ! -z "$user" ]  && chown "$user"  "$1"
+  [ ! -z "$group" ] && chgrp "$group" "$1"
 }
 function idem_CHMOD {
   chmod "$2" "$1"
