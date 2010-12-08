@@ -86,7 +86,7 @@ deriving instance Show Ownership
 chownStyle                  ::  Ownership -> ByteString
 chownStyle (Both u g)        =  enc u `append` ":" `append` enc g
 chownStyle (OnlyUser u)      =  enc u `append` ":"
-chownStyle (OnlyGroup g)     =                 ":" `append` enc g
+chownStyle (OnlyGroup g)     =  ":" `append` enc g
 
 
 data Mode                    =  Mode TriState -- ^ User read bit.
@@ -120,8 +120,8 @@ deriving instance Show GroupAttrs
 
 {-| Test commands that will assuredly exit 0 after the command is run.
  -}
-essentialTests              ::  Command -> Test
-essentialTests thing         =  case thing of
+essentialTest               ::  Command -> Test
+essentialTest thing          =  case thing of
   CHOWN p o                 ->  LSo p o
   CHMOD p m                 ->  LSm p m
   RM p                      ->  Not (DASHe p)

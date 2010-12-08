@@ -20,6 +20,8 @@ import System.TaskL.IdemShell
 import System.TaskL.Op
 import System.TaskL.Task
 import System.TaskL.Bash.Program
+import System.TaskL.Bash.Codegen.Util
+import System.TaskL.Bash.Codegen.IdemShell
 
 
 arrayKeys                   ::  [Op] -> [Esc.Bash]
@@ -50,12 +52,11 @@ msg op@(Op (code, (_, t))    =  Bash.SimpleCommand (ARGV [f, labelTask op])
 
 
 checkCode                   ::  Task -> Term
-checkCode task = checkSet False `Sequence` foldr And (checkSet True) testCode
+checkCode task = checkSet False `Sequence` (codeGen test `And` checkSet True)
  where
-  tests                      =  case task of
-    Command c l             ->  essentialTests c ++ l
-    Package _ l             ->  l
-  testCode                   =  map codeGen tests
+  test                       =  case task of
+    Command c extraTest     ->  extraTest `mappend` essentialTest c
+    Package _ extraTest     ->  extraTest
   checkSet b = VarAssign "check_state" (if b then "true" else "false")
 
 
