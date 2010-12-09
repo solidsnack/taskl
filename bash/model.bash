@@ -45,14 +45,10 @@ USAGE
 ################################################################
 # Script setup, handling of switches and arguments.
 
-# Note that `-o' means enable while `+o' means disable.
-set -o errexit
-set -o nounset
-set -o pipefail
-set -o functrace
-set -o errtrace
-set -o noglob
-set +o histexpand
+# Enable error handling and reporting.
+set -o errexit -o errtrace -o nounset -o pipefail -o functrace
+# Disable cute expansions that should not be available anyways.
+set +o histexpand -o noglob
 
 function main {
   while "$1"
