@@ -54,41 +54,38 @@ set -o errtrace
 set -o noglob
 set +o histexpand
 
-# Hash for run modes.
-declare -A options=(
-[sep]=--nl
-[dest]=/
-[wait]=false
-[action]=install
-)
-
-while "$1"
-do
-  case "$1"
-    --no-wait)                  options[wait]=false ;;
-    --wait)                     options[wait]=true ;;
-    --nl|--0nl)                 options[sep]=$1 ;;
-    -0|--0)                     options[sep]='--0' ;;
-    --help|-h|'-?')             usage ; exit 0 ;;
-    install|check|list)         options[action]=$1 ;;
-    ./*|/*)                     options[dest]="$1" ;;
-    fs/*:*|pw/*:*|task:*)       { [ ${enabled["$1"]:-x} != x ] &&
-                                  enabled["$1"]=true ;} ||
-                                  { ! echo "No such task \`$1'." 1>&2 ;}
-                                fi ;;
-    *)                          ! echo 'Invalid arguments.' 1>&2 ;;
-  esac
-  shift
-done
+function main {
+  while "$1"
+  do
+    case "$1"
+      --no-wait)                taskl_options[interactive]=false ;;
+      --wait)                   taskl_options[interactive]=true ;;
+      --nl|--0nl)               taskl_options[separator]=$1 ;;
+      -0|--0)                   taskl_options[separator]='--0' ;;
+      --help|-h|'-?')           usage ; exit 0 ;;
+      install|check|list)       taskl_options[action]=$1 ;;
+      ./*|/*)                   taskl_options[destination]="$1" ;;
+      fs/*:*|pw/*:*|task:*)     { [ ${taskl_enabled["$1"]:-x} != x ] &&
+                                  taskl_enabled["$1"]=true ;} ||
+                                { ! echo "No such task \`$1'." 1>&2 ;} ;;
+      *)                        ! echo 'Invalid arguments.' 1>&2 ;;
+    esac
+    shift
+  done
+}
 
 
 
 
 ################################################################
-# Task\L library functions.
+# Task\L machine -- functions and state.
+
+declare -A taskl_checks taskl_enabled
+declare -A taskl_options=(  [separator]=--nl  [destination]=/
+                            [action]=install  [interactive]=false  )
 
 function taskl_message {
-  case $sep in
+  case ${taskl_options[separator]} in
     --0nl)          printf      " %s %s\\0\\n"    "$2" "$3" ;;
     --0)            printf      " %s %s\\0"       "$2" "$3" ;;
     --nl)           printf      " %s %s\\n"       "$2" "$3" ;;
@@ -96,101 +93,115 @@ function taskl_message {
   esac
 }
 function taskl_interact {
-  if ${options[interactive]}
+  if ${taskl_options[interactive]}
   then
     read response
     case "$response" in
-      OK)           taskl_info  "Read \`OK', proceeding." ;;
-      ABORT)        taskl_abort "Read \`ABORT', quitting." ;;
+      OK|ok)        taskl_info  "Read \`OK', proceeding." ;;
+      ABORT|abort)  taskl_abort "Read \`ABORT', quitting." ;;
       *)            taskl_error "Read \`$response'; not understood." ;;
     esac
   fi
 }
 function taskl_enter {
-  ${enabled["$1"]} && taskl_message P '>>' "$1" && interact
+  ${taskl_enabled["$1"]} && taskl_message P '>>' "$1" && interact
 }
 function taskl_check {
-  ${enabled["$1"]} && taskl_message G '**' "$1" && interact
+  ${taskl_enabled["$1"]} && taskl_message G '**' "$1" && interact
 }
 function taskl_enable {
-  ${enabled["$1"]} && taskl_message P '++' "$1" && interact
+  ${taskl_enabled["$1"]} &&
+  ${taskl_checks["$1"]} &&
+  taskl_message P '++' "$1" &&
+  interact
 }
 function taskl_exec {
-  ${enabled["$1"]} && check_state && taskl_message G '@@' "$1" &&
-    { [ 'check' = ${options[action]} ] &&
-      { taskl_info 'Not running: dry-run mode.' 
-        false                                   ;} ;} || true
+  ${taskl_enabled["$1"]} &&
+  ${taskl_checks["$1"]} &&
+  taskl_message G '@@' "$1" &&
+  { [ 'check' = ${taskl_options[action]} ] &&
+    { taskl_info 'Not running: dry-run mode.' ; false ;} ;} || true
 }
 function taskl_leave {
-  ${enabled["$1"]} && taskl_message P '<<' "$1" && interact
+  ${taskl_enabled["$1"]} && taskl_message P '<<' "$1" && interact
 }
 function taskl_info {
   taskl_message B '##' "$1"
 }
 function taskl_abort {
-  taskl_message Y '~~' "$1" ; exit 0
+  taskl_message Y '~~' "$1"
+  exit 0
 }
 function taskl_error {
-  taskl_message R '!!' "$1" ; exit 1
+  taskl_message R '!!' "$1"
+  exit 1
 }
 
 
 
 
 ################################################################
-# Task\L state variables.
+# Generated code.
 
-check_state=false
+script_random_key=c7fd4f07-8007-4c9f-a7aa-c0cf581cf97b
 
-declare -A enabled
+taskl_enabled=(
+[$'task:pg']=false
+[$'fs:/etc/postgres.conf']=false
+)
+
+taskl_checks=(
+[$'task:pg']=true
+[$'fs:/etc/postgres.conf']=false
+)
+
+function apply {
+  taskl_enter $'task:pg'
+  taskl_enable $'task:pg' &&
+  { taskl_enabled[$'fs:/etc/postgres.conf']=true
+    taskl_enabled[$'fs:/etc/hosts']=true ;}
+  taskl_enter $'fs:/etc/postgres.conf'
+  taskl_check $'fs:/etc/postgres.conf' &&
+  { ! diff -q "$1"/./etc/postgres.conf "$2"/etc/postgres.conf &&
+    taskl_checks[$'fs:/etc/postgres.conf']=true ;}
+  taskl_exec $'fs:/etc/postgres.conf' &&
+  { cp -a "$1"/./etc/postgres.conf "$2"/etc/postgres.conf ;}
+  taskl_leave $'fs:/etc/postgres.conf'
+  taskl_enter $'task:postfix'
+  taskl_enable $'task:postfix' &&
+  { taskl_enabled[$'fs:/etc/postgres.conf']=true
+    taskl_enabled[$'fs:/etc/hosts']=true ;}
+  taskl_enter $'fs:/etc/hosts'
+  taskl_check $'fs:/etc/hosts' &&
+  { ! diff -q "$1"/./etc/hosts "$2"/etc/hosts
+    taskl_checks[$'fs:/etc/hosts']=true ;}
+  taskl_exec $'fs:/etc/hosts' &&
+  { cp -a "$1"/./etc/hosts "$2"/etc/hosts ;}
+  taskl_leave $'fs:/etc/hosts'
+  taskl_leave $'task:pg'
+  taskl_enter $'fs:/etc/postfix.conf'
+  taskl_check $'fs:/etc/postfix.conf' &&
+  { check_state=false
+    ! diff -q "$1"/./etc/postfix.conf "$2"/etc/postfix.conf
+    check_state=true ;}
+  taskl_exec $'fs:/etc/postfix.conf' &&
+  { cp -a "$1"/./etc/postfix.conf "$1"/etc/postfix.conf ;}
+  taskl_leave $'fs:/etc/postfix.conf'
+  taskl_leave $'task:postfix'
+}
 
 
 
 
 ################################################################
-# Generated Code
+# Go.
 
-enabled=(
-[$'task:pg_conf']=false
-[$'task:my_conf']=false
-)
-
-msg_enter $'task:pg'
-check_state=true ## No check.
-{ ${enabled[$'task:pg']}
-  ${check_state}
-  enabled[$'fs:/etc/postgres.conf']=true
-  enabled[$'fs:/etc/hosts']=true ;}
-msg_enter $'fs:/etc/postgres.conf'
-msg_check $'fs:/etc/postgres.conf' &&
-{ check_state=false
-  ! diff -q ./etc/postgres.conf "$T"/etc/postgres.conf
-  check_state=true ;}
-msg_exec $'fs:/etc/postgres.conf' &&
-{ cp -a ./etc/postgres.conf "$T"/etc/postgres.conf ;}
-msg_leave $'fs:/etc/postgres.conf'
-msg_enter $'task:postfix'
-check_state=true ## No check.
-{ ${enabled[$'task:postfix']}
-  ${check_state}
-  enabled[$'fs:/etc/postgres.conf']=true
-  enabled[$'fs:/etc/hosts']=true ;}
-msg_enter $'fs:/etc/hosts'
-msg_check $'fs:/etc/hosts' &&
-{ check_state=false
-  ! diff -q ./etc/hosts "$T"/etc/hosts
-  check_state=true ;}
-msg_exec $'fs:/etc/hosts'
-{ cp -a ./etc/hosts "$T"/etc/hosts ;}
-msg_leave $'fs:/etc/hosts'
-msg_leave $'task:pg'
-msg_enter $'fs:/etc/postfix.conf'
-msg_check $'fs:/etc/postfix.conf' &&
-{ check_state=false
-  ! diff -q ./etc/postfix.conf "$T"/etc/postfix.conf
-  check_state=true ;}
-msg_exec $'fs:/etc/postfix.conf' &&
-{ cp -a ./etc/postfix.conf "$T"/etc/postfix.conf ;}
-msg_leave $'fs:/etc/postfix.conf'
-msg_leave $'task:postfix'
+if fgprep $script_random_key "$0"     # Don't run code if we're being sourced. 
+then
+  main "$@"
+  local dir=`dirname "$0"`/root    # Only run code from the package directory.
+  cd "$dir"
+  local physical_dir=`pwd -P`
+  apply "$physical_dir" "${taskl_options[destination]}"
+fi
 
