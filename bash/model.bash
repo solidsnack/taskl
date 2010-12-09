@@ -49,6 +49,8 @@ USAGE
 set -o errexit -o errtrace -o nounset -o pipefail -o functrace
 # Disable cute expansions that should not be available anyways.
 set +o histexpand -o noglob
+# Ignore environment variables that set options. (Also affects user IDs.)
+set -o privileged
 
 function main {
   while "$1"
