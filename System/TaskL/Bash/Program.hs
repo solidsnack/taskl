@@ -34,10 +34,10 @@ data Term                    =  SimpleCommand ARGV
                              |  Pipe Term Term
                              |  Sequence Term Term
                              |  Background Term Term
-                             |  Group [Term]
-                             |  Subshell [Term]
-                             |  IfThen [Term] [Term]
-                             |  IfThenElse [Term] [Term] [Term]
+                             |  Group Term
+                             |  Subshell Term
+                             |  IfThen Term Term
+                             |  IfThenElse Term Term Term
                              |  VarAssign ByteString ByteString
                              |  DictDecl ByteString [(ByteString, ByteString)]
                              |  DictUpdate ByteString ByteString ByteString
