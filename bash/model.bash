@@ -194,7 +194,7 @@ function apply {
 ################################################################
 # Go.
 
-if fgprep $script_random_key "$0"     # Don't run code if we're being sourced. 
+if fgrep $script_random_key "$0"      # Don't run code if we're being sourced.
 then
   main "$@"
   local dir=`dirname "$0"`/root    # Only run code from the package directory.
