@@ -1,4 +1,3 @@
-
 {-# LANGUAGE TypeFamilies
            , EmptyDataDecls
            , OverloadedStrings
