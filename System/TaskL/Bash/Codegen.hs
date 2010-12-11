@@ -16,6 +16,7 @@ module System.TaskL.Bash.Codegen where
 import Data.List (sort, nub)
 import Data.Monoid
 
+import Data.ByteString.Char8 (ByteString)
 import qualified Text.ShellEscape as Esc
 
 import System.TaskL.IdemShell (essentialTest)
@@ -35,25 +36,21 @@ main                         =  undefined
 
 
 code                        ::  Op -> Term
-code op@(Op (code, (_, t)))  =  case code of
-  Enter                     ->  m
-  Check                     ->  m `And` checkCode (task t)
-  Enable                    ->  m `And` enableCode (depLabels t)
-  Exec                      ->  m `And` execCode (task t)
-  Leave                     ->  m
+code op@(Op (code, _))       =  case code of
+  Enter                     ->  msg
+  Check                     ->  msg `And` checkCode (task op)
+  Enable                    ->  msg `And` enableCode (depLabels op)
+  Exec                      ->  msg `And` execCode (task op)
+  Leave                     ->  msg
  where
-  m                          =  msg op
   depLabels                  =  map label . dependencies
-
-
-msg op@(Op (code, (_, t)))   =  SimpleCommand (ARGV [s, labelTask op])
- where
-  s                          =  case code of
-    Enter                   ->  "taskl_enter"
-    Check                   ->  "taskl_check"
-    Enable                  ->  "taskl_enable"
-    Exec                    ->  "taskl_exec"
-    Leave                   ->  "taskl_leave"
+  msg                        =  SimpleCommand . ARGV . (:[labelTask op]) $
+    case code of
+      Enter                 ->  "taskl_enter"
+      Check                 ->  "taskl_check"
+      Enable                ->  "taskl_enable"
+      Exec                  ->  "taskl_exec"
+      Leave                 ->  "taskl_leave"
 
 
 checkCode                   ::  Task -> Term
@@ -67,8 +64,8 @@ checkCode task               =  codeGen test `And` checkSet
 
 execCode                    ::  Task -> Term
 execCode task                =  case task of
-  Command c extraTest       ->  codeGen c
-  Package _ extraTest       ->  Empty
+  Command c _               ->  codeGen c
+  Package _ _               ->  Empty
 
 
 enableCode                  ::  [ByteString] -> Term
