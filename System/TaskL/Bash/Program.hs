@@ -38,6 +38,7 @@ data Term                    =  SimpleCommand ARGV
                              |  Subshell Term
                              |  IfThen Term Term
                              |  IfThenElse Term Term Term
+                             |  ForDoDone ByteString [ByteString] Term
                              |  VarAssign ByteString ByteString
                              |  DictDecl ByteString [(ByteString, ByteString)]
                              |  DictUpdate ByteString ByteString ByteString
