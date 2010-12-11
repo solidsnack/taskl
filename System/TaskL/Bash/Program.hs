@@ -17,10 +17,10 @@ import Data.ByteString
                              |  <term> | <term>
                              |  <term> ; <term>
                              |  <term> & <term>
-                             |  { <term>+ ;}
-                             |  '(' <term>+ ')'
-                             |  if <term>+ then <term>+ else <term>+
-                             |  if <term>+ then <term>+
+                             |  { <term> ;}
+                             |  '(' <term> ')'
+                             |  if <term> then <term> else <term>
+                             |  if <term> then <term>
                              |  <name>=<text>
                              |  declare -A <name>='('([<name>]=<text>)*')'
                              |  <name>[<name>]=<text>
