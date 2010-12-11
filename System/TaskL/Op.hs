@@ -15,6 +15,8 @@ module System.TaskL.Op
   , sharesDeps
   , labelTask
   , display
+  , task
+  , dependencies
   ) where
 
 import Data.Ord
@@ -123,4 +125,11 @@ display (Op (code, t))       =  lead `append` lbR t
 labelTask                   ::  Op -> ByteString
 labelTask (Op (code, t))     =  lbR t
 
+
+task                        ::  Op -> Task
+task (Op (_, Node (_, t) _)) = t
+
+
+dependencies                ::  Op -> [Task]
+dependencies (Op (_, Node (_, _) tasks)) = map (snd . rootLabel) tasks
 

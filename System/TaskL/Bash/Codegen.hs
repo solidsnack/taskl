@@ -37,22 +37,23 @@ main                         =  undefined
 code                        ::  Op -> Term
 code op@(Op (code, (_, t)))  =  case code of
   Enter                     ->  m
-  Check                     ->  m `And` checkCode t
-  Enable                    ->  m `And` undefined
-  Exec                      ->  m `And` execCode t
+  Check                     ->  m `And` checkCode (task t)
+  Enable                    ->  m `And` enableCode (depLabels t)
+  Exec                      ->  m `And` execCode (task t)
   Leave                     ->  m
  where
   m                          =  msg op
+  depLabels                  =  map label . dependencies
 
 
-msg op@(Op (code, (_, t)))   =  SimpleCommand (ARGV [f, labelTask op])
+msg op@(Op (code, (_, t)))   =  SimpleCommand (ARGV [s, labelTask op])
  where
-  f                          =  case code of
-    Enter                   ->  SimpleCommand (ARGV ["taskl_enter",  label t])
-    Check                   ->  SimpleCommand (ARGV ["taskl_check",  label t])
-    Enable                  ->  SimpleCommand (ARGV ["taskl_enable", label t])
-    Exec                    ->  SimpleCommand (ARGV ["taskl_exec",   label t])
-    Leave                   ->  SimpleCommand (ARGV ["taskl_leave",  label t])
+  s                          =  case code of
+    Enter                   ->  "taskl_enter"
+    Check                   ->  "taskl_check"
+    Enable                  ->  "taskl_enable"
+    Exec                    ->  "taskl_exec"
+    Leave                   ->  "taskl_leave"
 
 
 checkCode                   ::  Task -> Term
@@ -69,5 +70,9 @@ execCode task                =  case task of
   Command c extraTest       ->  codeGen c
   Package _ extraTest       ->  Empty
 
+
+enableCode                  ::  [ByteString] -> Term
+enableCode depLabels         =  ForDoDone "task" depLabels
+                                  (DictUpdate "taskl_enabled" "$task" "true")
 
 
