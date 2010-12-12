@@ -13,6 +13,8 @@
 
 module System.TaskL.Bash.Codegen where
 
+import Data.Ord
+import Control.Arrow (first, second, (&&&))
 import Data.List (sort, nub)
 import Data.Monoid
 
@@ -23,16 +25,26 @@ import System.TaskL.IdemShell (essentialTest)
 import System.TaskL.Op
 import System.TaskL.Task
 import System.TaskL.Bash.Program
-import System.TaskL.Bash.Codegen.Utils
 import System.TaskL.Bash.Codegen.IdemShell
 
 
-arrayKeys                   ::  [Op] -> [Esc.Bash]
-arrayKeys                    =  map Esc.bash . sort . nub . map labelTask
+labelAndSort                ::  [Op] -> [(ByteString, Op)]
+labelAndSort                 =  map (first (Esc.bytes . Esc.bash))
+                             .  sortBy (comparing fst)
+                             .  map (labelTask &&& id)
 
 
-main                        ::  [Op] -> Term
-main                         =  undefined
+stateArrays                 ::  [Op] -> Term
+stateArrays ops              =  Sequence (DictAssign "taskl_enabled" falses)
+                                         (DictAssign "taskl_checks" checks)
+ where
+  falses                     =  map (second (const "false")) labelled
+  checks                     =  map (second checkOK) labelled
+  labelled                   =  map (second task) labelAndSort ops
+  checkOK (Package _ t)
+    | t == mempty            =  "true"
+    | otherwise              =  "false"
+  checkOK _                  =  "false"
 
 
 code                        ::  Op -> Term
