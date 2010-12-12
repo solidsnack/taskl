@@ -7,6 +7,8 @@ module System.TaskL.Bash.Program where
 
 import Data.ByteString
 
+import qualified Text.ShellEscape as Esc
+
 
 {-| Terms that can be combined with one another.
 @
@@ -57,5 +59,13 @@ deriving instance Show ARGV
 
 cmd                         ::  [ByteString] -> Term
 cmd                          =  SimpleCommand . ARGV
+
+
+-- Unused.
+data Expression              =  Literal Esc.Bash
+                             |  DeReference Identifier
+-- Ignore                    |  Exec Term
+
+newtype Identifier           =  Identifier ByteString
 
 
