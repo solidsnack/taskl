@@ -15,7 +15,7 @@ module System.TaskL.Bash.Codegen where
 
 import Data.Ord
 import Control.Arrow (first, second, (&&&))
-import Data.List (sort, nub)
+import Data.List (sortBy, nub)
 import Data.Monoid
 
 import Data.ByteString.Char8 (ByteString)
@@ -29,7 +29,7 @@ import System.TaskL.Bash.Codegen.IdemShell
 
 
 labelAndSort                ::  [Op] -> [(ByteString, Op)]
-labelAndSort                 =  map (first (Esc.bytes . Esc.bash))
+labelAndSort                 =  nub . map (first (Esc.bytes . Esc.bash))
                              .  sortBy (comparing fst)
                              .  map (labelTask &&& id)
 
@@ -40,7 +40,7 @@ stateArrays ops              =  Sequence (DictAssign "taskl_enabled" falses)
  where
   falses                     =  map (second (const "false")) labelled
   checks                     =  map (second checkOK) labelled
-  labelled                   =  map (second task) labelAndSort ops
+  labelled                   =  (map (second task) . labelAndSort) ops
   checkOK (Package _ t)
     | t == mempty            =  "true"
     | otherwise              =  "false"
