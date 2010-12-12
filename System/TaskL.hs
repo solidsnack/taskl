@@ -30,23 +30,6 @@
 
 module System.TaskL where
 
-import qualified Data.List as List
-import Data.Tree
-import Data.String
-import Control.Applicative
-import Control.Arrow (first, second)
-import Control.Monad.Identity
-import Control.Monad.State
-
-import Data.ByteString (ByteString)
-import qualified Data.ByteString as ByteString
-import Data.Number.Natural
-import Data.Monoid
-
-import qualified System.TaskL.IdemShell as IdemShell
-import System.TaskL.Combination
-import System.TaskL.IndexForest
-import System.TaskL.Task
-import System.TaskL.Op
+import System.TaskL.Bash
 import System.TaskL.Schedule
 
