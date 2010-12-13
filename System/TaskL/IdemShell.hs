@@ -3,6 +3,7 @@
            , EmptyDataDecls
            , OverloadedStrings
            , StandaloneDeriving
+           , ParallelListComp
   #-}
 
 
@@ -81,6 +82,21 @@ data Ownership               =  Both User Group
                              |  OnlyGroup Group
 deriving instance Eq Ownership
 deriving instance Show Ownership
+instance Combine Ownership where
+  combine a b                =  case (a, b) of
+    (Both u _   , OnlyUser u' ) | u == u'     ->  Combined a
+                                | otherwise   ->  Contradictory a b
+    (Both _ g   , OnlyGroup g') | g == g'     ->  Combined a
+                                | otherwise   ->  Contradictory a b
+    (OnlyUser u , Both u' _   ) | u == u'     ->  Combined b
+                                | otherwise   ->  Contradictory a b
+    (OnlyUser u , OnlyGroup g')               ->  Combined (Both u g')
+    (OnlyGroup g, Both _ g'   ) | g == g'     ->  Combined b
+                                | otherwise   ->  Contradictory a b
+    (OnlyGroup g, OnlyUser u' )               ->  Combined (Both u' g)
+    (_                        )               ->  if a == b
+                                                    then Combined a
+                                                    else Contradictory a b
 
 -- |    This is actually wrong; final colon means something to @chown@.
 chownStyle                  ::  Ownership -> ByteString
@@ -103,10 +119,29 @@ data Mode                    =  Mode TriState -- ^ User read bit.
                                      TriState -- ^ Sticky bit.
 deriving instance Eq Mode
 deriving instance Show Mode
+instance Combine Mode where
+  combine a@(Mode ur  uw  ux  us  gr  gw  gx  gs  or  ow  ox  ot )
+          b@(Mode ur' uw' ux' us' gr' gw' gx' gs' or' ow' ox' ot') =
+    case combinations of
+      [ Combined ur_, Combined uw_, Combined ux_, Combined us_,
+        Combined gr_, Combined gw_, Combined gx_, Combined gs_,
+        Combined or_, Combined ow_, Combined ox_, Combined ot_ ]
+         -> Combined (Mode ur_ uw_ ux_ us_ gr_ gw_ gx_ gs_ or_ ow_ ox_ ot_)
+      _                     ->  Contradictory a b
+   where
+    combinations =
+      [ combine x y | x <- [ur, uw, ux, us, gr, gw, gx, gs, or, ow, ox, ot ]
+                    | y <- [ur',uw',ux',us',gr',gw',gx',gs',or',ow',ox',ot'] ]
 
 data TriState                =  On | Indifferent | Off
 deriving instance Eq TriState
 deriving instance Show TriState
+instance Combine TriState where
+  combine On Off             =  Contradictory On Off
+  combine On _               =  Combined On
+  combine Off On             =  Contradictory Off On
+  combine Off _              =  Combined Off
+  combine _   _              =  Combined Indifferent
 
 
 data UserAttrs               =  UserAttrs
