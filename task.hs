@@ -33,8 +33,8 @@ tasks1 =
   ]
 
 tasks2 =
-  [ Node (Command (TOUCH "/q/a") mempty) [Node (Command (MKDIR "/q")
-                                        (DIFFq "./a" "./b")) []]
+  [ Node (Command (TOUCH "/q/a") mempty)
+      [ Node (Command (MKDIR "/q") (DIFFq "./a" "./b")) [] ]
   , Node (Command (TOUCH "/q/b") mempty)
       [ Node (Command (MKDIR "/q") (DIFFq "./c" "./d")) []
       , Node (Command (MKDIR "/q/p") mempty) [] ]
