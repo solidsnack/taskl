@@ -25,3 +25,9 @@ draw (Contradictory a b)     =  "-----------Contradictory\n" ++ a ++ "\n" ++ b
 draw (Combined a)            =  "----------------Combined\n" ++ a
 draw (Separate a b)          =  "----------------Separate\n" ++ a ++ "\n" ++ b
 
+
+contradictory               ::  Combination t -> Bool
+contradictory (Contradictory _ _) = True
+contradictory _              =  False
+
+
