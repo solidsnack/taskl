@@ -5,7 +5,11 @@
 
 module System.TaskL.Bash.Program where
 
-import Data.ByteString
+import Prelude hiding (all)
+import Data.Char
+import Data.String
+import Data.Maybe
+import Data.ByteString.Char8
 
 import qualified Text.ShellEscape as Esc
 
@@ -66,6 +70,21 @@ data Expression              =  Literal Esc.Bash
                              |  DeReference Identifier
 -- Ignore                    |  Exec Term
 
-newtype Identifier           =  Identifier ByteString
 
+newtype Identifier           =  Identifier ByteString
+deriving instance Eq Identifier
+deriving instance Ord Identifier
+deriving instance Show Identifier
+instance IsString Identifier where
+  fromString                 =  fromJust . identifier . fromString
+
+identifier                  ::  ByteString -> Maybe Identifier
+identifier bytes             =  do
+  (c, bytes')               <-  uncons bytes
+  if okayHead c && all okayTail bytes'
+    then  Just (Identifier bytes)
+    else  Nothing
+ where
+  okayTail c                 =  (isAlphaNum c || c == '_') && isAscii c
+  okayHead c                 =  (isAlpha c || c == '_') && isAscii c
 
