@@ -61,8 +61,9 @@ cmd                          =  SimpleCommand
 
 -- Unused.
 data Expression              =  Literal Esc.Bash
-                             |  DeReference Identifier
+                             |  DeRef Identifier (Maybe Esc.Bash)
 -- Ignore                    |  Exec Term
+-- Ignore                    |  crazy patterns
 
 
 newtype Identifier           =  Identifier ByteString
