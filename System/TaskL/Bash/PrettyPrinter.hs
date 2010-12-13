@@ -1,3 +1,6 @@
+{-# LANGUAGE OverloadedStrings
+  #-}
+
 {-| Pretty printer for Bash. Not very pretty right now.
  -}
 
@@ -9,12 +12,11 @@ import Data.ByteString
 import System.TaskL.Bash.Program
 
 
-
-prettyprint term = case term of
-  SimpleCommand [] -> prettyprint Empty
-  Empty ->
-  Bang t ->
-  And t t' ->
+pp (i, l) term               =  case term of
+  SimpleCommand cmd vals    ->  mempty
+  Empty                     ->  b (pad `append` ":")
+  Bang t                    ->  b (pad `append` "! ") `mappend` pp (i, l+2) term
+  And t t'                  ->  pp i t `mappend` " &&\n" `mappend` pp i t'
   Or t t' ->
   Pipe t t' ->
   Sequence t t' ->
@@ -28,7 +30,9 @@ prettyprint term = case term of
   DictDecl var pairs ->
   DictUpdate var key val ->
   DictAssign var pairs ->
-
+ where
+  b                          =  fromByteString
+  pad                        =  replicate i ' '
 
 {- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
