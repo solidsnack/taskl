@@ -28,11 +28,11 @@
 
  -}
 
-module System.TaskL where
+module System.TaskL
+  ( Combination(..)
+  , schedule
+  ) where
 
 import System.TaskL.Combination
-import System.TaskL.Bash
 import System.TaskL.Schedule (schedule)
-import System.TaskL.IdemShell ( Command(..), Test(..), Ownership(..), Mode(..)
-                              , TriState(..), NodeType(..) )
 

@@ -28,10 +28,10 @@ import System.TaskL.Bash.Program
 import System.TaskL.Bash.Codegen.IdemShell
 
 
-labelAndSort                ::  [Op] -> [(ByteString, Op)]
+labelAndSort                ::  [Op] -> [(ByteString, Task)]
 labelAndSort                 =  nub . map (first (Esc.bytes . Esc.bash))
                              .  sortBy (comparing fst)
-                             .  map (labelTask &&& id)
+                             .  map (labelTask &&& task)
 
 
 stateArrays                 ::  [Op] -> Term
@@ -40,7 +40,7 @@ stateArrays ops              =  Sequence (DictAssign "taskl_enabled" falses)
  where
   falses                     =  map (second (const "false")) labelled
   checks                     =  map (second checkOK) labelled
-  labelled                   =  (map (second task) . labelAndSort) ops
+  labelled                   =  labelAndSort ops
   checkOK (Package _ t)
     | t == mempty            =  "true"
     | otherwise              =  "false"

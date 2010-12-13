@@ -10,6 +10,7 @@ import Data.Tree
 
 import Data.Monoid
 
+import System.TaskL.Bash
 import System.TaskL.IdemShell
 import System.TaskL.Combination
 import System.TaskL.IndexForest
