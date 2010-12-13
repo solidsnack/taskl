@@ -30,6 +30,9 @@
 
 module System.TaskL where
 
+import System.TaskL.Combination
 import System.TaskL.Bash
-import System.TaskL.Schedule
+import System.TaskL.Schedule (schedule)
+import System.TaskL.IdemShell ( Command(..), Test(..), Ownership(..), Mode(..)
+                              , TriState(..), NodeType(..) )
 
