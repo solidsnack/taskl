@@ -32,7 +32,7 @@ import qualified Text.ShellEscape as Esc
                              |  <name>[<name>]=<text>
 @
  -}
-data Term                    =  SimpleCommand ARGV
+data Term                    =  SimpleCommand ByteString [ByteString]
                              |  Empty
                              |  Bang Term
                              |  And Term Term
@@ -55,14 +55,8 @@ deriving instance Ord Term
 deriving instance Show Term
 
 
-newtype ARGV                 =  ARGV [ByteString]
-deriving instance Eq ARGV
-deriving instance Ord ARGV
-deriving instance Show ARGV
-
-
-cmd                         ::  [ByteString] -> Term
-cmd                          =  SimpleCommand . ARGV
+cmd                         ::  ByteString -> [ByteString] -> Term
+cmd                          =  SimpleCommand
 
 
 -- Unused.

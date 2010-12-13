@@ -15,7 +15,7 @@ module System.TaskL.Bash.Codegen where
 
 import Data.Ord
 import Control.Arrow (first, second, (&&&))
-import Data.List (sortBy, nub)
+import Data.List (sortBy, nub, foldl')
 import Data.Monoid
 
 import Data.ByteString.Char8 (ByteString)
@@ -26,6 +26,10 @@ import System.TaskL.Op
 import System.TaskL.Task
 import System.TaskL.Bash.Program
 import System.TaskL.Bash.Codegen.IdemShell
+
+
+code                        ::  [Op] -> Term
+code ops = foldl' Sequence (stateArrays ops) (map codeForOp ops)
 
 
 labelAndSort                ::  [Op] -> [(ByteString, Task)]
@@ -47,8 +51,8 @@ stateArrays ops              =  Sequence (DictAssign "taskl_enabled" falses)
   checkOK _                  =  "false"
 
 
-code                        ::  Op -> Term
-code op@(Op (code, _))       =  case code of
+codeForOp                   ::  Op -> Term
+codeForOp op@(Op (code, _))  =  case code of
   Enter                     ->  msg
   Check                     ->  msg `And` checkCode (task op)
   Enable                    ->  msg `And` enableCode (depLabels op)
@@ -56,7 +60,7 @@ code op@(Op (code, _))       =  case code of
   Leave                     ->  msg
  where
   depLabels                  =  map label . dependencies
-  msg                        =  SimpleCommand . ARGV . (:[labelTask op]) $
+  msg                        =  flip SimpleCommand [labelTask op] $
     case code of
       Enter                 ->  "taskl_enter"
       Check                 ->  "taskl_check"

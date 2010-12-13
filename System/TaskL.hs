@@ -31,8 +31,10 @@
 module System.TaskL
   ( Combination(..)
   , schedule
+  , code
   ) where
 
 import System.TaskL.Combination
 import System.TaskL.Schedule (schedule)
+import System.TaskL.Bash (stateArrays, code, codeForOp)
 
