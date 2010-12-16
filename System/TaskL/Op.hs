@@ -25,6 +25,7 @@ import Data.Monoid
 import Data.Tree
 import Data.ByteString (ByteString, append)
 
+import System.TaskL.IdemShell (essentialTest)
 import System.TaskL.IndexForest
 import System.TaskL.Task
 
@@ -33,8 +34,9 @@ ops                         ::  Tree (Index, Task) -> [Op]
 ops t@(Node (_, task) sub)   =  (map (Op . (,t)) .  catMaybes)
   [Just Enter, Check !? test, Enable !? sub, exec, Just Leave]
  where
-  (test, exec)               =  case task of Command _ x    ->  (x, Just Exec)
-                                             Package _ x    ->  (x, Nothing)
+  (test, exec)               =  case task of
+    Command c x             ->  (x `mappend` essentialTest c, Just Exec)
+    Package _ x             ->  (x, Nothing)
   k !? x                     =  if x == mempty then Nothing else Just k
 
 {-| A backend supports these operations.
