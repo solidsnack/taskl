@@ -104,6 +104,7 @@ data PPState                 =  PPState { indents :: [Word]
 ppZero                      ::  PPState
 ppZero                       =  PPState [] True 0 Builder.empty
 
+
 {-| Operations we can perform while pretty printing:
 
  *  Add n spaces to the indentation.
@@ -137,6 +138,7 @@ op state@PPState{..} x       =  case x of
 
 opM                         ::  [PPOp] -> State PPState ()
 opM                          =  mapM_ (modify . flip op)
+
 
 cast                         =  fromIntegral
 
