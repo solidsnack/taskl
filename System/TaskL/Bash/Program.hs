@@ -25,6 +25,7 @@ import qualified Text.ShellEscape as Esc
                              |  <term> & <term>
                              |  { <term> ;}
                              |  '(' <term> ')'
+                             |  function <name> '{' <term> '}'
                              |  if <term> then <term> else <term>
                              |  if <term> then <term>
                              |  <name>=<text>
@@ -42,6 +43,7 @@ data Term                    =  SimpleCommand ByteString [ByteString]
                              |  Background Term Term
                              |  Group Term
                              |  Subshell Term
+                             |  Function ByteString Term
                              |  IfThen Term Term
                              |  IfThenElse Term Term Term
                              |  ForDoDone ByteString [ByteString] Term

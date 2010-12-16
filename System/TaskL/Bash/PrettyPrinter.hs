@@ -54,16 +54,15 @@ ops term                     =  case term of
                             >>  nl >> word ")"
   DictUpdate var key val    ->  wordcat [var, "[", key, "]=", val]
   DictAssign var pairs      ->  wordcat [var, "=("] >> nl
-                            >>  mapM_ (opM .  arrayset) pairs
-                            >>  nl >> word ")"
+                            >>  mapM_ (opM .  arrayset) pairs >> word ")"
  where
   nl                         =  opM [Newline]
   hang b                     =  opM [Word b, Indent (cast (length b) + 1)]
   word b                     =  opM [Word b]
   wordcat                    =  word . concat
   outdent                    =  opM [Outdent]
-  inword b                   =  opM [Word b, Indent 2]
-  outword b                  =  opM [Outdent, Word b]
+  inword b                   =  opM [Word b, Indent 2, Newline]
+  outword b                  =  opM [Newline, Outdent, Word b]
   arrayset (key, val)        =  [Word (concat ["[", key, "]=", val]), Newline]
   breakline b                =  do
     PPState{..}             <-  get
@@ -124,7 +123,7 @@ data PPOp = Indent Word | Outdent | Word ByteString | Newline
 op                          ::  PPState -> PPOp -> PPState
 op state@PPState{..} x       =  case x of
   Indent w                  ->  state {indents = w:indents}
-  Outdent                   ->  state {indents = ht indents}
+  Outdent                   ->  state {indents = nullTail indents}
   Newline                   ->  state {string = sNL, flag = True, columns = 0}
   Word b                    ->  state {string = s', flag = False, columns = c'}
    where
@@ -134,7 +133,7 @@ op state@PPState{..} x       =  case x of
     padded                   =  if flag then replicate dent ' ' `append` b
                                         else ' ' `cons` b
  where
-  ht                         =  List.head . List.tails
+  nullTail list              =  if list == [] then list else List.tail list
   sNL                        =  string `mappend` Builder.fromByteString "\n"
 
 opM                         ::  [PPOp] -> State PPState ()

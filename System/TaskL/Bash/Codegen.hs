@@ -26,14 +26,18 @@ import System.TaskL.Op
 import System.TaskL.Task
 import System.TaskL.Bash.Program
 import System.TaskL.Bash.Codegen.IdemShell
+import System.TaskL.Bash.Codegen.Utils
 
 
-code                        ::  [Op] -> Term
-code ops = foldl' Sequence (stateArrays ops) (map codeForOp ops)
+code                        ::  [Op] -> (Term, Term)
+code ops                     =  (stateArrays ops, (fold . map codeForOp) ops)
+ where
+  fold [   ]                 =  Empty
+  fold (h:t)                 =  foldl' Sequence h t
 
 
 labelAndSort                ::  [Op] -> [(ByteString, Task)]
-labelAndSort                 =  nub . map (first (Esc.bytes . Esc.bash))
+labelAndSort                 =  nub . map (first esc)
                              .  sortBy (comparing fst)
                              .  map (labelTask &&& task)
 
@@ -54,13 +58,13 @@ stateArrays ops              =  Sequence (DictAssign "taskl_enabled" falses)
 codeForOp                   ::  Op -> Term
 codeForOp op@(Op (code, _))  =  case code of
   Enter                     ->  msg
-  Check                     ->  msg `And` checkCode (task op)
-  Enable                    ->  msg `And` enableCode (depLabels op)
-  Exec                      ->  msg `And` execCode (task op)
+  Check                     ->  IfThen msg (checkCode (task op))
+  Enable                    ->  IfThen msg (enableCode (depLabels op))
+  Exec                      ->  IfThen msg (execCode (task op))
   Leave                     ->  msg
  where
   depLabels                  =  map label . dependencies
-  msg                        =  flip SimpleCommand [labelTask op] $
+  msg                        =  flip SimpleCommand [esc $ labelTask op] $
     case code of
       Enter                 ->  "taskl_enter"
       Check                 ->  "taskl_check"
@@ -70,12 +74,13 @@ codeForOp op@(Op (code, _))  =  case code of
 
 
 checkCode                   ::  Task -> Term
-checkCode task               =  codeGen test `And` checkSet
+checkCode task               =  IfThen (codeGen test) checkSet
  where
   test                       =  case task of
     Command c extraTest     ->  extraTest `mappend` essentialTest c
     Package _ extraTest     ->  extraTest
-  checkSet                   =  DictUpdate "taskl_checks" (label task) "true"
+  checkSet                   =  DictUpdate "taskl_checks"
+                                          (esc $ label task) "true"
 
 
 execCode                    ::  Task -> Term
@@ -85,7 +90,7 @@ execCode task                =  case task of
 
 
 enableCode                  ::  [ByteString] -> Term
-enableCode depLabels         =  ForDoDone "task" depLabels
-                                  (DictUpdate "taskl_enabled" "$task" "true")
-
+enableCode depLabels         =  ForDoDone "task" (map esc depLabels)
+                                  (DictUpdate "taskl_enabled"
+                                              "\"$task\"" "true")
 

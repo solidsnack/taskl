@@ -52,11 +52,14 @@ instance CodeGen Test where
     GETENTu u               ->  cmd "idem_GETENTu"  [escEnc u]
     GETENTg g               ->  cmd "idem_GETENTg"  [escEnc g]
     GROUPS u g              ->  cmd "idem_GROUPS"   [escEnc u,  escEnc g]
-    Not t                   ->  Program.Bang (codeGen t)
-    And t t'                ->  codeGen t `Program.And` codeGen t'
-    Or t t'                 ->  codeGen t `Program.Or` codeGen t'
+    Not t                   ->  Program.Bang (codeGen' t)
+    And t t'                ->  codeGen' t `Program.And` codeGen' t'
+    Or t t'                 ->  codeGen' t `Program.Or` codeGen' t'
     TRUE                    ->  cmd "true"          []
     FALSE                   ->  cmd "false"         []
+   where
+    codeGen' t | flat t      =  codeGen t
+               | otherwise   =  Program.Group (codeGen t)
 
 
 {-| Remove redundant negations.
@@ -64,6 +67,13 @@ instance CodeGen Test where
 collapse                    ::  Test -> Test
 collapse (Not (Not test))    =  collapse test
 collapse test                =  test
+
+{-| Is this a flat, simple test or one that needs grouping?
+ -}
+flat                        ::  Test -> Bool
+flat (And _ _)               =  False
+flat (Or _ _)                =  False
+flat _                       =  True
 
 
 fullModeRE                  ::  Mode -> ByteString
@@ -146,7 +156,7 @@ modeSymbolic (Mode ur uw ux us gr gw gx gs or ow ox ot) = concatModes $
     Three1 -> ( (u', u_),          (g', g_ `snoc` c), (o', o_) )
     Three2 -> ( (u', u_),          (g', g_),          (o', o_ `snoc` c) )
   appendModeBit  Indifferent _   strings _ = strings
-  showMode ugoC pair = concat $ case pair of
+  showMode ugoC pair         =  concat $ case pair of
     ("","")                 ->  []
     (p ,"")                 ->  [ugo', p]
     ("", n)                 ->  [ugo_ , n]
