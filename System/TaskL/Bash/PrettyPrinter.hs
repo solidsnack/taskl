@@ -60,6 +60,11 @@ ops term                     =  case term of
   inword b                   =  opM [Word b, Indent 2]
   outword b                  =  opM [Outdent, Word b]
   arrayset (key, val)        =  [Word (concat ["[", key, "]=", val]), Newline]
+  breakline b                =  do
+    PPState{..}             <-  get
+    if columns + cast (length b) + 1 > 79 && columns /= sum indents
+      then  opM [Word "\\", Newline, Word b]
+      else  opM [Word b]
 
 
 {-| State of pretty printing -- string being built, indent levels, whether
