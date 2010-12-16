@@ -225,35 +225,23 @@ function taskl_enter {
   fi
 }
 function taskl_check {
-  if ${taskl_enabled["$1"]}
-  then
-    taskl_message G '**' "$1"
-    taskl_interact
-  else
-    false
-  fi
+  ${taskl_enabled["$1"]} &&
+  taskl_message G '**' "$1" &&
+  taskl_interact
 }
 function taskl_enable {
-  if ${taskl_enabled["$1"]} && ! ${taskl_checks["$1"]}
-  then
-    taskl_message P '++' "$1"
-    taskl_interact
-  else
-    false
-  fi
+  ${taskl_enabled["$1"]} && ! ${taskl_checks["$1"]} &&
+  taskl_message P '++' "$1" &&
+  taskl_interact
 }
 function taskl_exec {
-  if ${taskl_enabled["$1"]} && ! ${taskl_checks["$1"]}
-  then
-    taskl_message G '@@' "$1"
+  ${taskl_enabled["$1"]} && ! ${taskl_checks["$1"]} &&
+  { taskl_message G '@@' "$1"
     if [ 'check' = ${taskl_options[action]} ]
     then
       taskl_info 'Not running: dry-run mode.'
       false
-    fi
-  else
-    false
-  fi
+    fi ;}
 }
 function taskl_leave {
   if ${taskl_enabled["$1"]}
