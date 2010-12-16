@@ -91,11 +91,11 @@ op state@PPState{..} x       =  case x of
   Newline                   ->  state {flag = True, columns = 0}
   Word b                    ->  state {string = string', columns = columns'}
    where
-    padded                   =  if flag then replicate dent ' ' `append` b
-                                        else ' ' `cons` b
     columns'                 =  columns + cast (length padded)
     string'                  =  string `mappend` fromByteString padded
     dent                     =  cast (sum indents)
+    padded                   =  if flag then replicate dent ' ' `append` b
+                                        else ' ' `cons` b
  where
   ht                         =  List.head . List.tails
 
