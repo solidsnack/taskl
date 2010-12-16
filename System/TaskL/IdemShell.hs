@@ -62,7 +62,9 @@ deriving instance Eq Test
 deriving instance Show Test
 instance Monoid Test where
   mempty                     =  FALSE
-  mappend                    =  Or
+  mappend FALSE x            =  x
+  mappend x FALSE            =  x
+  mappend x y                =  Or x y
 
 
 data NodeType                =  File
