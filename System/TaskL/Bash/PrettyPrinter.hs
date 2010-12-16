@@ -60,6 +60,7 @@ ops term                     =  case term of
   outword bytes              =  [Outdent, Word bytes]
   arrayset (key, val)        =  [Word (concat ["[", key, "]=", val]), Newline]
 
+
 {-| State of pretty printing -- string being built, indent levels, whether
     we've started a new line or not. 
  -}
