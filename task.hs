@@ -11,6 +11,7 @@ import Data.Tree
 import Data.Monoid
 import qualified Data.Binary.Builder
 import qualified Data.ByteString.Lazy
+import Data.ByteString.Lazy.Char8
 
 import System.TaskL.Bash
 import System.TaskL.Bash.PrettyPrinter
@@ -45,12 +46,22 @@ tasks2 =
 
 
 
-code2 = Data.Binary.Builder.toLazyByteString delayedText
+code2                        =  bytes
  where
   (ops, _, _)                =  schedule tasks2
-  bash                       =  code ops
-  delayedText                =  builder (colPPState 2) bash
-
+  (arrays, install)          =  code ops
+  text ppS t = Data.Binary.Builder.toLazyByteString (builder ppS t)
+  bytes                      =  Data.ByteString.Lazy.Char8.unlines
+                                  [ "# State arrays."
+                                  , text (colPPState 0) arrays
+                                  , ""
+                                  , "# Installation routine."
+                                  , "function apply {"
+                                  , text (colPPState 2) install
+                                  , "}"
+                                  , "" ]
 
 main                         =  Data.ByteString.Lazy.hPut stdout code2
+
+
 
