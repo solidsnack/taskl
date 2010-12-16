@@ -32,9 +32,11 @@ module System.TaskL
   ( Combination(..)
   , schedule
   , code
+  , builder
+  , colPPState
   ) where
 
 import System.TaskL.Combination
 import System.TaskL.Schedule (schedule)
-import System.TaskL.Bash (stateArrays, code, codeForOp)
+import System.TaskL.Bash (stateArrays, code, codeForOp, builder, colPPState)
 

@@ -99,10 +99,10 @@ data PPState                 =  PPState { indents :: [Word]
                                         , columns :: Word
                                         , string :: Builder }
 
-{-| Pretty printer state starting at line 0, column 0. 
+{-| Pretty printer state starting on a new line indented to the given column.
  -}
-ppZero                      ::  PPState
-ppZero                       =  PPState [] True 0 Builder.empty
+colPPState                  ::  Word -> PPState
+colPPState w                 =  PPState [w] True 0 Builder.empty
 
 
 {-| Operations we can perform while pretty printing:
