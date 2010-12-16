@@ -125,7 +125,7 @@ op                          ::  PPState -> PPOp -> PPState
 op state@PPState{..} x       =  case x of
   Indent w                  ->  state {indents = w:indents}
   Outdent                   ->  state {indents = ht indents}
-  Newline                   ->  state {flag = True, columns = 0}
+  Newline                   ->  state {string = sNL, flag = True, columns = 0}
   Word b                    ->  state {string = string', columns = columns'}
    where
     columns'                 =  columns + cast (length padded)
@@ -135,6 +135,7 @@ op state@PPState{..} x       =  case x of
                                         else ' ' `cons` b
  where
   ht                         =  List.head . List.tails
+  sNL                        =  string `mappend` Builder.fromByteString "\n"
 
 opM                         ::  [PPOp] -> State PPState ()
 opM                          =  mapM_ (modify . flip op)
