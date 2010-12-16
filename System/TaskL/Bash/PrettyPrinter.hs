@@ -23,7 +23,7 @@ import System.TaskL.Bash.Program
 
 ops                         ::  Term -> State PPState ()
 ops term                     =  case term of
-  SimpleCommand cmd vals    ->  hang cmd >> undefined >> outdent
+  SimpleCommand cmd vals    ->  hang cmd >> mapM_ breakline vals >> outdent
   Empty                     ->  word ": 'Do nothing.'"
   Bang t                    ->  hang "!" >> ops t >> outdent
   And t t'                  ->  ops t >> word "&&" >> nl >> ops t'
@@ -39,7 +39,7 @@ ops term                     =  case term of
                             >>  inword "then"      >> ops t'  >> outdent
                             >>  inword "else"      >> ops t'' >> outword "fi"
   ForDoDone var vals t      ->  hang (concat ["for ", var, " in"])
-                            >>  undefined
+                            >>  mapM_ breakline vals
                             >>  outdent >> nl
                             >>  inword "do" >> ops t >> outword "done"
   VarAssign var val         ->  wordcat [var, "=", val]
@@ -55,7 +55,6 @@ ops term                     =  case term of
   hang b                     =  opM [Word b, Indent (cast (length b) + 1)]
   word b                     =  opM [Word b]
   wordcat                    =  word . concat
-  backslash b                =  opM [Word "\\", Newline, Word b]
   outdent                    =  opM [Outdent]
   inword b                   =  opM [Word b, Indent 2]
   outword b                  =  opM [Outdent, Word b]
