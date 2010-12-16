@@ -43,11 +43,11 @@ ops term                     =  case term of
                             ++  inword "do" ++ ops t ++ outword "done"
   VarAssign var val         ->  wordcat [var, "=", val]
   DictDecl var pairs        ->  wordcat ["declare -A ", var, "=("] ++ nl
-                            ++  undefined
+                            ++  List.concatMap arrayset pairs
                             ++  nl ++ word ")"
   DictUpdate var key val    ->  wordcat [var, "[", key, "]=", val]
   DictAssign var pairs      ->  wordcat [var, "=("] ++ nl
-                            ++  undefined
+                            ++  List.concatMap arrayset pairs
                             ++  nl ++ word ")"
  where
   nl                         =  [Newline]
@@ -58,6 +58,7 @@ ops term                     =  case term of
   outdent                    =  [Outdent]
   inword bytes               =  [Word bytes, Indent 2]
   outword bytes              =  [Outdent, Word bytes]
+  arrayset (key, val)        =  [Word (concat ["[", key, "]=", val]), Newline]
 
 {-| State of pretty printing -- string being built, indent levels, whether
     we've started a new line or not. 
