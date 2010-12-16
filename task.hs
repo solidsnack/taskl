@@ -6,9 +6,11 @@
   #-}
 
 
+import System.IO
 import Data.Tree
-
 import Data.Monoid
+import qualified Data.Binary.Builder
+import qualified Data.ByteString.Lazy
 
 import System.TaskL.Bash
 import System.TaskL.IdemShell
@@ -39,4 +41,15 @@ tasks2 =
       [ Node (Command (MKDIR "/q") (DIFFq "./c" "./d")) []
       , Node (Command (MKDIR "/q/p") mempty) [] ]
   ]
+
+
+
+code2 = Data.Binary.Builder.toLazyByteString delayedText
+ where
+  (ops, _, _)                =  schedule tasks2
+  bash                       =  code ops
+  delayedText                =  builder (colPPState 2) bash
+
+
+main                         =  Data.ByteString.Lazy.hPut stdout code2
 
