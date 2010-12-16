@@ -2,6 +2,8 @@
 {-# LANGUAGE StandaloneDeriving
            , NoMonomorphismRestriction
            , OverloadedStrings
+           , ScopedTypeVariables
+           , GeneralizedNewtypeDeriving
   #-}
 
 module System.TaskL.IdemShell.ID

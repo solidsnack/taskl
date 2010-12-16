@@ -1,5 +1,6 @@
 {-# LANGUAGE StandaloneDeriving
            , ParallelListComp
+           , FlexibleInstances
   #-}
 
 {-| The input to the Task\\L system is a list of 'Tree' of 'Task' items,

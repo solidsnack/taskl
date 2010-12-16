@@ -4,6 +4,7 @@
            , OverloadedStrings
            , StandaloneDeriving
            , ParallelListComp
+           , PostfixOperators
   #-}
 
 

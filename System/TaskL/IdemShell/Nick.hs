@@ -2,6 +2,7 @@
 {-# LANGUAGE StandaloneDeriving
            , OverloadedStrings
            , OverlappingInstances
+           , GeneralizedNewtypeDeriving
   #-}
 
 module System.TaskL.IdemShell.Nick
