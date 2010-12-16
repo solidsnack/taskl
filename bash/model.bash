@@ -53,9 +53,9 @@ set +o histexpand -o noglob
 set -o privileged
 
 function main {
-  while "$1"
+  while [ "${1:-}" != '' ]
   do
-    case "$1"
+    case "$1" in
       --no-wait)                taskl_options[interactive]=false ;;
       --wait)                   taskl_options[interactive]=true ;;
       --nl|--0nl)               taskl_options[separator]=$1 ;;
@@ -70,6 +70,122 @@ function main {
     esac
     shift
   done
+}
+
+
+
+
+################################################################
+# Implementation of IdemShell commands and tests.
+
+function idem_CHOWN {
+  local user="${2%:*}"
+  local group="${2#*:}"
+  [ ! -z "$user" ]  && chown "$user"  "$1"
+  [ ! -z "$group" ] && chgrp "$group" "$1"
+}
+function idem_CHMOD {
+  chmod "$2" "$1"
+}
+function idem_RM {
+  rm -rf "$1"
+}
+function idem_CP {
+  { which rsync && rsync "$1" "$2" ;} || cp "$1" "$2"
+}
+function idem_LNs {
+  { [ -L "$2" ] && rm -f "$2" ;} || rm -rf "$2"
+  ln -s "$1" "$2"
+}
+function idem_TOUCH {
+  rm -rf "$1"
+  touch "$1"
+}
+function idem_MKDIR {
+  rm -rf "$1"
+  mkdir -p "$1"
+}
+function idem_USERADD {
+  idem_USERDEL "$1"
+  useradd "$@" 
+}
+function idem_USERDEL {
+  getent passwd "$1" && userdel "$1"
+}
+function idem_GROUPADD {
+  idem_GROUPDEL "$1"
+  groupadd "$@" 
+}
+function idem_GROUPDEL {
+  getent group "$1" && groupdel "$1"
+}
+function idem_GPASSWDa {
+  gpasswd "$1" -a "$2" 1>/dev/null
+}
+function idem_GPASSWDd {
+  gpasswd "$1" -d "$2" 1>/dev/null
+}
+
+function idem_LSo {
+  local user="${2%:*}"
+  local group="${2#*:}"
+  { [ "$user" = "" ]  || idem_helper_LSo "$1" ":$user"  ;} &&
+  { [ "$group" = "" ] || idem_helper_LSo "$1" "$group:" ;}
+}
+function idem_helper_LSo {
+  local awk_script
+  local name
+  case "$2" in
+    *:) name="${2%:}" ; awk_script='{print $3}' ;;
+    :*) name="${2#:}" ; awk_script='{print $4}' ;;
+    *)  ! echo 'Mysterious invalid call to LSo helper.' 1>&2 ;;  
+  esac
+  local normed="${name#+}"
+  if [ "$name" = "$normed" ]  # Determine if we are using numric form.
+  then
+    ls -ld "$1"
+  else
+    ls -nd "$1"
+  fi | awk "$awk_script" | fgrep -x -- "$normed"
+}
+function idem_LSm {
+  ls -ld "$1" | awk '{print $1}' | egrep ".$2"
+}
+function idem_DASHe {
+  [ -e "$1" ]
+}
+function idem_DASH_ {
+  [ "$1" "$2" ]
+}
+function idem_DIFFq {
+  diff -q "$1" "$2" 2>/dev/null
+}
+function idem_LSl {
+  [ `readlink -- "$2"` = "$1" ]
+}
+function idem_GETENTu {
+  getent passwd "$1"
+}
+function idem_GETENTg {
+  getent group "$1"
+}
+function idem_GROUPS {
+  groups -- "$1" | xargs printf '%s\n' | sed '1,2 d' | fgrep -x -- "$2"
+}
+function idem_Not {
+  ! echo 'Unimplemented IdemShell primitive should not be called!' 1>&2
+}
+function idem_And {
+  ! echo 'Unimplemented IdemShell primitive should not be called!' 1>&2
+}
+function idem_Or {
+  ! echo 'Unimplemented IdemShell primitive should not be called!' 1>&2
+}
+function idem_TRUE {
+  ! echo 'Unimplemented IdemShell primitive should not be called!' 1>&2
+}
+function idem_FALSE {
+  ! echo 'Unimplemented IdemShell primitive should not be called!' 1>&2
 }
 
 
@@ -105,25 +221,29 @@ function taskl_enter {
   if ${taskl_enabled["$1"]}
   then
     taskl_message P '>>' "$1"
-    interact
+    taskl_interact
   fi
 }
 function taskl_check {
   if ${taskl_enabled["$1"]}
   then
     taskl_message G '**' "$1"
-    interact
+    taskl_interact
+  else
+    false
   fi
 }
 function taskl_enable {
-  if ${taskl_enabled["$1"]} && ${taskl_checks["$1"]}
+  if ${taskl_enabled["$1"]} && ! ${taskl_checks["$1"]}
   then
     taskl_message P '++' "$1"
-    interact
+    taskl_interact
+  else
+    false
   fi
 }
 function taskl_exec {
-  if ${taskl_enabled["$1"]} && ${taskl_checks["$1"]}
+  if ${taskl_enabled["$1"]} && ! ${taskl_checks["$1"]}
   then
     taskl_message G '@@' "$1"
     if [ 'check' = ${taskl_options[action]} ]
@@ -131,13 +251,15 @@ function taskl_exec {
       taskl_info 'Not running: dry-run mode.'
       false
     fi
+  else
+    false
   fi
 }
 function taskl_leave {
   if ${taskl_enabled["$1"]}
   then
     taskl_message P '<<' "$1"
-    interact
+    taskl_interact
   fi
 }
 function taskl_info {
@@ -160,49 +282,93 @@ function taskl_error {
 
 script_random_key=c7fd4f07-8007-4c9f-a7aa-c0cf581cf97b
 
+# State arrays.
 taskl_enabled=(
-[$'task:pg']=false
-[$'fs:/etc/postgres.conf']=false
+[$'fs/node:/q']=false
+[$'fs/node:/q/a']=false
+[$'fs/node:/q/b']=false
+[$'fs/node:/q/p']=false
 )
-
 taskl_checks=(
-[$'task:pg']=true
-[$'fs:/etc/postgres.conf']=false
+[$'fs/node:/q']=false
+[$'fs/node:/q/a']=false
+[$'fs/node:/q/b']=false
+[$'fs/node:/q/p']=false
 )
 
+# Installation routine.
 function apply {
-  taskl_enter $'task:pg'
-  taskl_enable $'task:pg' &&
-  { taskl_enabled[$'fs:/etc/postgres.conf']=true
-    taskl_enabled[$'fs:/etc/hosts']=true ;}
-  taskl_enter $'fs:/etc/postgres.conf'
-  taskl_check $'fs:/etc/postgres.conf' &&
-  { ! diff -q "$1"/./etc/postgres.conf "$2"/etc/postgres.conf &&
-    taskl_checks[$'fs:/etc/postgres.conf']=true ;}
-  taskl_exec $'fs:/etc/postgres.conf' &&
-  { cp -a "$1"/./etc/postgres.conf "$2"/etc/postgres.conf ;}
-  taskl_leave $'fs:/etc/postgres.conf'
-  taskl_enter $'task:postfix'
-  taskl_enable $'task:postfix' &&
-  { taskl_enabled[$'fs:/etc/postgres.conf']=true
-    taskl_enabled[$'fs:/etc/hosts']=true ;}
-  taskl_enter $'fs:/etc/hosts'
-  taskl_check $'fs:/etc/hosts' &&
-  { ! diff -q "$1"/./etc/hosts "$2"/etc/hosts
-    taskl_checks[$'fs:/etc/hosts']=true ;}
-  taskl_exec $'fs:/etc/hosts' &&
-  { cp -a "$1"/./etc/hosts "$2"/etc/hosts ;}
-  taskl_leave $'fs:/etc/hosts'
-  taskl_leave $'task:pg'
-  taskl_enter $'fs:/etc/postfix.conf'
-  taskl_check $'fs:/etc/postfix.conf' &&
-  { check_state=false
-    ! diff -q "$1"/./etc/postfix.conf "$2"/etc/postfix.conf
-    check_state=true ;}
-  taskl_exec $'fs:/etc/postfix.conf' &&
-  { cp -a "$1"/./etc/postfix.conf "$1"/etc/postfix.conf ;}
-  taskl_leave $'fs:/etc/postfix.conf'
-  taskl_leave $'task:postfix'
+  taskl_enter $'fs/node:/q/a'
+  taskl_enter $'fs/node:/q/b'
+  if taskl_check $'fs/node:/q/a'
+  then
+    if false ||
+       idem_DASH_ -f /q/a
+    then
+      taskl_checks[$'fs/node:/q/a']=true
+    fi
+  fi
+  if taskl_check $'fs/node:/q/b'
+  then
+    if false ||
+       idem_DASH_ -f /q/b
+    then
+      taskl_checks[$'fs/node:/q/b']=true
+    fi
+  fi
+  if taskl_enable $'fs/node:/q/a'
+  then
+    for task in $'fs/node:/q'
+    do
+      taskl_enabled["$task"]=true
+    done
+  fi
+  if taskl_enable $'fs/node:/q/b'
+  then
+    for task in $'fs/node:/q' $'fs/node:/q/p'
+    do
+      taskl_enabled["$task"]=true
+    done
+  fi
+  taskl_enter $'fs/node:/q'
+  if taskl_check $'fs/node:/q'
+  then
+    if { false ||
+         false ;} ||
+       idem_DASH_ -d /q
+    then
+      taskl_checks[$'fs/node:/q']=true
+    fi
+  fi
+  if taskl_exec $'fs/node:/q'
+  then
+    idem_MKDIR /q
+  fi
+  taskl_leave $'fs/node:/q'
+  if taskl_exec $'fs/node:/q/a'
+  then
+    idem_TOUCH /q/a
+  fi
+  taskl_leave $'fs/node:/q/a'
+  taskl_enter $'fs/node:/q/p'
+  if taskl_check $'fs/node:/q/p'
+  then
+    if false ||
+       idem_DASH_ -d /q/p
+    then
+      taskl_checks[$'fs/node:/q/p']=true
+    fi
+  fi
+  if taskl_exec $'fs/node:/q/p'
+  then
+    idem_MKDIR /q/p
+  fi
+  taskl_leave $'fs/node:/q/p'
+  if taskl_exec $'fs/node:/q/b'
+  then
+    idem_TOUCH /q/b
+  fi
+  taskl_leave $'fs/node:/q/b'
 }
 
 
@@ -211,12 +377,12 @@ function apply {
 ################################################################
 # Go.
 
-if fgrep $script_random_key "$0"      # Don't run code if we're being sourced.
+if fgrep -q $script_random_key "$0"   # Don't run code if we're being sourced.
 then
   main "$@"
-  local dir=`dirname "$0"`/root    # Only run code from the package directory.
+  dir=`dirname "$0"`/root          # Only run code from the package directory.
   cd "$dir"
-  local physical_dir=`pwd -P`
+  physical_dir=`pwd -P`
   apply "$physical_dir" "${taskl_options[destination]}"
 fi
 
