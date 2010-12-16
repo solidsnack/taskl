@@ -71,6 +71,25 @@ ops term                     =  case term of
       then  opM [Word "\\", Newline, Word b]
       else  opM [Word b]
 
+{- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+  Line break algorithm for simple commands and arguments of for loops:
+
+    IF the width of the current line with the given word added is greater
+       than 79 columns
+    THEN
+      IF moving the word to the following line causes the line to be shorter
+      THEN
+        do it
+      ELSE
+        add the current word to the current line
+      DONE
+    ELSE
+      add the current word to the current line
+    DONE
+
+ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
+
 
 {-| State of pretty printing -- string being built, indent levels, whether
     we've started a new line or not. 
@@ -113,25 +132,6 @@ op state@PPState{..} x       =  case x of
 
 opM                         ::  [PPOp] -> State PPState ()
 opM                          =  mapM_ (modify . flip op)
-
-{- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-
-  Line break algorithm for simple commands and arguments of for loops:
-
-    IF the width of the current line with the given word added is greater
-       than 79 columns
-    THEN
-      IF moving the word to the following line causes the line to be shorter
-      THEN
-        do it
-      ELSE
-        add the current word to the current line
-      DONE
-    ELSE
-      add the current word to the current line
-    DONE
-
- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
 
 cast                         =  fromIntegral
 
