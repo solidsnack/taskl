@@ -13,6 +13,7 @@ import qualified Data.Binary.Builder
 import qualified Data.ByteString.Lazy
 
 import System.TaskL.Bash
+import System.TaskL.Bash.PrettyPrinter
 import System.TaskL.IdemShell
 import System.TaskL.Combination
 import System.TaskL.IndexForest
