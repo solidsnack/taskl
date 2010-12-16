@@ -290,16 +290,14 @@ function apply {
   taskl_enter $'fs/node:/q/b'
   if taskl_check $'fs/node:/q/a'
   then
-    if false ||
-       idem_DASH_ -f /q/a
+    if idem_DASH_ -f /q/a
     then
       taskl_checks[$'fs/node:/q/a']=true
     fi
   fi
   if taskl_check $'fs/node:/q/b'
   then
-    if false ||
-       idem_DASH_ -f /q/b
+    if idem_DASH_ -f /q/b
     then
       taskl_checks[$'fs/node:/q/b']=true
     fi
@@ -321,9 +319,7 @@ function apply {
   taskl_enter $'fs/node:/q'
   if taskl_check $'fs/node:/q'
   then
-    if { false ||
-         false ;} ||
-       idem_DASH_ -d /q
+    if idem_DASH_ -d /q
     then
       taskl_checks[$'fs/node:/q']=true
     fi
@@ -341,8 +337,7 @@ function apply {
   taskl_enter $'fs/node:/q/p'
   if taskl_check $'fs/node:/q/p'
   then
-    if false ||
-       idem_DASH_ -d /q/p
+    if idem_DASH_ -d /q/p
     then
       taskl_checks[$'fs/node:/q/p']=true
     fi
