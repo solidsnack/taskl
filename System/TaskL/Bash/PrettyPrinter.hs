@@ -16,7 +16,7 @@ import Prelude hiding (concat, length, replicate)
 import Data.Binary.Builder hiding (append)
 import Data.ByteString.Char8
 import Data.Word
-import Control.Monad.State
+import Control.Monad.State.Strict
 
 import System.TaskL.Bash.Program
 
