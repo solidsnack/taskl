@@ -5,7 +5,8 @@
            , NoMonomorphismRestriction
   #-}
 
-{-| Pretty printer for Bash. Not very pretty right now.
+{-| Pretty printer for Bash. The pretty printer generates a builder which we
+    pass to the "linker" later to put between the two main chunks of code.
  -}
 
 module System.TaskL.Bash.PrettyPrinter where
@@ -13,7 +14,8 @@ module System.TaskL.Bash.PrettyPrinter where
 import qualified Data.List as List
 import Data.Monoid
 import Prelude hiding (concat, length, replicate)
-import Data.Binary.Builder hiding (append)
+import Data.Binary.Builder (Builder)
+import qualified Data.Binary.Builder as Builder
 import Data.ByteString.Char8
 import Data.Word
 import Control.Monad.State.Strict
@@ -21,10 +23,8 @@ import Control.Monad.State.Strict
 import System.TaskL.Bash.Program
 
 
-builder                     ::  Term -> Builder
-builder t                    =  string $ execState (ops t) init
- where
-  init                       =  PPState [] True 0 Data.Binary.Builder.empty
+builder                     ::  PPState -> Term -> Builder
+builder init t               =  string $ execState (ops t) init
 
 
 ops                         ::  Term -> State PPState ()
@@ -99,6 +99,11 @@ data PPState                 =  PPState { indents :: [Word]
                                         , columns :: Word
                                         , string :: Builder }
 
+{-| Pretty printer state starting at line 0, column 0. 
+ -}
+ppZero                      ::  PPState
+ppZero                       =  PPState [] True 0 Builder.empty
+
 {-| Operations we can perform while pretty printing:
 
  *  Add n spaces to the indentation.
@@ -123,7 +128,7 @@ op state@PPState{..} x       =  case x of
   Word b                    ->  state {string = string', columns = columns'}
    where
     columns'                 =  columns + cast (length padded)
-    string'                  =  string `mappend` fromByteString padded
+    string'                  =  string `mappend` Builder.fromByteString padded
     dent                     =  cast (sum indents)
     padded                   =  if flag then replicate dent ' ' `append` b
                                         else ' ' `cons` b
