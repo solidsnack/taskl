@@ -16,48 +16,49 @@ import Prelude hiding (concat, length, replicate)
 import Data.Binary.Builder hiding (append)
 import Data.ByteString.Char8
 import Data.Word
+import Control.Monad.State
 
 import System.TaskL.Bash.Program
 
 
-ops                         ::  Term -> [PPOp]
+ops                         ::  Term -> State PPState ()
 ops term                     =  case term of
-  SimpleCommand cmd vals    ->  hang cmd ++ undefined ++ outdent
+  SimpleCommand cmd vals    ->  hang cmd >> undefined >> outdent
   Empty                     ->  word ": 'Do nothing.'"
-  Bang t                    ->  hang "!" ++ ops t ++ outdent
-  And t t'                  ->  ops t ++ word "&&" ++ nl ++ ops t'
-  Or t t'                   ->  ops t ++ word "||" ++ nl ++ ops t'
-  Pipe t t'                 ->  ops t ++ word "|"  ++ nl ++ ops t'
-  Sequence t t'             ->  ops t              ++ nl ++ ops t'
-  Background t t'           ->  ops t ++ word "&"  ++ nl ++ ops t'
-  Group t                   ->  hang "{"  ++ ops t ++ word ";}" ++ outdent
-  Subshell t                ->  hang "("  ++ ops t ++ word ")"  ++ outdent
-  IfThen t t'               ->  hang "if" ++ ops t ++ outdent ++ nl
-                            ++  inword "then"      ++ ops t'  ++ outword "fi"
-  IfThenElse t t' t''       ->  hang "if" ++ ops t ++ outdent ++ nl
-                            ++  inword "then"      ++ ops t'  ++ outdent
-                            ++  inword "else"      ++ ops t'' ++ outword "fi"
+  Bang t                    ->  hang "!" >> ops t >> outdent
+  And t t'                  ->  ops t >> word "&&" >> nl >> ops t'
+  Or t t'                   ->  ops t >> word "||" >> nl >> ops t'
+  Pipe t t'                 ->  ops t >> word "|"  >> nl >> ops t'
+  Sequence t t'             ->  ops t              >> nl >> ops t'
+  Background t t'           ->  ops t >> word "&"  >> nl >> ops t'
+  Group t                   ->  hang "{"  >> ops t >> word ";}" >> outdent
+  Subshell t                ->  hang "("  >> ops t >> word ")"  >> outdent
+  IfThen t t'               ->  hang "if" >> ops t >> outdent >> nl
+                            >>  inword "then"      >> ops t'  >> outword "fi"
+  IfThenElse t t' t''       ->  hang "if" >> ops t >> outdent >> nl
+                            >>  inword "then"      >> ops t'  >> outdent
+                            >>  inword "else"      >> ops t'' >> outword "fi"
   ForDoDone var vals t      ->  hang (concat ["for ", var, " in"])
-                            ++  undefined
-                            ++  outdent ++ nl
-                            ++  inword "do" ++ ops t ++ outword "done"
+                            >>  undefined
+                            >>  outdent >> nl
+                            >>  inword "do" >> ops t >> outword "done"
   VarAssign var val         ->  wordcat [var, "=", val]
-  DictDecl var pairs        ->  wordcat ["declare -A ", var, "=("] ++ nl
-                            ++  List.concatMap arrayset pairs
-                            ++  nl ++ word ")"
+  DictDecl var pairs        ->  wordcat ["declare -A ", var, "=("] >> nl
+                            >>  mapM_ (opM .  arrayset) pairs
+                            >>  nl >> word ")"
   DictUpdate var key val    ->  wordcat [var, "[", key, "]=", val]
-  DictAssign var pairs      ->  wordcat [var, "=("] ++ nl
-                            ++  List.concatMap arrayset pairs
-                            ++  nl ++ word ")"
+  DictAssign var pairs      ->  wordcat [var, "=("] >> nl
+                            >>  mapM_ (opM .  arrayset) pairs
+                            >>  nl >> word ")"
  where
-  nl                         =  [Newline]
-  hang bytes                 =  [Word bytes, Indent (cast (length bytes) + 1)]
-  word bytes                 =  [Word bytes]
+  nl                         =  opM [Newline]
+  hang b                     =  opM [Word b, Indent (cast (length b) + 1)]
+  word b                     =  opM [Word b]
   wordcat                    =  word . concat
-  backslash bytes            =  [Word "\\", Newline, Word bytes]
-  outdent                    =  [Outdent]
-  inword bytes               =  [Word bytes, Indent 2]
-  outword bytes              =  [Outdent, Word bytes]
+  backslash b                =  opM [Word "\\", Newline, Word b]
+  outdent                    =  opM [Outdent]
+  inword b                   =  opM [Word b, Indent 2]
+  outword b                  =  opM [Outdent, Word b]
   arrayset (key, val)        =  [Word (concat ["[", key, "]=", val]), Newline]
 
 
@@ -99,6 +100,9 @@ op state@PPState{..} x       =  case x of
                                         else ' ' `cons` b
  where
   ht                         =  List.head . List.tails
+
+opM                         ::  [PPOp] -> State PPState ()
+opM                          =  mapM_ (modify . flip op)
 
 {- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
