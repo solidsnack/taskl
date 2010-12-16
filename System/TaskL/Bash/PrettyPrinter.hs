@@ -21,6 +21,12 @@ import Control.Monad.State
 import System.TaskL.Bash.Program
 
 
+builder                     ::  Term -> Builder
+builder t                    =  string $ execState (ops t) init
+ where
+  init                       =  PPState [] True 0 Data.Binary.Builder.empty
+
+
 ops                         ::  Term -> State PPState ()
 ops term                     =  case term of
   SimpleCommand cmd vals    ->  hang cmd >> mapM_ breakline vals >> outdent
