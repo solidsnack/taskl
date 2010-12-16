@@ -126,10 +126,10 @@ op state@PPState{..} x       =  case x of
   Indent w                  ->  state {indents = w:indents}
   Outdent                   ->  state {indents = ht indents}
   Newline                   ->  state {string = sNL, flag = True, columns = 0}
-  Word b                    ->  state {string = string', columns = columns'}
+  Word b                    ->  state {string = s', flag = False, columns = c'}
    where
-    columns'                 =  columns + cast (length padded)
-    string'                  =  string `mappend` Builder.fromByteString padded
+    c'                       =  columns + cast (length padded)
+    s'                       =  string `mappend` Builder.fromByteString padded
     dent                     =  cast (sum indents)
     padded                   =  if flag then replicate dent ' ' `append` b
                                         else ' ' `cons` b
