@@ -56,7 +56,7 @@ tasks3 =
 code2                        =  bytes
  where
   (ops, _, _)                =  schedule tasks2
-  (arrays, install)          =  code ops
+  (arrays, install)          =  code (fmap rootLabel tasks2) ops
   text ppS t = Data.Binary.Builder.toLazyByteString (builder ppS t)
   bytes                      =  Data.ByteString.Lazy.Char8.unlines
                                   [ "# State arrays."

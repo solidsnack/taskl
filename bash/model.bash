@@ -324,8 +324,8 @@ script_random_key=c7fd4f07-8007-4c9f-a7aa-c0cf581cf97b
 # State arrays.
 taskl_enabled=(
 [$'fs/node:/q']=false
-[$'fs/node:/q/a']=false
-[$'fs/node:/q/b']=false
+[$'fs/node:/q/a']=true
+[$'fs/node:/q/b']=true
 [$'fs/node:/q/p']=false
 )
 taskl_checks=(

@@ -29,8 +29,9 @@ import System.TaskL.Bash.Codegen.IdemShell
 import System.TaskL.Bash.Codegen.Utils
 
 
-code                        ::  [Op] -> (Term, Term)
-code ops                     =  (stateArrays ops, (fold . map codeForOp) ops)
+code                        ::  [Task] -> [Op] -> (Term, Term)
+code tasks ops               =  ( stateArrays tasks ops
+                                , (fold . map codeForOp) ops )
  where
   fold [   ]                 =  Empty
   fold (h:t)                 =  foldl' Sequence h t
@@ -42,13 +43,17 @@ labelAndSort                 =  nub . map (first esc)
                              .  map (labelTask &&& task)
 
 
-stateArrays                 ::  [Op] -> Term
-stateArrays ops              =  Sequence (DictAssign "taskl_enabled" falses)
+stateArrays                 ::  [Task] -> [Op] -> Term
+stateArrays tasks ops        =  Sequence (DictAssign "taskl_enabled" enables)
                                          (DictAssign "taskl_checks" checks)
  where
-  falses                     =  map (second (const "false")) labelled
+  enables                    =  map (second topLevel) labelled
   checks                     =  map (second checkOK) labelled
   labelled                   =  labelAndSort ops
+  topLevel task              =  if label task `elem` topLevelLabels
+                                  then  "true"
+                                  else  "false"
+  topLevelLabels             =  map label tasks
   checkOK (Package _ t)
     | t == mempty            =  "true"
     | otherwise              =  "false"
