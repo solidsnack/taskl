@@ -66,10 +66,12 @@ function main {
       -0|--0)                   taskl_options[separator]='--0' ;;
       --help|-h|'-?')           usage ; exit 0 ;;
       install|check|list)       taskl_options[action]=$1 ;;
-      ./*|/*)                   taskl_options[destination]="$1" ;;
+      ./*|/*)                   local x=$(cd "$1" && pwd -P)
+                                taskl_options[destination]="$x"
+                                ;;
       fs/*:*|pw/*:*|task:*)     if [ ${taskl_enabled["$1"]:-x} != x ]
                                 then
-                                  i=${#tasks_to_enable[@]}
+                                  local i=${#tasks_to_enable[@]}
                                   tasks_to_enable[$i]="$1"
                                 else
                                   ! echo "No such task \`$1'." 1>&2
@@ -80,7 +82,7 @@ function main {
                                 do
                                   if [ ${taskl_enabled["$t"]:-x} != x ]
                                   then
-                                    i=${#tasks_to_enable[@]}
+                                    local i=${#tasks_to_enable[@]}
                                     tasks_to_enable[$i]="$t"
                                   fi
                                 done
@@ -94,7 +96,7 @@ function main {
                                 do
                                   if [ ${taskl_enabled["$t"]:-x} != x ]
                                   then
-                                    i=${#tasks_to_enable[@]}
+                                    local i=${#tasks_to_enable[@]}
                                     tasks_to_enable[$i]="$t"
                                   fi
                                 done
@@ -337,18 +339,19 @@ taskl_checks=(
 
 # Installation routine.
 function apply {
+  local T="${taskl_options[destination]}"
   taskl_enter $'fs/node:/q/a'
   taskl_enter $'fs/node:/q/b'
   if taskl_check $'fs/node:/q/a'
   then
-    if idem_DASH_ -f /q/a
+    if idem_DASH_ -f "$T"/q/a
     then
       taskl_checks[$'fs/node:/q/a']=true
     fi
   fi
   if taskl_check $'fs/node:/q/b'
   then
-    if idem_DASH_ -f /q/b
+    if idem_DASH_ -f "$T"/q/b
     then
       taskl_checks[$'fs/node:/q/b']=true
     fi
@@ -370,37 +373,37 @@ function apply {
   taskl_enter $'fs/node:/q'
   if taskl_check $'fs/node:/q'
   then
-    if idem_DASH_ -d /q
+    if idem_DASH_ -d "$T"/q
     then
       taskl_checks[$'fs/node:/q']=true
     fi
   fi
   if taskl_exec $'fs/node:/q'
   then
-    idem_MKDIR /q
+    idem_MKDIR "$T"/q
   fi
   taskl_leave $'fs/node:/q'
   if taskl_exec $'fs/node:/q/a'
   then
-    idem_TOUCH /q/a
+    idem_TOUCH "$T"/q/a
   fi
   taskl_leave $'fs/node:/q/a'
   taskl_enter $'fs/node:/q/p'
   if taskl_check $'fs/node:/q/p'
   then
-    if idem_DASH_ -d /q/p
+    if idem_DASH_ -d "$T"/q/p
     then
       taskl_checks[$'fs/node:/q/p']=true
     fi
   fi
   if taskl_exec $'fs/node:/q/p'
   then
-    idem_MKDIR /q/p
+    idem_MKDIR "$T"/q/p
   fi
   taskl_leave $'fs/node:/q/p'
   if taskl_exec $'fs/node:/q/b'
   then
-    idem_TOUCH /q/b
+    idem_TOUCH "$T"/q/b
   fi
   taskl_leave $'fs/node:/q/b'
 }

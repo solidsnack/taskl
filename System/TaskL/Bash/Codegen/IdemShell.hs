@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings
            , ParallelListComp
+           , PostfixOperators
   #-}
 
 
@@ -27,13 +28,13 @@ class CodeGen t where
 
 instance CodeGen Command where
   codeGen command            =  case command of
-    CHOWN p o               ->  cmd "idem_CHOWN"    [escEnc p,  chownStyle o]
-    CHMOD p m               ->  cmd "idem_CHMOD"    [escEnc p, modeSymbolic m]
-    RM p                    ->  cmd "idem_RM"       [escEnc p]
-    CP p' p                 ->  cmd "idem_CP"       [escEnc p', escEnc p]
-    LNs p' p                ->  cmd "idem_LNs"      [escEnc p', escEnc p]
-    TOUCH p                 ->  cmd "idem_TOUCH"    [escEnc p]
-    MKDIR p                 ->  cmd "idem_MKDIR"    [escEnc p]
+    CHOWN p o               ->  cmd "idem_CHOWN"    [destP  p,  chownStyle o]
+    CHMOD p m               ->  cmd "idem_CHMOD"    [destP  p, modeSymbolic m]
+    RM p                    ->  cmd "idem_RM"       [destP  p]
+    CP p' p                 ->  cmd "idem_CP"       [destP  p', destP p]
+    LNs p' p                ->  cmd "idem_LNs"      [destP  p', destP p]
+    TOUCH p                 ->  cmd "idem_TOUCH"    [destP  p]
+    MKDIR p                 ->  cmd "idem_MKDIR"    [destP  p]
     USERADD u attrs         ->  cmd "idem_USERADD"  [escEnc u]--,  attrs]
     USERDEL u               ->  cmd "idem_USERDEL"  [escEnc u]
     GROUPADD g attrs        ->  cmd "idem_GROUPADD" [escEnc g]--,  attrs]
@@ -43,12 +44,12 @@ instance CodeGen Command where
 
 instance CodeGen Test where
   codeGen test               =  case collapse test of
-    LSo p o                 ->  cmd "idem_LSo"      [escEnc p,  chownStyle o]
-    LSm p m                 ->  cmd "idem_LSm"      [escEnc p,  fullModeRE m]
-    DASHe p                 ->  cmd "idem_DASHe"    [escEnc p]
-    DASH_ node p            ->  cmd "idem_DASH_"    [nodeTest node, escEnc p]
-    DIFFq p' p              ->  cmd "idem_DIFFq"    [escEnc p', escEnc p]
-    LSl p' p                ->  cmd "idem_LSl"      [escEnc p', escEnc p]
+    LSo p o                 ->  cmd "idem_LSo"      [destP p,   chownStyle o]
+    LSm p m                 ->  cmd "idem_LSm"      [destP p,   fullModeRE m]
+    DASHe p                 ->  cmd "idem_DASHe"    [destP p]
+    DASH_ node p            ->  cmd "idem_DASH_"    [nodeTest node, destP p]
+    DIFFq p' p              ->  cmd "idem_DIFFq"    [destP p',  destP p]
+    LSl p' p                ->  cmd "idem_LSl"      [destP p',  destP p]
     GETENTu u               ->  cmd "idem_GETENTu"  [escEnc u]
     GETENTg g               ->  cmd "idem_GETENTg"  [escEnc g]
     GROUPS u g              ->  cmd "idem_GROUPS"   [escEnc u,  escEnc g]
@@ -182,4 +183,8 @@ modeSymbol Three2 Four1      =  'w'
 modeSymbol Three2 Four2      =  'x'
 modeSymbol Three2 Four3      =  't'
 
+
+destP path                   =  if (path /?)
+                                  then  "\"$T\"" `append` escEnc path
+                                  else  escEnc path
 

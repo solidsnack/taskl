@@ -1,7 +1,4 @@
-{-# LANGUAGE TypeFamilies
-           , EmptyDataDecls
-           , OverloadedStrings
-           , StandaloneDeriving
+{-# LANGUAGE OverloadedStrings
            , ParallelListComp
   #-}
 
@@ -59,14 +56,15 @@ code2                        =  bytes
   (arrays, install)          =  code (fmap rootLabel tasks2) ops
   text ppS t = Data.Binary.Builder.toLazyByteString (builder ppS t)
   bytes                      =  Data.ByteString.Lazy.Char8.unlines
-                                  [ "# State arrays."
-                                  , text (colPPState 0) arrays
-                                  , ""
-                                  , "# Installation routine."
-                                  , "function apply {"
-                                  , text (colPPState 2) install
-                                  , "}"
-                                  , "" ]
+                                 ["# State arrays."
+                                 ,text (colPPState 0) arrays
+                                 ,""
+                                 ,"# Installation routine."
+                                 ,"function apply {"
+                                 ,"  local T=\"${taskl_options[destination]}\""
+                                 ,text (colPPState 2) install
+                                 ,"}"
+                                 ,"" ]
 
 main                         =  Data.ByteString.Lazy.hPut stdout code2
 
