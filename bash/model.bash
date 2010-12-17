@@ -21,7 +21,10 @@ cat <<USAGE
   Specifying tasks not in the script will cause it to fail immediately. To
   specify tasks, use strings of the form:
 
-    (fs/.*|pw/.*|task):.*
+    (fs/.+|pw/.+|task):.+
+    (fs|pw):.+
+
+  The latter form is a shortcut.
 
   The script may be run with nulls between each output message, with newlines
   (the default) or with nulls and newlines.
@@ -53,7 +56,7 @@ set +o histexpand -o noglob
 set -o privileged
 
 function main {
-  local task_was_set=false
+  local -a tasks_to_enable
   while [ "${1:-}" != '' ]
   do
     case "$1" in
@@ -66,19 +69,54 @@ function main {
       ./*|/*)                   taskl_options[destination]="$1" ;;
       fs/*:*|pw/*:*|task:*)     if [ ${taskl_enabled["$1"]:-x} != x ]
                                 then
-                                  taskl_enabled["$1"]=true
-                                  task_was_set=true
+                                  i=${#tasks_to_enable[@]}
+                                  tasks_to_enable[$i]="$1"
                                 else
+                                  ! echo "No such task \`$1'." 1>&2
+                                fi ;;
+      fs:*)                     base=${1#fs:}
+                                begin=${#tasks_to_enable[@]}
+                                for t in fs/{own,node,mode}:"$base"
+                                do
+                                  if [ ${taskl_enabled["$t"]:-x} != x ]
+                                  then
+                                    i=${#tasks_to_enable[@]}
+                                    tasks_to_enable[$i]="$t"
+                                  fi
+                                done
+                                if [ $begin = ${#tasks_to_enable[@]} ]
+                                then
+                                  ! echo "No such task \`$1'." 1>&2
+                                fi ;;
+      pw:*)                     base=${1#pw:}
+                                begin=${#tasks_to_enable[@]}
+                                for t in pw/{user,group,members}:"$base"
+                                do
+                                  if [ ${taskl_enabled["$t"]:-x} != x ]
+                                  then
+                                    i=${#tasks_to_enable[@]}
+                                    tasks_to_enable[$i]="$t"
+                                  fi
+                                done
+                                if [ $begin = ${#tasks_to_enable[@]} ]
+                                then
                                   ! echo "No such task \`$1'." 1>&2
                                 fi ;;
       *)                        ! echo 'Invalid arguments.' 1>&2 ;;
     esac
     shift
   done
-  $task_was_set || for task in "${!taskl_enabled[@]}"
-                   do
-                     taskl_enabled["$task"]=true
-                   done
+  if [ ${#tasks_to_enable[@]} != 0 ]
+  then
+    for task in "${!taskl_enabled[@]}"
+    do
+      taskl_enabled["$task"]=false
+    done
+    for i in "${!tasks_to_enable[@]}"
+    do
+      taskl_enabled["${tasks_to_enable[$i]}"]=true
+    done
+  fi
 }
 
 
