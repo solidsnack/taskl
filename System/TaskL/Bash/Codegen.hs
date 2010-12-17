@@ -85,7 +85,7 @@ checkCode task               =  IfThen (codeGen test) checkSet
     Command c extraTest     ->  extraTest `mappend` essentialTest c
     Package _ extraTest     ->  extraTest
   checkSet                   =  DictUpdate "taskl_checks"
-                                          (esc $ label task) "true"
+                                           (esc $ label task) "true"
 
 
 execCode                    ::  Task -> Term
