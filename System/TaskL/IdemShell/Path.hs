@@ -10,6 +10,7 @@ module System.TaskL.IdemShell.Path
   , (</?)
   , (-/)
   , (/-)
+  , (/?)
   , message
   , check
   , Check
@@ -56,6 +57,11 @@ Path a </? Path b            =  a `isPrefixOf` b
  -}
 (/-)                        ::  Path -> Path
 (/-) (Path a)                =  (Path . snd . breakEnd (== '/')) a
+
+{-| Is the path absolute?
+ -}
+(/?)                        ::  Path -> Bool
+(/?) (Path a)                =  '/' == head a
 
 
 deriving instance Eq Path
