@@ -53,6 +53,7 @@ set +o histexpand -o noglob
 set -o privileged
 
 function main {
+  local task_was_set=false
   while [ "${1:-}" != '' ]
   do
     case "$1" in
@@ -63,13 +64,21 @@ function main {
       --help|-h|'-?')           usage ; exit 0 ;;
       install|check|list)       taskl_options[action]=$1 ;;
       ./*|/*)                   taskl_options[destination]="$1" ;;
-      fs/*:*|pw/*:*|task:*)     { [ ${taskl_enabled["$1"]:-x} != x ] &&
-                                  taskl_enabled["$1"]=true ;} ||
-                                { ! echo "No such task \`$1'." 1>&2 ;} ;;
+      fs/*:*|pw/*:*|task:*)     if [ ${taskl_enabled["$1"]:-x} != x ]
+                                then
+                                  taskl_enabled["$1"]=true
+                                  task_was_set=true
+                                else
+                                  ! echo "No such task \`$1'." 1>&2
+                                fi ;;
       *)                        ! echo 'Invalid arguments.' 1>&2 ;;
     esac
     shift
   done
+  $task_was_set || for task in "${!taskl_enabled[@]}"
+                   do
+                     taskl_enabled["$task"]=true
+                   done
 }
 
 
@@ -218,7 +227,7 @@ function taskl_interact {
   fi
 }
 function taskl_enter {
-  if ${taskl_enabled["$1"]}
+  if ${taskl_enabled["$1"]} && [ 'list' != ${taskl_options[action]} ]
   then
     taskl_message P '>>' "$1"
     taskl_interact
@@ -226,16 +235,20 @@ function taskl_enter {
 }
 function taskl_check {
   ${taskl_enabled["$1"]} &&
+  [ 'list' != ${taskl_options[action]} ] &&
   taskl_message G '**' "$1" &&
   taskl_interact
 }
 function taskl_enable {
-  ${taskl_enabled["$1"]} && ! ${taskl_checks["$1"]} &&
-  taskl_message P '++' "$1" &&
+  ${taskl_enabled["$1"]} &&
+  ! ${taskl_checks["$1"]} &&
+  { [ 'list' = ${taskl_options[action]} ] || taskl_message P '++' "$1" ;} &&
   taskl_interact
 }
 function taskl_exec {
-  ${taskl_enabled["$1"]} && ! ${taskl_checks["$1"]} &&
+  ${taskl_enabled["$1"]} &&
+  [ 'list' != ${taskl_options[action]} ] &&
+  ! ${taskl_checks["$1"]} &&
   { taskl_message G '@@' "$1"
     if [ 'check' = ${taskl_options[action]} ]
     then
