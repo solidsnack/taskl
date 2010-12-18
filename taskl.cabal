@@ -13,7 +13,7 @@ description                   : Configure UNIX systems.
 cabal-version                 : >= 1.2.3
 build-type                    : Simple
 extra-source-files            : README
-                                test/SimpleUnits.hs
+data-files                    : example/example.bash
 
 
 library
@@ -24,8 +24,25 @@ library
                               , numbers >= 2007.9.24
                               , uu-parsinglib >= 2.5
                               , shell-escape >= 0.1
+                              , mtl
+                              , binary
   exposed-modules             : System.TaskL
-  extensions                  : StandaloneDeriving
+  other-modules               : Paths_taskl
+  extensions                  : EmptyDataDecls
                                 FlexibleInstances
+                                GeneralizedNewtypeDeriving
+                                MultiParamTypeClasses
+                                NamedFieldPuns
+                                NoMonomorphismRestriction
+                                OverlappingInstances
                                 OverloadedStrings
+                                ParallelListComp
+                                PostfixOperators
+                                RecordWildCards
+                                ScopedTypeVariables
+                                StandaloneDeriving
+                                TemplateHaskell
+                                TupleSections
+                                TypeFamilies
+                                UndecidableInstances
 
