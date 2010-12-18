@@ -1,0 +1,19 @@
+
+- CP:               [./vimrc, /.vimrc]
+- ssh::
+  - 'FALSE'
+  - - MKDIR:        [/.ssh]
+    - CHMOD:        [/.ssh, "g-rwx,o-rwx"]
+    - CP:           [./ssh/authorized_keys, /.ssh/authorized_keys]
+    - CHMOD:        [/.ssh/authorized_keys, "g-rwx,o-rwx"]
+    - CP:           [./ssh/heroku, /.ssh/heroku]
+    - CHMOD:        [/.ssh/heroku, "g-rwx,o-rwx"]
+
+# <task>          = <command>: [<arg>+]
+#                 | <command>: [[<arg>+],<test>]
+#                 | <command>: [[<arg>+],<test>,[<task>*]]
+#                 | <command>: [[<arg>+],[<task>*],<test>]
+#                 | <package>:: [<task>*]
+#                 | <package>:: [<test>,[<task>*]]
+#                 | <package>:: [[<task>*],<test>]
+
