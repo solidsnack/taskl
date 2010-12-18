@@ -193,14 +193,18 @@ label thing                  =  case thing of
 
 --  Use GADTs for this later.
 merge                       ::  Command -> Command -> Combination Command
-merge a@(CHOWN p0 _) b       =  case b of
-  CHOWN p1 _                ->  if p0 == p1 then Contradictory a b
-                                            else Separate a b
+merge a@(CHOWN p0 o0) b      =  case b of
+  CHOWN p1 o1 | p0 /= p1    ->  Separate a b
+              | otherwise   ->  case combine o0 o1 of
+                                  Combined o  ->  Combined (CHOWN p0 o)
+                                  _           ->  Contradictory a b
   RM _                      ->  merge b a
   _                         ->  Separate a b
-merge a@(CHMOD p0 _) b       =  case b of
-  CHMOD p1 _                ->  if p0 == p1 then Contradictory a b
-                                            else Separate a b
+merge a@(CHMOD p0 m0) b      =  case b of
+  CHMOD p1 m1 | p0 /= p1    ->  Separate a b
+              | otherwise   ->  case combine m0 m1 of
+                                  Combined m  ->  Combined (CHMOD p0 m)
+                                  _           ->  Contradictory a b
   RM _                      ->  merge b a
   LNs _ p1                  ->  if p0 == p1 then Contradictory a b
                                             else Separate a b
