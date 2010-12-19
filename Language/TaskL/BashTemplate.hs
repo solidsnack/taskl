@@ -12,6 +12,7 @@ module Language.TaskL.BashTemplate
   , goCodeHeading
   , splitTemplate ) where
 
+import Prelude hiding (tail)
 import Data.ByteString.Char8
 
 import Language.TaskL.Macros
@@ -22,7 +23,9 @@ template                     =  $(pullFile "./example/example.bash")
 
 
 preamble, runtime, postamble :: ByteString
-(preamble, runtime, postamble) = splitTemplate template
+(preamble, runtime, postamble) = (preamble', tail runtime', tail postamble')
+ where
+  (preamble', runtime', postamble') = splitTemplate template
 
 
 splitTemplate :: ByteString -> (ByteString, ByteString, ByteString)

@@ -63,7 +63,7 @@ script tasks                 =  case errors of [ ] -> Right (bytes, warns)
   topLevel                   =  map rootLabel tasks
   (arrays, install)          =  code topLevel ops
   text ppS t                 =  Builder.toLazyByteString (builder ppS t)
-  bytes                      =  Data.ByteString.Lazy.Char8.unlines
+  bytes                      =  Data.ByteString.Lazy.Char8.intercalate "\n"
                                   [ toLazy preamble
                                   , toLazy runtime
                                   , toLazy generatedCodeHeading
@@ -73,9 +73,11 @@ script tasks                 =  case errors of [ ] -> Right (bytes, warns)
                                   , generatedCode
                                   , ""
                                   , ""
+                                  , ""
+                                  , ""
                                   , toLazy postamble ]
   digest = (Data.ByteString.Lazy.Char8.pack . showDigest . sha1) generatedCode
-  generatedCode              =  Data.ByteString.Lazy.Char8.unlines
+  generatedCode              =  Data.ByteString.Lazy.Char8.intercalate "\n"
     [ "# State arrays."
     , text (colPPState 0) arrays
     , ""
