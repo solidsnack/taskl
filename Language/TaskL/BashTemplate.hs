@@ -5,8 +5,12 @@
 module Language.TaskL.BashTemplate
   ( template
   , preamble
+  , runtime
   , postamble
-  , splitOnGeneratedCode ) where
+  , generatedCodeHeading
+  , runtimeCodeHeading
+  , goCodeHeading
+  , splitTemplate ) where
 
 import Data.ByteString.Char8
 
@@ -17,21 +21,21 @@ template                    ::  ByteString
 template                     =  $(pullFile "./example/example.bash")
 
 
-preamble                    ::  ByteString
-preamble                     =  fst templateSplitted
-
-postamble                   ::  ByteString
-postamble                    =  snd templateSplitted
+preamble, runtime, postamble :: ByteString
+(preamble, runtime, postamble) = splitTemplate template
 
 
-splitOnGeneratedCode        ::  ByteString -> (ByteString, ByteString)
-splitOnGeneratedCode bytes   =  (a `append` generatedCodeDelimiter, z)
+splitTemplate :: ByteString -> (ByteString, ByteString, ByteString)
+splitTemplate bytes          =  (preamble, runtime, postamble)
  where
-  (a, crud)                  =  breakSubstring generatedCodeDelimiter bytes
-  (_, z)                     =  breakSubstring (bar `append` "\n# Go.") crud
-  generatedCodeDelimiter     =  append bar "\n# Generated code."
-  bar = "################################################################"
+  (preamble, bytes')         =  breakSubstring runtimeCodeHeading bytes
+  (runtime, bytes'')         =  breakSubstring generatedCodeHeading bytes'
+  (_, postamble)             =  breakSubstring goCodeHeading bytes''
 
+generatedCodeHeading, runtimeCodeHeading, goCodeHeading :: ByteString
+generatedCodeHeading         =  append bar "\n# Generated code."
+runtimeCodeHeading           =  append bar "\n# Runtime code:"
+goCodeHeading                =  append bar "\n# Go."
 
-templateSplitted             =  splitOnGeneratedCode template
+bar = "################################################################"
 

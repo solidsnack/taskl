@@ -29,15 +29,66 @@
  -}
 
 module Language.TaskL
-  ( Combination(..)
-  , schedule
-  , code
-  , builder
-  , colPPState
+  ( script
+  , Language.TaskL.Task.Task(..)
+  , Language.TaskL.IdemShell.Command(..)
+  , Language.TaskL.IdemShell.Test(..)
+  , Language.TaskL.Schedule.schedule
+  , Language.TaskL.Schedule.Error(..)
+  , Language.TaskL.Schedule.Warn(..)
   ) where
 
-import Language.TaskL.Combination
-import Language.TaskL.Schedule (schedule)
+import Data.Tree
+import Data.Binary.Builder (Builder)
+import qualified Data.Binary.Builder as Builder
+import Data.ByteString.Lazy.Char8 (ByteString, append)
+import qualified Data.ByteString.Lazy.Char8
+
+import Data.Digest.Pure.SHA
+
+import Language.TaskL.Task
+import Language.TaskL.IdemShell
+import Language.TaskL.Schedule (schedule, Error(..), Warn(..))
 import Language.TaskL.Bash (builder, colPPState)
 import Language.TaskL.Codegen (stateArrays, code, codeForOp)
+import Language.TaskL.BashTemplate
+  (preamble, runtime, postamble, generatedCodeHeading, splitTemplate)
+
+
+script :: [Tree Task] -> Either [Error] (ByteString, [Warn])
+script tasks                 =  case errors of [ ] -> Right (bytes, warns)
+                                               _:_ -> Left errors
+ where
+  (ops, errors, warns)       =  schedule tasks
+  topLevel                   =  map rootLabel tasks
+  (arrays, install)          =  code topLevel ops
+  text ppS t                 =  Builder.toLazyByteString (builder ppS t)
+  bytes                      =  Data.ByteString.Lazy.Char8.unlines
+                                  [ toLazy preamble
+                                  , ""
+                                  , ""
+                                  , ""
+                                  , ""
+                                  , toLazy runtime
+                                  , toLazy generatedCodeHeading
+                                  , ""
+                                  , "taskl_script_key=" `append` digest
+                                  , ""
+                                  , generatedCode
+                                  , ""
+                                  , ""
+                                  , ""
+                                  , ""
+                                  , toLazy postamble ]
+  digest = (Data.ByteString.Lazy.Char8.pack . showDigest . sha1) generatedCode
+  generatedCode              =  Data.ByteString.Lazy.Char8.unlines
+    [ "# State arrays."
+    , text (colPPState 0) arrays
+    , ""
+    , "# Installation routine."
+    , "function taskl_apply {"
+    , "  local T=\"$1\""
+    , text (colPPState 2) install
+    , "}" ]
+  toLazy                     =  Data.ByteString.Lazy.Char8.fromChunks . (:[])
 
