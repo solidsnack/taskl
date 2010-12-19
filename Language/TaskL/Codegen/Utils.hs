@@ -1,9 +1,9 @@
-module System.TaskL.Bash.Codegen.Utils where
+module Language.TaskL.Codegen.Utils where
 
 import Data.ByteString
 import qualified Text.ShellEscape as Esc
 
-import System.TaskL.EncDec
+import Language.TaskL.EncDec
 
 
 escEnc                      ::  (EncDec t) => t -> ByteString

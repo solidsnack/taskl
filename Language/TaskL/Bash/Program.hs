@@ -3,7 +3,7 @@
            , StandaloneDeriving
   #-}
 
-module System.TaskL.Bash.Program where
+module Language.TaskL.Bash.Program where
 
 import Prelude hiding (all)
 import Data.Char

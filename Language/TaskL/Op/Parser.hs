@@ -2,16 +2,16 @@
            , OverloadedStrings
   #-}
 
-module System.TaskL.Op.Parser where
+module Language.TaskL.Op.Parser where
 
 import Data.Tree
 
 import Data.Number.Natural
 import Text.ParserCombinators.UU
 
-import System.TaskL.Op
-import System.TaskL.Task
-import System.TaskL.IndexForest
+import Language.TaskL.Op
+import Language.TaskL.Task
+import Language.TaskL.IndexForest
 
 
 type OpParser t              =  P (Str Op Natural) t

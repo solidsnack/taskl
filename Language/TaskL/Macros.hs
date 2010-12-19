@@ -1,4 +1,4 @@
-module System.TaskL.Macros where
+module Language.TaskL.Macros where
 
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax

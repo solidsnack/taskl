@@ -2,14 +2,15 @@
            , OverloadedStrings
   #-}
 
-module System.TaskL.Bash.Template ( template
-                                  , preamble
-                                  , postamble
-                                  , splitOnGeneratedCode ) where
+module Language.TaskL.Bash.Template
+  ( template
+  , preamble
+  , postamble
+  , splitOnGeneratedCode ) where
 
 import Data.ByteString.Char8
 
-import System.TaskL.Macros
+import Language.TaskL.Macros
 
 
 template                    ::  ByteString

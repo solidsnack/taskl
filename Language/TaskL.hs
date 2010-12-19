@@ -28,7 +28,7 @@
 
  -}
 
-module System.TaskL
+module Language.TaskL
   ( Combination(..)
   , schedule
   , code
@@ -36,7 +36,7 @@ module System.TaskL
   , colPPState
   ) where
 
-import System.TaskL.Combination
-import System.TaskL.Schedule (schedule)
-import System.TaskL.Bash (stateArrays, code, codeForOp, builder, colPPState)
+import Language.TaskL.Combination
+import Language.TaskL.Schedule (schedule)
+import Language.TaskL.Bash (stateArrays, code, codeForOp, builder, colPPState)
 

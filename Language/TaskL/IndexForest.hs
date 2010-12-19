@@ -1,7 +1,7 @@
 {-# LANGUAGE StandaloneDeriving
   #-}
 
-module System.TaskL.IndexForest where
+module Language.TaskL.IndexForest where
 
 import qualified Data.List as List
 import Data.Tree

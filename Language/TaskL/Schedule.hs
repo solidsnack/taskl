@@ -11,7 +11,7 @@
 
  -}
 
-module System.TaskL.Schedule where
+module Language.TaskL.Schedule where
 
 import qualified Data.List as List
 import Data.Tree
@@ -20,10 +20,10 @@ import Control.Arrow
 import Data.Number.Natural
 import Data.Monoid
 
-import System.TaskL.Combination
-import System.TaskL.IndexForest
-import System.TaskL.Task
-import System.TaskL.Op
+import Language.TaskL.Combination
+import Language.TaskL.IndexForest
+import Language.TaskL.Task
+import Language.TaskL.Op
 
 
 {-| The script backend consumes a schedule, a list of basic operations, which

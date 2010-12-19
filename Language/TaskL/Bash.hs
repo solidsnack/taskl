@@ -1,16 +1,16 @@
 
-module System.TaskL.Bash
-  ( System.TaskL.Bash.Codegen.stateArrays
-  , System.TaskL.Bash.Codegen.codeForOp
-  , System.TaskL.Bash.Codegen.code
-  , System.TaskL.Bash.Program.Term(..)
-  , System.TaskL.Bash.PrettyPrinter.builder
-  , System.TaskL.Bash.PrettyPrinter.colPPState
+module Language.TaskL.Bash
+  ( Language.TaskL.Codegen.stateArrays
+  , Language.TaskL.Codegen.codeForOp
+  , Language.TaskL.Codegen.code
+  , Language.TaskL.Bash.Program.Term(..)
+  , Language.TaskL.Bash.PrettyPrinter.builder
+  , Language.TaskL.Bash.PrettyPrinter.colPPState
   ) where
 
-import System.TaskL.Bash.Codegen
-import System.TaskL.Bash.Program
-import System.TaskL.Bash.PrettyPrinter
+import Language.TaskL.Codegen
+import Language.TaskL.Bash.Program
+import Language.TaskL.Bash.PrettyPrinter
 
 
 

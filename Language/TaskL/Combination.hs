@@ -1,7 +1,7 @@
 {-# LANGUAGE StandaloneDeriving
   #-}
 
-module System.TaskL.Combination where
+module Language.TaskL.Combination where
 
 
 data Combination t           =  Contradictory t t

@@ -7,7 +7,7 @@
     Task\\L program executes for each task.
  -}
 
-module System.TaskL.Op
+module Language.TaskL.Op
   ( Op(..)
   , OpCode(..)
   , ops
@@ -25,9 +25,9 @@ import Data.Monoid
 import Data.Tree
 import Data.ByteString (ByteString, append)
 
-import System.TaskL.IdemShell (essentialTest)
-import System.TaskL.IndexForest
-import System.TaskL.Task
+import Language.TaskL.IdemShell (essentialTest)
+import Language.TaskL.IndexForest
+import Language.TaskL.Task
 
 
 ops                         ::  Tree (Index, Task) -> [Op]

@@ -4,7 +4,7 @@
            , PostfixOperators
   #-}
 
-module System.TaskL.IdemShell.Path
+module Language.TaskL.IdemShell.Path
   ( Path()
   , (</>)
   , (</?)
@@ -25,7 +25,7 @@ import Data.ByteString.Char8
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 
-import System.TaskL.EncDec
+import Language.TaskL.EncDec
 
 
 {-| Validated UNIX path. The text of the path does not contain ASCII NULL. All

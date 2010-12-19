@@ -7,7 +7,7 @@
   #-}
 
 
-module System.TaskL.IdemShell where
+module Language.TaskL.IdemShell where
 
 import qualified Data.List as List
 import Control.Applicative
@@ -15,10 +15,10 @@ import Data.Monoid
 
 import Data.ByteString.Char8
 
-import System.TaskL.IdemShell.PasswdDB
-import System.TaskL.IdemShell.Path
-import System.TaskL.Combination
-import System.TaskL.EncDec
+import Language.TaskL.IdemShell.PasswdDB
+import Language.TaskL.IdemShell.Path
+import Language.TaskL.Combination
+import Language.TaskL.EncDec
 
 
 data Command                 =  CHOWN Path Ownership

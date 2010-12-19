@@ -3,9 +3,9 @@
            , OverloadedStrings
   #-}
 
-module System.TaskL.IdemShell.PasswdDB
-  ( module System.TaskL.IdemShell.Nick
-  , module System.TaskL.IdemShell.ID
+module Language.TaskL.IdemShell.PasswdDB
+  ( module Language.TaskL.IdemShell.Nick
+  , module Language.TaskL.IdemShell.ID
   , User
   , Group
   , Password
@@ -16,9 +16,9 @@ import Prelude hiding (tail)
 import Data.Text (Text)
 import Data.ByteString.Char8
 
-import System.TaskL.EncDec
-import System.TaskL.IdemShell.Nick
-import System.TaskL.IdemShell.ID
+import Language.TaskL.EncDec
+import Language.TaskL.IdemShell.Nick
+import Language.TaskL.IdemShell.ID
 
 
 data User                    =  Username UNick | UserID UID

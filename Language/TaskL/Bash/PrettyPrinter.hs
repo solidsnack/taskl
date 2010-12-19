@@ -9,7 +9,7 @@
     pass to the "linker" later to put between the two main chunks of code.
  -}
 
-module System.TaskL.Bash.PrettyPrinter where
+module Language.TaskL.Bash.PrettyPrinter where
 
 import qualified Data.List as List
 import Data.Monoid
@@ -20,7 +20,7 @@ import Data.ByteString.Char8
 import Data.Word
 import Control.Monad.State.Strict
 
-import System.TaskL.Bash.Program
+import Language.TaskL.Bash.Program
 
 
 builder                     ::  PPState -> Term -> Builder

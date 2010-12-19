@@ -5,7 +5,7 @@
            , GeneralizedNewtypeDeriving
   #-}
 
-module System.TaskL.IdemShell.ID
+module Language.TaskL.IdemShell.ID
   ( ID()
   , UID
   , GID
@@ -20,7 +20,7 @@ import qualified Data.ByteString.Char8 as ByteString
 import Data.Text (Text)
 import qualified Data.Text as Text
 
-import System.TaskL.EncDec
+import Language.TaskL.EncDec
 
 
 {-| IDs that are specifically User IDs. 

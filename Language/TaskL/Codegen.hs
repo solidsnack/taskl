@@ -11,7 +11,7 @@
 
  -}
 
-module System.TaskL.Bash.Codegen where
+module Language.TaskL.Codegen where
 
 import Data.Ord
 import Control.Arrow (first, second, (&&&))
@@ -21,12 +21,12 @@ import Data.Monoid
 import Data.ByteString.Char8 (ByteString)
 import qualified Text.ShellEscape as Esc
 
-import System.TaskL.IdemShell (essentialTest)
-import System.TaskL.Op
-import System.TaskL.Task
-import System.TaskL.Bash.Program
-import System.TaskL.Bash.Codegen.IdemShell
-import System.TaskL.Bash.Codegen.Utils
+import Language.TaskL.IdemShell (essentialTest)
+import Language.TaskL.Op
+import Language.TaskL.Task
+import Language.TaskL.Bash.Program
+import Language.TaskL.Codegen.IdemShell
+import Language.TaskL.Codegen.Utils
 
 
 code                        ::  [Task] -> [Op] -> (Term, Term)

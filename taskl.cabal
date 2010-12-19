@@ -27,8 +27,7 @@ library
                               , mtl
                               , binary
                               , SHA
-  exposed-modules             : System.TaskL
-  other-modules               : Paths_taskl
+  exposed-modules             : Language.TaskL
   extensions                  : EmptyDataDecls
                                 FlexibleInstances
                                 GeneralizedNewtypeDeriving

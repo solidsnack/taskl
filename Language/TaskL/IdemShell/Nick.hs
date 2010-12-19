@@ -4,7 +4,7 @@
            , GeneralizedNewtypeDeriving
   #-}
 
-module System.TaskL.IdemShell.Nick
+module Language.TaskL.IdemShell.Nick
   ( Nick()
   , UNick
   , GNick
@@ -23,7 +23,7 @@ import qualified Data.Text.Encoding as Text
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8
 
-import System.TaskL.EncDec
+import Language.TaskL.EncDec
 
 
 newtype UNick                =  UNick Nick

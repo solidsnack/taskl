@@ -3,15 +3,15 @@
            , StandaloneDeriving
   #-}
 
-module System.TaskL.Task where
+module Language.TaskL.Task where
 
 import Data.String ()
 import Data.Monoid
 
 import Data.ByteString
 
-import qualified System.TaskL.IdemShell as IdemShell
-import System.TaskL.Combination
+import qualified Language.TaskL.IdemShell as IdemShell
+import Language.TaskL.Combination
 
 
 {-| A task may be either a command or a named package. Commands provide their

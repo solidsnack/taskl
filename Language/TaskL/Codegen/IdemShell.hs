@@ -4,7 +4,7 @@
   #-}
 
 
-module System.TaskL.Bash.Codegen.IdemShell where
+module Language.TaskL.Codegen.IdemShell where
 
 import Prelude hiding (concat)
 import Data.List (sort, foldl')
@@ -12,12 +12,12 @@ import Data.List (sort, foldl')
 import Data.ByteString.Char8 hiding (map, foldl', filter)
 import qualified Text.ShellEscape as Esc
 
-import System.TaskL.EncDec
-import System.TaskL.IdemShell
-import System.TaskL.IdemShell.Path
-import System.TaskL.Bash.Program (cmd)
-import qualified System.TaskL.Bash.Program as Program
-import System.TaskL.Bash.Codegen.Utils
+import Language.TaskL.EncDec
+import Language.TaskL.IdemShell
+import Language.TaskL.IdemShell.Path
+import Language.TaskL.Bash.Program (cmd)
+import qualified Language.TaskL.Bash.Program as Program
+import Language.TaskL.Codegen.Utils
 
 
 {-| Class of objects that may be translated to Bash programs. Both 'Command'
