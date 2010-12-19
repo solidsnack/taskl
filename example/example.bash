@@ -65,7 +65,7 @@ set +o histexpand -o noglob
 # Ignore environment variables that set options. (Also affects user IDs.)
 set -o privileged
 
-function taskl_main {
+function taskl_flag_handler {
   local -a tasks_to_enable
   while [ "${1:-}" != '' ]
   do
@@ -135,7 +135,7 @@ function taskl_main {
 
 
 ################################################################
-# Implementation of IdemShell commands and tests.
+# Runtime code: implementation of IdemShell commands and tests.
 
 function idem_CHOWN {
   local user="${2%:*}"
@@ -251,7 +251,7 @@ function idem_FALSE {
 
 
 ################################################################
-# Task\L machine -- functions and state.
+# Runtime code: Task\L functions and state.
 
 declare -A taskl_checks taskl_enabled
 declare -A taskl_options=(  [separator]=--nl  [destination]=/
@@ -421,14 +421,12 @@ function taskl_apply {
 
 
 
-
-
 ################################################################
 # Go.
 
 if fgrep -q $taskl_script_key "$0"    # Don't run code if we're being sourced.
 then
-  taskl_main "$@"
+  taskl_flag_handler "$@"
   dir=`dirname "$0"`/root          # Only run code from the package directory.
   cd "$dir"
   taskl_apply "${taskl_options[destination]}"
