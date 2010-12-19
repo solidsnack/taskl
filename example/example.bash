@@ -52,12 +52,6 @@ cat <<USAGE
 USAGE
 }
 
-
-
-
-################################################################
-# Script setup, handling of switches and arguments.
-
 # Enable error handling and reporting.
 set -o errexit -o errtrace -o nounset -o pipefail -o functrace
 # Disable cute expansions that should not be available anyways.
@@ -65,8 +59,19 @@ set +o histexpand -o noglob
 # Ignore environment variables that set options. (Also affects user IDs.)
 set -o privileged
 
+
+
+
+################################################################
+# Runtime code: handling of switches and arguments.
+
+declare -a taskl_flag_errors
+taskl_usage_requested=false
+
 function taskl_flag_handler {
   local -a tasks_to_enable
+  local x
+  local i
   while [ "${1:-}" != '' ]
   do
     case "$1" in
@@ -74,17 +79,23 @@ function taskl_flag_handler {
       --wait)                   taskl_options[interactive]=true ;;
       --nl|--0nl)               taskl_options[separator]=$1 ;;
       -0|--0)                   taskl_options[separator]='--0' ;;
-      --help|-h|'-?')           taskl_usage ; exit 0 ;;
+      --help|-h|'-?')           taskl_usage_requested=true ;;
       install|check|list)       taskl_options[action]=$1 ;;
-      ./*|/*)                   local x=$(cd "$1" && pwd -P)
-                                taskl_options[destination]="$x"
+      ./*|/*)                   if x=$(cd "$1" && pwd -P)
+                                then
+                                  taskl_options[destination]="$x"
+                                else
+                                  i=${#taskl_flag_errors[@]}
+                                  taskl_flag_errors[$i]="Bad dest \`$1'."
+                                fi
                                 ;;
       fs/*:*|pw/*:*|task:*)     if [ ${taskl_enabled["$1"]:-x} != x ]
                                 then
-                                  local i=${#tasks_to_enable[@]}
+                                  i=${#tasks_to_enable[@]}
                                   tasks_to_enable[$i]="$1"
                                 else
-                                  ! echo "No such task \`$1'." 1>&2
+                                  i=${#taskl_flag_errors[@]}
+                                  taskl_flag_errors[$i]="No such task \`$1'."
                                 fi ;;
       fs:*)                     base=${1#fs:}
                                 begin=${#tasks_to_enable[@]}
@@ -98,7 +109,8 @@ function taskl_flag_handler {
                                 done
                                 if [ $begin = ${#tasks_to_enable[@]} ]
                                 then
-                                  ! echo "No such task \`$1'." 1>&2
+                                  i=${#taskl_flag_errors[@]}
+                                  taskl_flag_errors[$i]="No such task \`$1'."
                                 fi ;;
       pw:*)                     base=${1#pw:}
                                 begin=${#tasks_to_enable[@]}
@@ -112,9 +124,11 @@ function taskl_flag_handler {
                                 done
                                 if [ $begin = ${#tasks_to_enable[@]} ]
                                 then
-                                  ! echo "No such task \`$1'." 1>&2
+                                  i=${#taskl_flag_errors[@]}
+                                  taskl_flag_errors[$i]="No such task \`$1'."
                                 fi ;;
-      *)                        ! echo 'Invalid arguments.' 1>&2 ;;
+      *)                        i=${#taskl_flag_errors[@]}
+                                taskl_flag_errors[$i]="Invalid arg \`$1'." ;;
     esac
     shift
   done
@@ -268,11 +282,11 @@ function taskl_message {
 function taskl_interact {
   if ${taskl_options[interactive]}
   then
-    read response
-    case "$response" in
+    read resp
+    case "$resp" in
       OK|ok)        taskl_info  "Read \`OK', proceeding." ;;
-      ABORT|abort)  taskl_abort "Read \`ABORT', quitting." ;;
-      *)            taskl_error "Read \`$response'; not understood." ;;
+      ABORT|abort)  taskl_abort "Read \`ABORT', quitting." ; exit 0 ;;
+      *)            taskl_error "Read \`$resp'; not understood." ; exit 1 ;;
     esac
   fi
 }
@@ -318,11 +332,9 @@ function taskl_info {
 }
 function taskl_abort {
   taskl_message Y '~~' "$1"
-  exit 0
 }
 function taskl_error {
   taskl_message R '!!' "$1"
-  exit 1
 }
 
 
@@ -427,6 +439,19 @@ function taskl_apply {
 if fgrep -q $taskl_script_key "$0"    # Don't run code if we're being sourced.
 then
   taskl_flag_handler "$@"
+  if $taskl_usage_requested
+  then
+    taskl_usage
+    exit 0
+  fi
+  if [ ${#taskl_flag_errors[@]} != 0 ]
+  then
+    for i in "${!taskl_flag_errors[@]}"
+    do
+      taskl_error "${taskl_flag_errors[$i]}" 1>&2
+    done
+    exit 2
+  fi
   dir=`dirname "$0"`/root          # Only run code from the package directory.
   cd "$dir"
   taskl_apply "${taskl_options[destination]}"
