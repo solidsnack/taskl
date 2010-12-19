@@ -39,6 +39,8 @@ ops term                     =  case term of
   Background t t'           ->  ops t >> word "&"  >> nl >> ops t'
   Group t                   ->  hang "{"  >> ops t >> word ";}" >> outdent
   Subshell t                ->  hang "("  >> ops t >> word ")"  >> outdent
+  Function b t              ->  wordcat ["function ", b]
+                            >>  inword " {" >> ops t >> outword "}"
   IfThen t t'               ->  hang "if" >> ops t >> outdent >> nl
                             >>  inword "then"      >> ops t'  >> outword "fi"
   IfThenElse t t' t''       ->  hang "if" >> ops t >> outdent >> nl
