@@ -18,7 +18,7 @@ import Data.ByteString.Char8
 import System.TaskL.IdemShell.PasswdDB
 import System.TaskL.IdemShell.Path
 import System.TaskL.Combination
-import Data.ByteString.EncDec
+import System.TaskL.EncDec
 
 
 data Command                 =  CHOWN Path Ownership

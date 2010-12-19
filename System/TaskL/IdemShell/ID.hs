@@ -20,7 +20,7 @@ import qualified Data.ByteString.Char8 as ByteString
 import Data.Text (Text)
 import qualified Data.Text as Text
 
-import Data.ByteString.EncDec
+import System.TaskL.EncDec
 
 
 {-| IDs that are specifically User IDs. 

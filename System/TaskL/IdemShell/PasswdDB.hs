@@ -16,7 +16,7 @@ import Prelude hiding (tail)
 import Data.Text (Text)
 import Data.ByteString.Char8
 
-import Data.ByteString.EncDec
+import System.TaskL.EncDec
 import System.TaskL.IdemShell.Nick
 import System.TaskL.IdemShell.ID
 

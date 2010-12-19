@@ -6,7 +6,7 @@
            , OverloadedStrings
   #-}
 
-module Data.ByteString.EncDec where
+module System.TaskL.EncDec where
 
 import Data.String
 import Control.Monad.Error

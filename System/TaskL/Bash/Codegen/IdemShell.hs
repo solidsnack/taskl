@@ -12,7 +12,7 @@ import Data.List (sort, foldl')
 import Data.ByteString.Char8 hiding (map, foldl', filter)
 import qualified Text.ShellEscape as Esc
 
-import Data.ByteString.EncDec
+import System.TaskL.EncDec
 import System.TaskL.IdemShell
 import System.TaskL.IdemShell.Path
 import System.TaskL.Bash.Program (cmd)

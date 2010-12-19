@@ -3,7 +3,7 @@ module System.TaskL.Bash.Codegen.Utils where
 import Data.ByteString
 import qualified Text.ShellEscape as Esc
 
-import Data.ByteString.EncDec
+import System.TaskL.EncDec
 
 
 escEnc                      ::  (EncDec t) => t -> ByteString

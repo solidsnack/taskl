@@ -23,7 +23,7 @@ import qualified Data.Text.Encoding as Text
 import Data.ByteString (ByteString)
 import Data.ByteString.Char8
 
-import Data.ByteString.EncDec
+import System.TaskL.EncDec
 
 
 newtype UNick                =  UNick Nick
