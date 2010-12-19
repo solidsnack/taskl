@@ -1,5 +1,5 @@
 #!/bin/bash
-function usage {
+function taskl_usage {
 local name=`basename "$0"`
 local pads="${name//?/ }"
 cat <<USAGE
@@ -74,7 +74,7 @@ function taskl_main {
       --wait)                   taskl_options[interactive]=true ;;
       --nl|--0nl)               taskl_options[separator]=$1 ;;
       -0|--0)                   taskl_options[separator]='--0' ;;
-      --help|-h|'-?')           usage ; exit 0 ;;
+      --help|-h|'-?')           taskl_usage ; exit 0 ;;
       install|check|list)       taskl_options[action]=$1 ;;
       ./*|/*)                   local x=$(cd "$1" && pwd -P)
                                 taskl_options[destination]="$x"
