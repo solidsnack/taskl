@@ -63,7 +63,8 @@ cmd                          =  SimpleCommand
 
 -- Unused.
 data Expression              =  Literal Esc.Bash
-                             |  DeRef Identifier (Maybe Esc.Bash)
+                             |  DeRef Identifier (Maybe Expression)
+                             |  Concat Expression Expression
 -- Ignore                    |  Exec Term
 -- Ignore                    |  crazy patterns
 
