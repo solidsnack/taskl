@@ -55,7 +55,7 @@ set +o histexpand -o noglob
 # Ignore environment variables that set options. (Also affects user IDs.)
 set -o privileged
 
-function main {
+function taskl_main {
   local -a tasks_to_enable
   while [ "${1:-}" != '' ]
   do
@@ -321,7 +321,7 @@ function taskl_error {
 ################################################################
 # Generated code.
 
-script_random_key=c7fd4f07-8007-4c9f-a7aa-c0cf581cf97b
+taskl_script_key=c7fd4f07-8007-4c9f-a7aa-c0cf581cf97b
 
 # State arrays.
 taskl_enabled=(
@@ -338,8 +338,8 @@ taskl_checks=(
 )
 
 # Installation routine.
-function apply {
-  local T="${taskl_options[destination]}"
+function taskl_apply {
+  local T="$1"
   taskl_enter $'fs/node:/q/a'
   taskl_enter $'fs/node:/q/b'
   if taskl_check $'fs/node:/q/a'
@@ -414,12 +414,11 @@ function apply {
 ################################################################
 # Go.
 
-if fgrep -q $script_random_key "$0"   # Don't run code if we're being sourced.
+if fgrep -q $taskl_script_key "$0"    # Don't run code if we're being sourced.
 then
-  main "$@"
+  taskl_main "$@"
   dir=`dirname "$0"`/root          # Only run code from the package directory.
   cd "$dir"
-  physical_dir=`pwd -P`
-  apply "$physical_dir" "${taskl_options[destination]}"
+  taskl_apply "${taskl_options[destination]}"
 fi
 
