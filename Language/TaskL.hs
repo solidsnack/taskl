@@ -38,5 +38,6 @@ module Language.TaskL
 
 import Language.TaskL.Combination
 import Language.TaskL.Schedule (schedule)
-import Language.TaskL.Bash (stateArrays, code, codeForOp, builder, colPPState)
+import Language.TaskL.Bash (builder, colPPState)
+import Language.TaskL.Codegen (stateArrays, code, codeForOp)
 
