@@ -26,6 +26,7 @@ library
                               , shell-escape >= 0.1
                               , mtl
                               , binary
+                              , SHA
   exposed-modules             : System.TaskL
   other-modules               : Paths_taskl
   extensions                  : EmptyDataDecls
