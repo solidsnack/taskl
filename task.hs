@@ -10,6 +10,9 @@ import qualified Data.Binary.Builder
 import qualified Data.ByteString.Lazy
 import Data.ByteString.Lazy.Char8
 
+import Data.Digest.Pure.SHA
+
+import System.TaskL.Bash.Template
 import System.TaskL.Bash
 import System.TaskL.Bash.PrettyPrinter
 import System.TaskL.IdemShell
@@ -56,17 +59,26 @@ code2                        =  bytes
   (arrays, install)          =  code (fmap rootLabel tasks2) ops
   text ppS t = Data.Binary.Builder.toLazyByteString (builder ppS t)
   bytes                      =  Data.ByteString.Lazy.Char8.unlines
-                                 ["# State arrays."
-                                 ,text (colPPState 0) arrays
-                                 ,""
-                                 ,"# Installation routine."
-                                 ,"function apply {"
-                                 ,"  local T=\"${taskl_options[destination]}\""
-                                 ,text (colPPState 2) install
-                                 ,"}"
-                                 ,"" ]
+                                  [ toLazy preamble
+                                  , ""
+                                  , "taskl_script_key=" `append` digest
+                                  , ""
+                                  , generatedCode
+                                  , "\n\n\n\n"
+                                  , toLazy postamble ]
+  digest = (Data.ByteString.Lazy.Char8.pack . showDigest . sha1) generatedCode
+  generatedCode              =  Data.ByteString.Lazy.Char8.unlines
+    [ "# State arrays."
+    , text (colPPState 0) arrays
+    , ""
+    , "# Installation routine."
+    , "function taskl_apply {"
+    , "  local T=\"$1\""
+    , text (colPPState 2) install
+    , "}" ]
 
 main                         =  Data.ByteString.Lazy.hPut stdout code2
 
 
+toLazy                       =  Data.ByteString.Lazy.Char8.fromChunks . (:[])
 

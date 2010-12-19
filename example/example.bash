@@ -331,7 +331,7 @@ function taskl_error {
 ################################################################
 # Generated code.
 
-taskl_script_key=c7fd4f07-8007-4c9f-a7aa-c0cf581cf97b
+taskl_script_key=01013b82945fbae2e3e402a85278e19c7232db42
 
 # State arrays.
 taskl_enabled=(
@@ -421,6 +421,8 @@ function taskl_apply {
 
 
 
+
+
 ################################################################
 # Go.
 
@@ -431,4 +433,5 @@ then
   cd "$dir"
   taskl_apply "${taskl_options[destination]}"
 fi
+
 
