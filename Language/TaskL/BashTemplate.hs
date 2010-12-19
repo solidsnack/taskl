@@ -2,7 +2,7 @@
            , OverloadedStrings
   #-}
 
-module Language.TaskL.Bash.Template
+module Language.TaskL.BashTemplate
   ( template
   , preamble
   , postamble
