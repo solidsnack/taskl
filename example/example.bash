@@ -1,12 +1,22 @@
 #!/bin/bash
 function usage {
-name=`basename "$0"`
+local name=`basename "$0"`
+local pads="${name//?/ }"
 cat <<USAGE
- USAGE: $name <output spec>? (--wait|--no-wait)? <action>? <dest>? <tasks>+
+ USAGE: ${name} (--nl|--0nl|--0|-0)?
+        ${pads} (--wait|--no-wait)?
+        ${pads} (list|check|install)?
+        ${pads} <dest>?
+        ${pads} <tasks>*
 
-  By default, all tasks are installed to the root. You may specify whether to
-  install, check or merely list tasks; to use a different destination
-  directory and to work with only a subset of tasks.
+  By default, all tasks are installed to the root directory and output is
+  delimited by newlines and nulls. This is equivalent to running with the
+  options:
+
+   :; ${name} --0nl --no-wait install /
+
+  You may specify whether to install, check or merely list tasks; to use a
+  different destination directory and to work with only a subset of tasks.
 
   Options and arguments may be given in any order, any number of times.
 
@@ -29,7 +39,7 @@ cat <<USAGE
   The script may be run with nulls between each output message, with newlines
   (the default) or with nulls and newlines.
 
-    --nl  --0  -0  --0nl
+    --nl  --0nl  --0  -0
 
   Options also control whether the script can be controlled by user (or
   machine) input. (The default is not to wait.)
