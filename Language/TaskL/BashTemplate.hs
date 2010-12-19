@@ -28,9 +28,9 @@ preamble, runtime, postamble :: ByteString
 splitTemplate :: ByteString -> (ByteString, ByteString, ByteString)
 splitTemplate bytes          =  (preamble, runtime, postamble)
  where
-  (preamble, bytes')         =  breakSubstring runtimeCodeHeading bytes
-  (runtime, bytes'')         =  breakSubstring generatedCodeHeading bytes'
-  (_, postamble)             =  breakSubstring goCodeHeading bytes''
+  (preamble, bytes')         =  breakL runtimeCodeHeading bytes
+  (runtime, bytes'')         =  breakL generatedCodeHeading bytes'
+  (_, postamble)             =  breakL goCodeHeading bytes''
 
 generatedCodeHeading, runtimeCodeHeading, goCodeHeading :: ByteString
 generatedCodeHeading         =  append bar "\n# Generated code."
@@ -38,4 +38,6 @@ runtimeCodeHeading           =  append bar "\n# Runtime code:"
 goCodeHeading                =  append bar "\n# Go."
 
 bar = "################################################################"
+
+breakL sub string            =  breakSubstring ('\n' `cons` sub) string
 

@@ -12,16 +12,14 @@ import Data.ByteString.Lazy.Char8
 
 import Data.Digest.Pure.SHA
 
-import System.TaskL.Bash.Template
-import System.TaskL.Bash
-import System.TaskL.Bash.PrettyPrinter
-import System.TaskL.IdemShell
-import System.TaskL.Combination
-import System.TaskL.IndexForest
-import System.TaskL.Task
-import System.TaskL.Op
-import System.TaskL.Schedule
-import System.TaskL
+import Language.TaskL.IdemShell
+import Language.TaskL.Combination
+import Language.TaskL.IndexForest
+import Language.TaskL.Task
+import Language.TaskL.Op
+import Language.TaskL.Schedule
+import Language.TaskL
+import qualified Language.TaskL as TaskL
 
 
 tasks0 =
@@ -53,32 +51,9 @@ tasks3 =
   ]
 
 
-code2                        =  bytes
- where
-  (ops, _, _)                =  schedule tasks2
-  (arrays, install)          =  code (fmap rootLabel tasks2) ops
-  text ppS t = Data.Binary.Builder.toLazyByteString (builder ppS t)
-  bytes                      =  Data.ByteString.Lazy.Char8.unlines
-                                  [ toLazy preamble
-                                  , ""
-                                  , "taskl_script_key=" `append` digest
-                                  , ""
-                                  , generatedCode
-                                  , "\n\n\n\n"
-                                  , toLazy postamble ]
-  digest = (Data.ByteString.Lazy.Char8.pack . showDigest . sha1) generatedCode
-  generatedCode              =  Data.ByteString.Lazy.Char8.unlines
-    [ "# State arrays."
-    , text (colPPState 0) arrays
-    , ""
-    , "# Installation routine."
-    , "function taskl_apply {"
-    , "  local T=\"$1\""
-    , text (colPPState 2) install
-    , "}" ]
+code2                        =  TaskL.script tasks2
 
-main                         =  Data.ByteString.Lazy.hPut stdout code2
-
-
-toLazy                       =  Data.ByteString.Lazy.Char8.fromChunks . (:[])
+main                         =  case code2 of
+  Right (bytes, warnings)   ->  Data.ByteString.Lazy.hPut stdout bytes
+  Left errors               ->  Data.ByteString.Lazy.hPut stderr "Error!"
 

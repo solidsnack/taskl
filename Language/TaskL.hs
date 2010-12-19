@@ -65,18 +65,12 @@ script tasks                 =  case errors of [ ] -> Right (bytes, warns)
   text ppS t                 =  Builder.toLazyByteString (builder ppS t)
   bytes                      =  Data.ByteString.Lazy.Char8.unlines
                                   [ toLazy preamble
-                                  , ""
-                                  , ""
-                                  , ""
-                                  , ""
                                   , toLazy runtime
                                   , toLazy generatedCodeHeading
                                   , ""
                                   , "taskl_script_key=" `append` digest
                                   , ""
                                   , generatedCode
-                                  , ""
-                                  , ""
                                   , ""
                                   , ""
                                   , toLazy postamble ]
