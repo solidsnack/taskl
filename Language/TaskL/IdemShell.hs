@@ -10,6 +10,8 @@
 module Language.TaskL.IdemShell where
 
 import qualified Data.List as List
+import qualified Data.Set as Set
+import Data.Set (Set)
 import Control.Applicative
 import Data.Monoid
 
@@ -32,7 +34,7 @@ data Command                 =  CHOWN Path Ownership
                              |  USERDEL UNick
                              |  GROUPADD GNick GroupAttrs
                              |  GROUPDEL GNick
-                             |  GPASSWDm GNick [UNick] [UNick]
+                             |  GPASSWDm GNick (Set UNick) (Set UNick)
 deriving instance Eq Command
 deriving instance Show Command
 instance Combine Command where
@@ -195,8 +197,9 @@ essentialTest thing          =  case thing of
   GPASSWDm gNick inU outU   ->  case terms of [ ] -> TRUE
                                               h:t -> List.foldl' And h t
    where
-    terms                    =  List.map (`GROUPS` gNick) inU
-                            ++  List.map (Not . (`GROUPS` gNick)) outU
+    terms                    =  smap (`GROUPS` gNick) inU
+                            ++  smap (Not . (`GROUPS` gNick)) outU
+    smap f                   =  List.map f . Set.toList
 
 
 label                       ::  Command -> ByteString
