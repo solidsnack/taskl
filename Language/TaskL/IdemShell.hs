@@ -32,8 +32,7 @@ data Command                 =  CHOWN Path Ownership
                              |  USERDEL UNick
                              |  GROUPADD GNick GroupAttrs
                              |  GROUPDEL GNick
-                             |  GPASSWDa GNick UNick
-                             |  GPASSWDd GNick UNick
+                             |  GPASSWDm GNick [UNick] [UNick]
 deriving instance Eq Command
 deriving instance Show Command
 instance Combine Command where
@@ -193,8 +192,11 @@ essentialTest thing          =  case thing of
   USERDEL nick              ->  (Not . GETENTu) nick
   GROUPADD nick _           ->  GETENTg nick
   GROUPDEL nick             ->  (Not . GETENTg) nick
-  GPASSWDa gNick uNick      ->  flip GROUPS gNick uNick
-  GPASSWDd gNick uNick      ->  (Not . flip GROUPS gNick) uNick
+  GPASSWDm gNick inU outU   ->  case terms of [ ] -> TRUE
+                                              h:t -> List.foldl' And h t
+   where
+    terms                    =  List.map (`GROUPS` gNick) inU
+                            ++  List.map (Not . (`GROUPS` gNick)) outU
 
 
 label                       ::  Command -> ByteString
@@ -210,8 +212,7 @@ label thing                  =  case thing of
   USERDEL nick              ->  "pw/user:" `append` enc nick
   GROUPADD nick _           ->  "pw/group:" `append` enc nick
   GROUPDEL nick             ->  "pw/group:" `append` enc nick
-  GPASSWDa nick _           ->  "pw/members:" `append` enc nick
-  GPASSWDd nick _           ->  "pw/members:" `append` enc nick
+  GPASSWDm nick _ _         ->  "pw/members:" `append` enc nick
 
 
 --  Use GADTs for this later.
@@ -294,27 +295,14 @@ merge a@(GROUPDEL g0) b      =  case b of
                                             else Separate a b
   GROUPDEL g1               ->  if g0 == g1 then Contradictory a b
                                             else Separate a b
-  GPASSWDa g1 _             ->  if g0 == g1 then Contradictory a b
+  GPASSWDm g1 _ _           ->  if g0 == g1 then Contradictory a b
                                             else  Separate a b
-  GPASSWDd g1 _             ->  if g0 == g1 then Contradictory a b
-                                            else Separate a b
   _                         ->  Separate a b
-merge a@(GPASSWDa g0 u0) b   =  case b of
-  GPASSWDa g1 u1            ->  if g0 == g1 && u0 == u1
+merge a@(GPASSWDm g0 x y) b  =  case b of
+  GPASSWDm g1 x' y'         ->  if g0 == g1
                                   then  Contradictory a b
                                   else  Separate a b
-  GPASSWDd g1 u1            ->  if g0 == g1 && u0 == u1
-                                  then  Contradictory a b
-                                  else  Separate a b
-  _                         ->  Separate a b
-merge a@(GPASSWDd g0 u0) b   =  case b of
-  GPASSWDa g1 u1            ->  if g0 == g1 && u0 == u1
-                                  then  Contradictory a b
-                                  else  Separate a b
-  GPASSWDd g1 u1            ->  if g0 == g1 && u0 == u1
-                                  then  Contradictory a b
-                                  else  Separate a b
-  _                         ->  Separate a b
+  _                         ->  merge b a
 
 
 impliedDirectories          ::  Command -> [Path]
