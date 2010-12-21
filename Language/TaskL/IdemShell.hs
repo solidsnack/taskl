@@ -302,9 +302,15 @@ merge a@(GROUPDEL g0) b      =  case b of
                                             else  Separate a b
   _                         ->  Separate a b
 merge a@(GPASSWDm g0 x y) b  =  case b of
-  GPASSWDm g1 x' y'         ->  if g0 == g1
-                                  then  Contradictory a b
-                                  else  Separate a b
+  GPASSWDm g1 x' y'         ->  if not (g0 == g1)
+                                  then  Separate a b
+                                  else  if not (nointer x x' && nointer y y')
+                                          then  Contradictory a b
+                                          else  Combined (GPASSWDm g0
+                                                           (Set.union x x')
+                                                           (Set.union y y'))
+                                 where
+                                  nointer = (Set.null .) . Set.intersection
   _                         ->  merge b a
 
 
