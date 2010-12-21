@@ -58,8 +58,31 @@ data Test                    =  LSo Path Ownership
                              |  Or Test Test
                              |  TRUE
                              |  FALSE
-deriving instance Eq Test
 deriving instance Show Test
+instance Eq Test where
+  LSo p0 o0 == LSo p1 o1     =  p0 == p1 && o0 == o1
+  LSm p0 m0 == LSm p1 m1     =  p0 == p1 && m0 == m1
+  DASHe p0 == DASHe p1       =  p0 == p1
+  DASH_ a x == DASH_ b y     =  a == b && x == y
+  DIFFq a x == DIFFq b y     =  a == b && x == y
+  LSl p0 p0' == LSl p1 p1'   =  p0 == p1 && p0' == p1'
+  GETENTu u0 == GETENTu u1   =  u0 == u1
+  GETENTg g0 == GETENTg g1   =  g0 == g1
+  GROUPS a x == GROUPS b y   =  a == b && x == y
+  Not t0 == Not t1           =  t0 == t1
+  And TRUE t0 == t1          =  t0 == t1
+  And t0 TRUE == t1          =  t0 == t1
+  t0 == And TRUE t1          =  t0 == t1
+  t0 == And t1 TRUE          =  t0 == t1
+  And t0 t0' == And t1 t1'   =  t0 == t1 && t0' == t1'
+  Or FALSE t0 == t1          =  t0 == t1
+  Or t0 FALSE == t1          =  t0 == t1
+  t0 == Or FALSE t1          =  t0 == t1
+  t0 == Or t1 FALSE          =  t0 == t1
+  Or t0 t0' == Or t1 t1'     =  t0 == t1 && t0' == t1'
+  TRUE == TRUE               =  True
+  FALSE == FALSE             =  True
+  _ == _                     =  False
 instance Monoid Test where
   mempty                     =  FALSE
   mappend FALSE x            =  x
