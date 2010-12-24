@@ -18,15 +18,17 @@ data-files                    : example/example.bash
 
 library
   build-depends               : base >= 2 && <= 5
-                              , containers
+                              , containers >= 0.3 && < 0.4
                               , text >= 0.9
                               , bytestring >= 0.9
                               , numbers >= 2007.9.24
                               , uu-parsinglib >= 2.5
                               , shell-escape >= 0.1
-                              , mtl
-                              , binary
-                              , SHA
+                              , mtl >= 2 && < 3
+                              , binary >= 0.5 && < 0.6
+                              , SHA >= 1.4 && < 2
+                              , yaml-light >= 0.1.4 && < 0.2
+                              , template-haskell >= 2.4 && <3
   exposed-modules             : Language.TaskL
   extensions                  : EmptyDataDecls
                                 FlexibleInstances
