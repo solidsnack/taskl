@@ -151,6 +151,11 @@ function taskl_flag_handler {
 ################################################################
 # Runtime code: implementation of IdemShell commands and tests.
 
+function idem_helper_die {
+  echo "$1" 1>&2
+  exit 8
+}
+
 function idem_CHOWN {
   local user="${2%:*}"
   local group="${2#*:}"
@@ -192,11 +197,17 @@ function idem_GROUPADD {
 function idem_GROUPDEL {
   getent group "$1" && groupdel "$1"
 }
-function idem_GPASSWDa {
-  gpasswd "$1" -a "$2" 1>/dev/null
-}
-function idem_GPASSWDd {
-  gpasswd "$1" -d "$2" 1>/dev/null
+function idem_GPASSWDm {
+  local group="$1"
+  shift
+  while [ "${1:-}" != '' ]
+  do
+    case "$1" in
+      +*)       gpasswd "$group" -a "${1#+}" 1>/dev/null ;;
+      -*)       gpasswd "$group" -d "${1#-}" 1>/dev/null ;;
+      *)        idem_helper_die "Invalid arg \`$1' for GPASSWDm." ;;
+    esac
+  done
 }
 
 function idem_LSo {
@@ -211,7 +222,7 @@ function idem_helper_LSo {
   case "$2" in
     *:) name="${2%:}" ; awk_script='{print $3}' ;;
     :*) name="${2#:}" ; awk_script='{print $4}' ;;
-    *)  ! echo 'Mysterious invalid call to LSo helper.' 1>&2 ;;  
+    *)  idem_helper_die 'Mysterious invalid call to LSo helper.' ;;
   esac
   local normed="${name#+}"
   if [ "$name" = "$normed" ]  # Determine if we are using numric form.
@@ -246,19 +257,19 @@ function idem_GROUPS {
   groups -- "$1" | xargs printf '%s\n' | sed '1,2 d' | fgrep -x -- "$2"
 }
 function idem_Not {
-  ! echo 'Unimplemented IdemShell primitive should not be called!' 1>&2
+  idem_helper_die 'Unimplemented IdemShell primitive should not be called!'
 }
 function idem_And {
-  ! echo 'Unimplemented IdemShell primitive should not be called!' 1>&2
+  idem_helper_die 'Unimplemented IdemShell primitive should not be called!'
 }
 function idem_Or {
-  ! echo 'Unimplemented IdemShell primitive should not be called!' 1>&2
+  idem_helper_die 'Unimplemented IdemShell primitive should not be called!'
 }
 function idem_TRUE {
-  ! echo 'Unimplemented IdemShell primitive should not be called!' 1>&2
+  idem_helper_die 'Unimplemented IdemShell primitive should not be called!'
 }
 function idem_FALSE {
-  ! echo 'Unimplemented IdemShell primitive should not be called!' 1>&2
+  idem_helper_die 'Unimplemented IdemShell primitive should not be called!'
 }
 
 

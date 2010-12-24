@@ -7,6 +7,8 @@
 module Language.TaskL.Codegen.IdemShell where
 
 import Prelude hiding (concat)
+import qualified Data.Set as Set
+import Data.Set (Set)
 import Data.List (sort, foldl')
 
 import Data.ByteString.Char8 hiding (map, foldl', filter)
@@ -39,8 +41,10 @@ instance CodeGen Command where
     USERDEL u               ->  cmd "idem_USERDEL"  [escEnc u]
     GROUPADD g attrs        ->  cmd "idem_GROUPADD" [escEnc g]--,  attrs]
     GROUPDEL g              ->  cmd "idem_GROUPDEL" [escEnc g]
-    GPASSWDa g user         ->  cmd "idem_GPASSWDa" [escEnc g,  escEnc user]
-    GPASSWDd g user         ->  cmd "idem_GPASSWDd" [escEnc g,  escEnc user]
+    GPASSWDm g inU outU     ->  cmd "idem_GPASSWDm" ( escEnc g : f '+' inU
+                                                              ++ f '-' outU )
+     where
+      f char = map (cons char . escEnc) . Set.toList
 
 instance CodeGen Test where
   codeGen test               =  case collapse test of
