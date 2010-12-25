@@ -44,7 +44,7 @@ instance CodeGen Command where
     GPASSWDm g inU outU     ->  cmd "idem_GPASSWDm" ( escEnc g : f '+' inU
                                                               ++ f '-' outU )
      where
-      f char = map (cons char . escEnc) . Set.toList
+      f char                 =  map (cons char . escEnc) . Set.toList
 
 instance CodeGen Test where
   codeGen test               =  case collapse test of
