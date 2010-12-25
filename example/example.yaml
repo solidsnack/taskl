@@ -8,6 +8,14 @@
     - CHMOD:        [/.ssh/authorized_keys, "g-rwx,o-rwx"]
     - CP:           [./ssh/heroku, /.ssh/heroku]
     - CHMOD:        [/.ssh/heroku, "g-rwx,o-rwx"]
+- sudoers/:
+  - CP: [./sudoers /etc/sudoers]
+  - GPASSWDm:
+    - sudoers
+    - -nobody
+    - -postgres
+    - +molly
+    - +moe
 
 # <task>          = <command>: [<arg>+]
 #                 | <command>: [[<arg>+],<test>]
