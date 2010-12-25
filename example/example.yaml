@@ -1,6 +1,6 @@
 
 - CP:               [./vimrc, /.vimrc]
-- ssh::
+- ssh/:
   - 'FALSE'
   - - MKDIR:        [/.ssh]
     - CHMOD:        [/.ssh, "g-rwx,o-rwx"]
@@ -12,8 +12,8 @@
 # <task>          = <command>: [<arg>+]
 #                 | <command>: [[<arg>+],<test>]
 #                 | <command>: [[<arg>+],<test>,[<task>*]]
-#                 | <command>: [[<arg>+],[<task>*],<test>]
-#                 | <package>:: [<task>*]
-#                 | <package>:: [<test>,[<task>*]]
-#                 | <package>:: [[<task>*],<test>]
+#                 | <command>: [[<arg>+],[<task>*]]
+#                 | <package>/: [<task>*]
+#                 | <package>/: [<test>,[<task>*]]
+#                 | <package>/: [[<task>*],<test>]
 
