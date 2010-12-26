@@ -97,13 +97,13 @@ function taskl_flag_handler {
                                   i=${#taskl_flag_errors[@]}
                                   taskl_flag_errors[$i]="No such task \`$1'."
                                 fi ;;
-      fs:*)                     base=${1#fs:}
-                                begin=${#tasks_to_enable[@]}
+      fs:*)                     local base=${1#fs:}
+                                local begin=${#tasks_to_enable[@]}
                                 for t in fs/{own,node,mode}:"$base"
                                 do
                                   if [ ${taskl_enabled["$t"]:-x} != x ]
                                   then
-                                    local i=${#tasks_to_enable[@]}
+                                    i=${#tasks_to_enable[@]}
                                     tasks_to_enable[$i]="$t"
                                   fi
                                 done
@@ -112,13 +112,13 @@ function taskl_flag_handler {
                                   i=${#taskl_flag_errors[@]}
                                   taskl_flag_errors[$i]="No such task \`$1'."
                                 fi ;;
-      pw:*)                     base=${1#pw:}
-                                begin=${#tasks_to_enable[@]}
+      pw:*)                     local base=${1#pw:}
+                                local begin=${#tasks_to_enable[@]}
                                 for t in pw/{user,group,members}:"$base"
                                 do
                                   if [ ${taskl_enabled["$t"]:-x} != x ]
                                   then
-                                    local i=${#tasks_to_enable[@]}
+                                    i=${#tasks_to_enable[@]}
                                     tasks_to_enable[$i]="$t"
                                   fi
                                 done
