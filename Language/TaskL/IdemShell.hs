@@ -255,6 +255,8 @@ merge a@(RM p0) b            =  case b of
 merge a@(CP _ p0) b          =  case b of
   CP _ p1                   ->  if p0 == p1 then Contradictory a b
                                             else Separate a b
+  TOUCH p1                  ->  if p0 == p1 then Combined a
+                                            else Separate a b
   RM _                      ->  merge b a
   _                         ->  Separate a b
 merge a@(LNs _ p0) b         =  case b of
@@ -263,6 +265,7 @@ merge a@(LNs _ p0) b         =  case b of
   RM _                      ->  merge b a
   _                         ->  Separate a b
 merge a@(TOUCH p0) b         =  case b of
+  CP _ _                    ->  merge b a
   TOUCH p1                  ->  if p0 == p1 then Contradictory a b
                                             else Separate a b
   MKDIR p1                  ->  if p0 == p1 then Contradictory a b

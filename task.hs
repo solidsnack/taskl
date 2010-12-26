@@ -58,9 +58,9 @@ tasks3 = do
     , Node (Command (CHMOD "/etc/sudoers"
                            (Mode On On Off Off On Off Off Off Off Off Off Off))
                     mempty)
-           [Node (Command (CP "./etc/sudoers" "/etc/sudoers") mempty) []]
+           [Node (Command (TOUCH "/etc/sudoers") mempty) []]
     , Node (Command (CHOWN "/etc/sudoers" (Both root admin')) mempty)
-           [Node (Command (CP "./etc/sudoers" "/etc/sudoers") mempty) []]
+           [Node (Command (TOUCH "/etc/sudoers") mempty) []]
     ]
 
 code2                        =  TaskL.bash tasks2
