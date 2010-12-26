@@ -175,7 +175,7 @@ function idem_RM {
   rm -rf "$1"
 }
 function idem_CP {
-  { which rsync && rsync "$1" "$2" ;} || cp "$1" "$2"
+  { which rsync && rsync "$1" "$2" ;} || { cat "$1" > "$2" ;}
 }
 function idem_LNs {
   { [ -L "$2" ] && rm -f "$2" ;} || rm -rf "$2"
