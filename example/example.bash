@@ -127,6 +127,34 @@ function taskl_flag_handler {
                                   i=${#taskl_flag_errors[@]}
                                   taskl_flag_errors[$i]="No such task \`$1'."
                                 fi ;;
+      fs)                       local begin=${#tasks_to_enable[@]}
+                                for task in "${!taskl_enabled[@]}"
+                                do
+                                  if [[ ${task:0:3} = 'fs/' ]]
+                                  then
+                                    i=${#tasks_to_enable[@]}
+                                    tasks_to_enable[$i]="$task"
+                                  fi
+                                done
+                                if [[ $begin = ${#tasks_to_enable[@]} ]]
+                                then
+                                  i=${#taskl_flag_errors[@]}
+                                  taskl_flag_errors[$i]="No \`$1' tasks."
+                                fi ;;
+      pw)                       local begin=${#tasks_to_enable[@]}
+                                for task in "${!taskl_enabled[@]}"
+                                do
+                                  if [[ ${task:0:3} = 'pw/' ]]
+                                  then
+                                    i=${#tasks_to_enable[@]}
+                                    tasks_to_enable[$i]="$task"
+                                  fi
+                                done
+                                if [[ $begin = ${#tasks_to_enable[@]} ]]
+                                then
+                                  i=${#taskl_flag_errors[@]}
+                                  taskl_flag_errors[$i]="No \`$1' tasks."
+                                fi ;;
       *)                        i=${#taskl_flag_errors[@]}
                                 taskl_flag_errors[$i]="Invalid arg \`$1'." ;;
     esac
