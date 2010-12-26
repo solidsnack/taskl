@@ -151,6 +151,12 @@ function taskl_flag_handler {
 ################################################################
 # Runtime code: implementation of IdemShell commands and tests.
 
+##  In some places, we've used `test' for string equality and in others we've
+##  used `fgrep -q -x --'. The latter works as long as there are no newlines
+##  in the pattern and it turns out that usernames and groupnames can not have
+##  newlines in them. (See ./Language/TaskL/IdemShell/Nick.hs for more
+##  restrictions I discovered for user names.)
+
 function idem_helper_die {
   echo "$1" 1>&2
   exit 8
@@ -230,7 +236,7 @@ function idem_helper_LSo {
     ls -ld "$1"
   else
     ls -nd "$1"
-  fi | awk "$awk_script" | fgrep -x -- "$normed"
+  fi | awk "$awk_script" | fgrep -q -x -- "$normed"
 }
 function idem_LSm {
   ls -ld "$1" | awk '{print $1}' | egrep ".$2"
@@ -245,7 +251,7 @@ function idem_DIFFq {
   diff -q "$1" "$2" 2>/dev/null
 }
 function idem_LSl {
-  [ `readlink -- "$2"` = "$1" ]
+  [[ $(readlink -- "$2") = "$1" ]]
 }
 function idem_GETENTu {
   getent passwd "$1"
@@ -254,7 +260,7 @@ function idem_GETENTg {
   getent group "$1"
 }
 function idem_GROUPS {
-  groups -- "$1" | xargs printf '%s\n' | sed '1,2 d' | fgrep -x -- "$2"
+  groups -- "$1" | xargs printf '%s\n' | sed '1,2 d' | fgrep -q -x -- "$2"
 }
 function idem_Not {
   idem_helper_die 'Unimplemented IdemShell primitive should not be called!'
