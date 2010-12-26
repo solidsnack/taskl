@@ -29,7 +29,7 @@
  -}
 
 module Language.TaskL
-  ( script
+  ( bash
   , Language.TaskL.Task.Task(..)
   , Language.TaskL.IdemShell.Command(..)
   , Language.TaskL.IdemShell.Test(..)
@@ -55,8 +55,8 @@ import Language.TaskL.BashTemplate
   (preamble, runtime, postamble, generatedCodeHeading, splitTemplate)
 
 
-script :: [Tree Task] -> Either [Error] (ByteString, [Warn])
-script tasks                 =  case errors of [ ] -> Right (bytes, warns)
+bash :: [Tree Task] -> Either [Error] (ByteString, [Warn])
+bash tasks                   =  case errors of [ ] -> Right (bytes, warns)
                                                _:_ -> Left errors
  where
   (ops, errors, warns)       =  schedule tasks

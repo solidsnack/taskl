@@ -63,9 +63,9 @@ tasks3 = do
            [Node (Command (CP "./etc/sudoers" "/etc/sudoers") mempty) []]
     ]
 
-code2                        =  TaskL.script tasks2
+code2                        =  TaskL.bash tasks2
 
-code3                        =  TaskL.script (either (const []) id tasks3)
+code3                        =  TaskL.bash (either (const []) id tasks3)
 
 main                         =  case code3 of
   Right (bytes, warnings)   ->  Data.ByteString.Lazy.hPut stdout bytes
