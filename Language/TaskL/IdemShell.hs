@@ -12,8 +12,9 @@ module Language.TaskL.IdemShell where
 import qualified Data.List as List
 import qualified Data.Set as Set
 import Data.Set (Set)
-import Control.Applicative
 import Data.Monoid
+import Control.Monad.Error
+import Control.Applicative
 
 import Data.ByteString.Char8
 
@@ -108,6 +109,13 @@ data Ownership               =  Both User Group
                              |  OnlyGroup Group
 deriving instance Eq Ownership
 deriving instance Show Ownership
+instance EncDec Ownership where
+  enc                        =  chownStyle
+  dec bytes                  =  case split ':' bytes of
+    [u, ""]                 ->  OnlyUser <$> dec u
+    ["", g]                 ->  OnlyGroup <$> dec g
+    [u,  g]                 ->  Both <$> dec u <*> dec g
+    _                       ->  throwError "Malformed ownership string."
 instance Combine Ownership where
   combine a b                =  case (a, b) of
     (Both u _   , OnlyUser u' ) | u == u'     ->  Combined a
