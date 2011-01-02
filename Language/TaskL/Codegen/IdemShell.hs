@@ -67,20 +67,6 @@ instance CodeGen Test where
                | otherwise   =  Program.Group (codeGen t)
 
 
-{-| Remove redundant negations.
- -}
-collapse                    ::  Test -> Test
-collapse (Not (Not test))    =  collapse test
-collapse test                =  test
-
-{-| Is this a flat, simple test or one that needs grouping?
- -}
-flat                        ::  Test -> Bool
-flat (And _ _)               =  False
-flat (Or _ _)                =  False
-flat _                       =  True
-
-
 fullModeRE                  ::  Mode -> ByteString
 fullModeRE (Mode ur uw ux us gr gw gx gs or ow ox ot) =
   (concat . map (flippedModeRE ur uw ux us gr gw gx gs or ow ox ot))

@@ -338,3 +338,18 @@ conflictDirFile a b = List.any (`List.any` impliedDirectories b) filesAbove
  where
   filesAbove                 =  (</?) <$> impliedFiles a
 
+
+{-| Remove redundant negations.
+ -}
+collapse                    ::  Test -> Test
+collapse (Not (Not test))    =  collapse test
+collapse test                =  test
+
+
+{-| Is this a flat, simple test or one that needs grouping?
+ -}
+flat                        ::  Test -> Bool
+flat (And _ _)               =  False
+flat (Or _ _)                =  False
+flat _                       =  True
+

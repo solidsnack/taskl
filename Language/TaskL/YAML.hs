@@ -53,7 +53,42 @@ instance YShow Command where
        where
         f char               =  map (cons char . enc) . Set.toList
 
+instance YShow Test where
+  yshow test                 =  case test of
+    LSo _ _                 ->  m "LSo" undefined
+    LSm _ _                 ->  m "LSm" undefined
+    DASHe _                 ->  m "DASHe" undefined
+    DASH_ _ _               ->  m "DASH_" undefined
+    DIFFq _ _               ->  m "DIFFq" undefined
+    LSl _ _                 ->  m "LSl" undefined
+    GETENTu _               ->  m "GETENTu" undefined
+    GETENTg _               ->  m "GETENTg" undefined
+    GROUPS _ _              ->  m "GROUPS" undefined
+    Not _                   ->  m "NOT" undefined
+    And _ _                 ->  m "AND" undefined
+    Or _ _                  ->  m "OR" undefined
+    TRUE                    ->  scalarO "TRUE"
+    FALSE                   ->  scalarO "FALSE"
+   where
+    argsYAML test            =  case test of
+      LSo p o               ->  [enc p,   chownStyle o]
+      LSm p m               ->  [enc p,   modeSymbolic m]
+      DASHe p               ->  [enc p]
+      DASH_ node p          ->  [nodeTest node, enc p]
+      DIFFq p' p            ->  [enc p',  enc p]
+      LSl p' p              ->  [enc p',  enc p]
+      GETENTu u             ->  [enc u]
+      GETENTg g             ->  [enc g]
+      GROUPS u g            ->  [enc u,  enc g]
+      Not t                 ->  []
+      And t t'              ->  []
+      Or t t'               ->  []
+      TRUE                  ->  []
+      FALSE                 ->  []
+
 scalarO                      =  YO.Scalar . YO.toYamlScalar
 
 scalarY                      =  YO.toYamlScalar
+
+m k v                        =  YO.Mapping [(scalarY k, v)]
 
