@@ -18,7 +18,25 @@ import Language.TaskL.Codegen.IdemShell (modeSymbolic)
 class YShow t where
   yshow                     ::  t -> YO.YamlObject
 
+instance (EncDec t) => YShow t where
+  yshow                      =  scalarO . enc
+
 instance YShow Command where
+  yshow cmd                  =  case cmd of
+    CHOWN p o               ->  "CHOWN" `kvO` yshowSeq [p, o]
+    CHMOD p m               ->  "CHMOD" `kvO` yshowSeq [p, modeSymbolic m]
+    RM p                    ->  "RM" `kvO` yshow p
+    CP p' p                 ->  "CP" `kvO` yshowSeq [p', p]
+    LNs p' p                ->  "LNs" `kvO` yshowSeq [p', p]
+    TOUCH p                 ->  "TOUCH" `kvO` yshow p
+    MKDIR p                 ->  "MKDIR" `kvO` yshow p
+    USERADD nick _          ->  "USERADD" `kvO` nick
+    USERDEL nick            ->  "USERDEL" `kvO` nick
+    GROUPADD nick _         ->  "GROUPADD" `kvO` nick
+    GROUPDEL nick           ->  "GROUPDEL" `kvO` nick
+    GPASSWDm nick iU oU     ->  "GPASSWDm" `kvO` enc nick : f '+' iU ++ f '-' oU
+     where
+      f char                 =  map (cons char . enc) . Set.toList
   yshow cmd                  =  YO.Mapping [(name cmd, argSequence cmd)]
    where
     argSequence              =  YO.Sequence . map scalarO . args
@@ -54,41 +72,29 @@ instance YShow Command where
         f char               =  map (cons char . enc) . Set.toList
 
 instance YShow Test where
-  yshow test                 =  case test of
-    LSo _ _                 ->  m "LSo" undefined
-    LSm _ _                 ->  m "LSm" undefined
-    DASHe _                 ->  m "DASHe" undefined
-    DASH_ _ _               ->  m "DASH_" undefined
-    DIFFq _ _               ->  m "DIFFq" undefined
-    LSl _ _                 ->  m "LSl" undefined
-    GETENTu _               ->  m "GETENTu" undefined
-    GETENTg _               ->  m "GETENTg" undefined
-    GROUPS _ _              ->  m "GROUPS" undefined
-    Not _                   ->  m "NOT" undefined
-    And _ _                 ->  m "AND" undefined
-    Or _ _                  ->  m "OR" undefined
+  yshow test                 =  case collapse test of
+    LSo p o                 ->  "LSo" `kvO` yshowSeq [p, o]
+    LSm p o                 ->  "LSm" `kvO` yshowSeq [p, modeSymbolic m]
+    DASHe p                 ->  "DASHe" `kvO` yshow p
+    DASH_ node p            ->  "DASH_" `kvO` yshowSeq [nodeTest node, p]
+    DIFFq p p'              ->  "DIFFq" `kvO` yshowSeq [p, p']
+    LSl p p'                ->  "LSl" `kvO` yshowSeq [p, p']
+    GETENTu u               ->  "GETENTu" `kvO` yshow u
+    GETENTg g               ->  "GETENTg" `kvO` yshow g
+    GROUPS u g              ->  "GROUPS" `kvO` yshowSeq [u, g]
+    Not t                   ->  "NOT" `kvO` yshowSeq [t]
+    And t t'                ->  "AND" `kvO` yshowSeq [t, t']
+    Or t t'                 ->  "OR" `kvO` yshowSeq [t, t']
     TRUE                    ->  scalarO "TRUE"
     FALSE                   ->  scalarO "FALSE"
-   where
-    argsYAML test            =  case test of
-      LSo p o               ->  [enc p,   chownStyle o]
-      LSm p m               ->  [enc p,   modeSymbolic m]
-      DASHe p               ->  [enc p]
-      DASH_ node p          ->  [nodeTest node, enc p]
-      DIFFq p' p            ->  [enc p',  enc p]
-      LSl p' p              ->  [enc p',  enc p]
-      GETENTu u             ->  [enc u]
-      GETENTg g             ->  [enc g]
-      GROUPS u g            ->  [enc u,  enc g]
-      Not t                 ->  []
-      And t t'              ->  []
-      Or t t'               ->  []
-      TRUE                  ->  []
-      FALSE                 ->  []
 
 scalarO                      =  YO.Scalar . YO.toYamlScalar
 
 scalarY                      =  YO.toYamlScalar
 
-m k v                        =  YO.Mapping [(scalarY k, v)]
+kvO k v                      =  YO.Mapping [(scalarY k, v)]
+
+seqO                         =  YO.Sequence . map scalarO
+
+yshowSeq                     =  YO.Sequence . map yshow
 
