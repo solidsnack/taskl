@@ -46,10 +46,10 @@ tasks2 =
       , Node (Command (MKDIR "/q/p") mempty) [] ]
   ]
 
-tasks3 = do
-  root <- dec "root"
-  admin <- dec "admin"
-  admin' <- dec "admin"
+tasks3                       =  do
+  root                      <-  dec "root"
+  admin                     <-  dec "admin"
+  admin'                    <-  dec "admin"
   return
     [ Node (Command (GPASSWDm admin (Set.fromList ["solidsnack"]) Set.empty)
                     mempty)
@@ -67,7 +67,7 @@ code2                        =  TaskL.bash tasks2
 
 code3                        =  TaskL.bash (either (const []) id tasks3)
 
-main                         =  case code3 of
+main                         =  case code2 of
   Right (bytes, warnings)   ->  Data.ByteString.Lazy.hPut stdout bytes
   Left errors               ->  Data.ByteString.Lazy.hPut stderr "Error!"
 
