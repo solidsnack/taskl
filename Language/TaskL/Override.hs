@@ -1,14 +1,12 @@
 
 module Language.TaskL.Override where
 
-import Data.Set
-
 
 data Override msg t          =  Override msg (OverrideCore t)
 
 
 data OverrideCore t          =  Accept t
-                             |  Select (Override t) (Set (Override t))
-                             |  Keep (Set (Override t))
-                             |  Merge t (Set (Override t))
+                             |  Select (Override t) (Override t)
+                             |  Keep (Override t) (Override t)
+                             |  Merge t (Override t)
 

@@ -388,7 +388,7 @@ function taskl_error {
 ################################################################
 # Generated code.
 
-taskl_script_key=01013b82945fbae2e3e402a85278e19c7232db42
+taskl_script_key=fbdbf40a535bb059758925149de69589e7336a92
 
 # State arrays.
 taskl_enabled=(
