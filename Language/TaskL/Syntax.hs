@@ -8,33 +8,31 @@ import Data.ByteString (ByteString)
 import Data.Map (Map)
 import Data.Set (Set)
 
+import Language.TaskL.StringL
+
 
 data Module                  =  Module (Map Name TaskBody)
 
 data TaskBody                =  TaskBody (Maybe Test) (Maybe Task) (Set Call)
 
-data Call                    =  Call Name [StringL] TaskBody
+data Call                    =  Call Name [StringL] (Set Call)
 
 newtype Name                 =  Name ByteString
 
-newtype StringL              =  StringL [StringLToken]
+newtype Task                 =  Task Code
 
-data StringLToken            =  Literal ByteString
-                             |  Substitution ByteString
+newtype Test                 =  Test Code
 
-newtype Task                 =  Task ByteString
-deriving instance Monoid Task
+data Code                    =  Bash ByteString | Exec [StringL]
 
-newtype Test                 =  Test ByteString
-deriving instance Monoid Test
 
-instance Monoid Module where
-  mempty                     =  Module mempty
-  mappend (Module x) (Module y) = Module (mappend x y)
-instance Monoid TaskBody where
-  mempty                     =  TaskBody Nothing Nothing mempty
-  mappend (TaskBody x y z) (TaskBody x' y' z') =
-    TaskBody (mappend x x') (mappend y y') (mappend z z')
+--instance Monoid Module where
+--  mempty                     =  Module mempty
+--  mappend (Module x) (Module y) = Module (mappend x y)
+--instance Monoid TaskBody where
+--  mempty                     =  TaskBody Nothing Nothing mempty
+--  mappend (TaskBody x y z) (TaskBody x' y' z') =
+--    TaskBody (mappend x x') (mappend y y') (mappend z z')
 deriving instance Ord Name
 deriving instance Eq Name
 deriving instance Monoid Name
