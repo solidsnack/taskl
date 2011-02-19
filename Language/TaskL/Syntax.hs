@@ -8,6 +8,7 @@ import Data.ByteString (ByteString)
 import Data.Map (Map)
 import Data.Set (Set)
 
+import Language.TaskL.Name
 import Language.TaskL.StringL
 
 
@@ -16,8 +17,6 @@ data Module                  =  Module (Map Name TaskBody)
 data TaskBody                =  TaskBody (Maybe Test) (Maybe Task) (Set Call)
 
 data Call                    =  Call Name [StringL] (Set Call)
-
-newtype Name                 =  Name ByteString
 
 newtype Task                 =  Task Code
 

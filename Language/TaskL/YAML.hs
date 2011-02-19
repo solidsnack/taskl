@@ -11,11 +11,16 @@ import Language.TaskL.Syntax
 import Language.TaskL.StringL
 
 
-data NamedTaskParseResult =
-  NamedTaskParseResult { name  :: Name
-                       , body  :: TaskBody
-                       , extra :: Map YamlScalar YamlObject }
+data TaskParseResult =
+  TaskParseResult { body    ::  TaskBody
+                  , extra   ::  Map YamlScalar YamlObject }
 
 bodyFromYAML                ::  [(YamlScalar, YamlObject)] -> ()
 bodyFromYAML                 =  undefined
+
+
+readMapToModule :: Map YamlScalar YamlObject -> Map Name TaskParseResult
+readMapToModule              =  undefined
+
+
 
