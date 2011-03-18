@@ -14,34 +14,54 @@ import Data.String
 import Text.Regex.XMLSchema.String
 
 
-newtype Name                 =  Name { bytes :: ByteString }
+{-| A Task\\L name is one or more name components, separated by colons (@:@).
+ -}
+data Name                    =  Name { base :: Component,
+                                       qualifier :: [Component] }
 deriving instance Eq Name
 deriving instance Ord Name
 deriving instance Show Name
+instance IsString Name where
+  fromString s               =  case names (pack s) of
+    Right (name, names)     ->  Name name names
+    Left _                  ->  error ("Bad name: " ++ s)
 
 
-names :: ByteString -> Either (ByteString, ByteString) (Name, [Name])
+{-| A Task\\L name component conforms to the regex @[a-z_][a-zA-Z0-9_]*@,
+    resembling the syntax of identifiers found in many programming languages.
+ -}
+newtype Component            =  Component { bytes :: ByteString }
+deriving instance Eq Component
+deriving instance Ord Component
+deriving instance Show Component
+
+
+{-| Parses a 'ByteString' potentially containing a qualified name. The name in
+    the first slot of the tuple is rightmost name in the hierarchy, the
+    \"basename\".
+ -}
+names :: ByteString -> Either (ByteString, ByteString) (Component, [Component])
 names b                      =  case popName (unpack b) of
   Right (name, s)           ->  names' (name, []) s
   Left err                  ->  Left err
  where
   names' (name, names) ""    =  Right (name, reverse names)
   names' (name, names) s     =  case popName s of
-    Right (name', s')       ->  names' (name, name':names) s'
+    Right (name', s')       ->  names' (name', name:names) s'
     Left (before, after)    ->  Left (append repacked (cons ':' before), after)
    where
     repacked = (intercalate ":" . map bytes) (name : reverse names)
 
-popName :: String -> Either (ByteString, ByteString) (Name, String)
+popName :: String -> Either (ByteString, ByteString) (Component, String)
 popName s = maybe (Left (pack s, "")) rewrite (splitSubexRE namesRE s)
  where
   repack a b                 =  append (pack a) (':' `cons` pack b)
   rewrite res                =  case res of
     ([("name",""),("tail","")],"")  ->  Left  (pack s, "")
-    ([("name",n),("tail",t)]  ,"")  ->  Right (Name (pack n), t)
+    ([("name",n),("tail",t)]  ,"")  ->  Right (Component (pack n), t)
     ([("name",n),("tail",t)],trash) ->  Left  (repack n t, pack trash)
     ([("name","")]          ,  "")  ->  Left  (pack s, "")
-    ([("name",n)]           ,  "")  ->  Right (Name (pack n), "")
+    ([("name",n)]           ,  "")  ->  Right (Component (pack n), "")
     ([("name",n)]           ,trash) ->  Left  (pack n, pack trash)
     (_                      ,   _)  ->  Left  (pack s, "")
 
