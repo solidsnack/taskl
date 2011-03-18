@@ -1,9 +1,9 @@
   An example:
 
-    lotro:hobbits:
+    lotr:hobbits:
       isengard:
-        bash?:  fgrep isengard /srv/lotro/hobbits/$1
-        bash!:  cat isengard /srv/lotro/hobbits/$1
+        bash?:  fgrep isengard /srv/lotr/hobbits/$1
+        bash!:  cat isengard /srv/lotr/hobbits/$1
 
     # The task lotro:hobbits:isengard checks to if the hobbit argument is in
     # Isengard. If not, it moves it there.
@@ -11,9 +11,9 @@
   Here we use bash? to indicate a test in Bash and bash! to indicate an action
   in Bash. Let's try again, using another task we have defined:
 
-    lotro:hobbits:
+    lotr:hobbits:
       isengard:
-        tasks: - [set_content, [/srv/lotro/hobbits/$1], isengard]
+        tasks: - [set_content, [/srv/lotr/hobbits/$1], isengard]
 
     # The task lotro:hobbits:isengard is a trivial application of set_content.
 
