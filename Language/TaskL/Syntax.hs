@@ -14,15 +14,17 @@ import Language.TaskL.StringL
 
 data Module                  =  Module (Map Name TaskBody)
 
-data TaskBody                =  TaskBody (Maybe Test) (Maybe Task) (Set Call)
+data TaskBody                =  TaskBody Test Task (Set Call)
 
 data Call                    =  Call Name [StringL] (Set Call)
 
-newtype Task                 =  Task Code
+newtype Task                 =  Task [Code]
 
-newtype Test                 =  Test Code
+newtype Test                 =  Test [Code]
 
-data Code                    =  Bash ByteString | Exec [StringL]
+data Code                    =  Bash ByteString
+                             |  Exec [StringL]
+                             |  Hask (IO Bool)
 
 
 --instance Monoid Module where
@@ -32,6 +34,4 @@ data Code                    =  Bash ByteString | Exec [StringL]
 --  mempty                     =  TaskBody Nothing Nothing mempty
 --  mappend (TaskBody x y z) (TaskBody x' y' z') =
 --    TaskBody (mappend x x') (mappend y y') (mappend z z')
-deriving instance Ord Name
-deriving instance Eq Name
-deriving instance Monoid Name
+
