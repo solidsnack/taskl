@@ -22,8 +22,8 @@ deriving instance Eq Name
 deriving instance Ord Name
 deriving instance Show Name
 instance IsString Name where
-  fromString s               =  case names (pack s) of
-    Right (name, names)     ->  Name name names
+  fromString s               =  case name (pack s) of
+    Right x                 ->  x
     Left _                  ->  error ("Bad name: " ++ s)
 
 
@@ -36,12 +36,19 @@ deriving instance Ord Component
 deriving instance Show Component
 
 
+{-| Parses a 'Name' from a 'ByteString'.
+ -}
+name :: ByteString -> Either (ByteString, ByteString) Name
+name b                       =  uncurry Name `fmap` components b
+
+
 {-| Parses a 'ByteString' potentially containing a qualified name. The name in
-    the first slot of the tuple is rightmost name in the hierarchy, the
+    the first slot of the tuple is the rightmost name in the hierarchy, the
     \"basename\".
  -}
-names :: ByteString -> Either (ByteString, ByteString) (Component, [Component])
-names b                      =  case popName (unpack b) of
+components
+ :: ByteString -> Either (ByteString, ByteString) (Component, [Component])
+components b                 =  case popName (unpack b) of
   Right (name, s)           ->  names' (name, []) s
   Left err                  ->  Left err
  where
