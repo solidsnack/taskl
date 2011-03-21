@@ -1,41 +1,37 @@
-{-# LANGUAGE TypeFamilies
+{-# LANGUAGE OverloadedStrings
+           , TypeFamilies
+           , GADTs
   #-}
 
 module Language.TaskL.Code where
 
+import Prelude hiding (lines)
 import Data.ByteString.Char8
 
 
---data Code t where            =  Bash ByteString
---                             |  Exec StringL [StringL]
---                             |  Hask (IO Bool)
+data Code t where
+  Bash                      ::  ByteString -> Code ByteString
+  Exec                      ::  ByteString -> [ByteString] -> Code [ByteString]
+--Exec                      ::  StringL -> [StringL] -> Code [StringL]
+  Hask                      ::  IO Bool -> Code (IO Bool)
 
 
-data TaskL                   =  forall t. (Code t) => TaskL (T t)
-instance Show TaskL where
-  show t = case t of TaskL code -> "TaskL (" ++ (unpack . name) code ++ ")"
+instance Show (Code t) where
+  show code                  =  case code of
+    Bash b                  ->  "Bash " ++
+                                (unpack . intercalate "     " . lines) b
+    Exec _ _                ->  "Exec _ [...]"
+    Hask _                  ->  "Hask <IO Bool>"
 
-class Code t where
-  data T t                  ::  *
-  name                      ::  (T t) -> ByteString
-instance Code ByteString where
-  data T ByteString          =  Bash ByteString
-  name _                     =  "bash"
-instance Code [ByteString] where
-  data T [ByteString]        =  Exec ByteString [ByteString]
-  name _                     =  "exec"
-instance Code (IO Bool) where
-  data T (IO Bool)           =  Hask (IO Bool)
-  name _                     =  "hask"
-
-(-*)                        ::  (Code t) => (t -> T t) -> t -> TaskL
-f -* t                       =  TaskL (f t)
 
 {-| Adds code to the test body.
  -}
+(-?)                        ::  (t -> Code t) -> t -> TaskL
 (-?)                         =  undefined
 
 {-| Adds code to the task body. 
  -}
+(-!)                        ::  (t -> Code t) -> t -> TaskL
 (-!)                         =  undefined
 
+data TaskL                   =  TaskL
