@@ -1,37 +1,41 @@
-{-# LANGUAGE StandaloneDeriving
-           , EmptyDataDecls
+{-# LANGUAGE OverloadedStrings
+           , StandaloneDeriving
+           , TypeFamilies
+           , GADTs
   #-}
 module Language.TaskL.Syntax where
 
 import Data.Monoid
-import Data.ByteString (ByteString)
+import Prelude hiding (lines)
+import Data.ByteString.Char8
 import Data.Map (Map)
 import Data.Set (Set)
 
 import Language.TaskL.Name
-import Language.TaskL.StringL
+--import Language.TaskL.StringL
+data StringL                 =  StringL
 
 
-data Module                  =  Module (Map Name TaskBody)
+data Namespace               =  Namespace (Map Name TaskBody)
 
 data TaskBody                =  TaskBody Test Task (Set Call)
 
 data Call                    =  Call Name [StringL] (Set Call)
 
-newtype Task                 =  Task [Code]
+data Task                    =  forall t . Task [Code t]
 
-newtype Test                 =  Test [Code]
+data Test                    =  forall t . Test [Code t]
 
-data Code                    =  Bash ByteString
-                             |  Exec [StringL]
-                             |  Hask (IO Bool)
+data Code t where
+  Bash                      ::  ByteString -> Code ByteString
+  Exec                      ::  StringL -> [StringL] -> Code [StringL]
+  Hask                      ::  IO Bool -> Code (IO Bool)
+instance Show (Code t) where
+  show code                  =  case code of
+    Bash b                  ->  "Bash " ++ fill "     " b
+    Exec _ _                ->  "Exec _ [...]"
+    Hask _                  ->  "Hask <IO Bool>"
 
 
---instance Monoid Module where
---  mempty                     =  Module mempty
---  mappend (Module x) (Module y) = Module (mappend x y)
---instance Monoid TaskBody where
---  mempty                     =  TaskBody Nothing Nothing mempty
---  mappend (TaskBody x y z) (TaskBody x' y' z') =
---    TaskBody (mappend x x') (mappend y y') (mappend z z')
+fill s                       =  unpack . intercalate s . lines
 
