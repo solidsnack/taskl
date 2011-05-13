@@ -6,7 +6,7 @@ import System.Directory
 
 
 --  Creates a Task\L module with autotools:configure defined in it.
-make                        ::  Var FilePath -> TaskL
+configure                   ::  Var FilePath -> TaskL
 configure directory          =  "autotools:configure" -# do
   Bash -? "[ -e \"$1\"/config.status ]"
   Exec -! directory ["./configure"]
