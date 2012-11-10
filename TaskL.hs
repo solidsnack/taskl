@@ -1,8 +1,10 @@
 {-# LANGUAGE OverloadedStrings
+           , TemplateHaskell
            , GeneralizedNewtypeDeriving #-}
 module TaskL where
 
 import           Control.Applicative
+import           Control.Arrow
 import           Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as ByteString
 import           Data.Either
@@ -15,6 +17,7 @@ import qualified Data.Map as Map
 import           Data.Tree (Tree(..), Forest)
 import qualified Data.Tree as Tree
 
+import           Data.FileEmbed
 import           Data.Graph.Wrapper
 import qualified Text.ShellEscape as Esc
 import qualified Language.Bash as Bash
@@ -56,14 +59,18 @@ schedule g | a == []   = Right b
        scc2either (CyclicSCC ts) = Left ts
        scc2either (AcyclicSCC t) = Right t
 
-script :: [Task] -> Bash.Statement ()
-script  = Bash.Function "tasks" . anno . and . (compile <$>)
- where and cmds = case cmds of [   ] -> Bash.SimpleCommand "msg" ["No tasks."]
+-- | Generate Bash function declaration for task schedule.
+tasks :: [Task] -> Bash.Statement ()
+tasks  = Bash.Function "tasks" . anno . and . (compile <$>)
+ where anno = Bash.Annotated ()
+       and cmds = case cmds of [   ] -> Bash.SimpleCommand "msg" ["No tasks."]
                                [cmd] -> cmd
                                cmd:t -> Bash.AndAnd (anno cmd) (anno (and t))
 
-anno :: Bash.Statement () -> Bash.Annotated ()
-anno  = Bash.Annotated ()
+
+script :: [Task] -> ByteString
+script list = header <> Bash.bytes (tasks list) <> "\n" <> footer
+
 
 -- | When input documents are read, they present tasks and dependencies as
 --   trees. These trees are collapsed to an adjacency list representation, for
@@ -84,4 +91,12 @@ merge  = (Set.fromList <$>) . Map.fromListWith (++)
 graph :: Forest Task -> Graph Task Task
 graph  = fromListSimple . Map.toAscList . (Set.toAscList <$>)
        . merge . concatMap adjacencies
+
+
+frame, header, footer :: ByteString
+frame            = $(embedFile "frame.bash")
+(header, footer) = (ByteString.unlines *** ByteString.unlines)
+                 . second (drop 1 . dropWhile (/= "}"))
+                 . span (/= "function tasks {")
+                 $ ByteString.lines frame
 
