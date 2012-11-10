@@ -20,7 +20,7 @@ import           Data.Graph.Wrapper
 
 data Task = Cmd Command [Argument] -- ^ A command to run.
           | Msg Name               -- ^ Marks completion of a named task.
- deriving (Eq, Ord, Show)
+             deriving (Eq, Ord, Show)
 
 data Command = ShHTTP ByteString | Path ByteString deriving (Eq, Ord, Show)
 
@@ -29,10 +29,14 @@ instance IsString Argument where fromString = Literal . ByteString.pack
 
 newtype Name = Name ByteString deriving (Eq, Ord, Show, IsString)
 
+
+-- | Render a command section to an argument vector.
 command :: Command -> [Argument] -> [Argument]
 command (ShHTTP url) args = "curl_sh" : Literal url : args
 command (Path path)  args = Literal path : args
 
+-- | Render a task to an argument vector. Uses 'command' for commands and
+--   inserts a message, @..: job.name@, for completed jobs.
 compile :: Task -> [Argument]
 compile (Cmd cmd args) = command cmd args
 compile (Msg (Name b)) = "msg" : "..:" : Literal b : []
