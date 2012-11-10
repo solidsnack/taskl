@@ -3,7 +3,11 @@ set -o errexit -o nounset -o pipefail
 
 function curl_sh {
   local url="$1" ; shift
-  curl -sSfL --retry "$url" | sh -s -- "$@"
+  curl_ "$url" | sh -s -- "$@"
+}
+
+function curl_ {
+  curl -sSfL --retry 4 "$1"
 }
 
 function msg { out "$*" 1>&2 ;}
