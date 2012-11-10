@@ -16,6 +16,8 @@ import           Data.Tree (Tree(..), Forest)
 import qualified Data.Tree as Tree
 
 import           Data.Graph.Wrapper
+import qualified Text.ShellEscape as Esc
+import qualified Language.Bash as Bash
 
 
 data Task = Cmd Command [Argument] -- ^ A command to run.
@@ -30,16 +32,20 @@ instance IsString Argument where fromString = Literal . ByteString.pack
 newtype Name = Name ByteString deriving (Eq, Ord, Show, IsString)
 
 
--- | Render a command section to an argument vector.
-command :: Command -> [Argument] -> [Argument]
-command (ShHTTP url) args = "curl_sh" : Literal url : args
-command (Path path)  args = Literal path : args
+-- | Render a command section to a Bash command line.
+command :: Command -> [Argument] -> Bash.Statement Bash.Lines
+command cmd args = case cmd of ShHTTP url -> bash "curl_sh" (Literal url:args)
+                               Path path  -> bash path args
+ where bash a b = Bash.SimpleCommand (Bash.literal a) (arg <$> b)
 
 -- | Render a task to an argument vector. Uses 'command' for commands and
 --   inserts a message, @..: job.name@, for completed jobs.
-compile :: Task -> [Argument]
+compile :: Task -> Bash.Statement Bash.Lines
 compile (Cmd cmd args) = command cmd args
-compile (Msg (Name b)) = "msg" : "..:" : Literal b : []
+compile (Msg (Name b)) = Bash.SimpleCommand "msg" [Bash.literal (":)  "<>b)]
+
+arg :: Argument -> Bash.Expression Bash.Lines
+arg (Literal b) = Bash.literal b
 
 -- | Attempts to schedule a task graph. If there are cycles, scheduling fails
 --   and the cycles are returned.
@@ -50,6 +56,12 @@ schedule g | a == []   = Right b
        scc2either (CyclicSCC ts) = Left ts
        scc2either (AcyclicSCC t) = Right t
 
+script :: [Task] -> Bash.Statement Bash.Lines
+script  = Bash.Function "tasks" . anno . and . (compile <$>)
+ where anno     = Bash.Annotated (Bash.Lines [] [])
+       and cmds = case cmds of [   ] -> Bash.NoOp "none/empty"
+                               [cmd] -> cmd
+                               cmd:t -> Bash.AndAnd (anno cmd) (anno (and t))
 
 -- | When input documents are read, they present tasks and dependencies as
 --   trees. These trees are collapsed to an adjacency list representation, for
