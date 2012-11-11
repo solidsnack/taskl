@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings
            , TemplateHaskell
+           , ScopedTypeVariables
            , GeneralizedNewtypeDeriving #-}
 module TaskL where
 
@@ -16,11 +17,16 @@ import           Data.Map (Map)
 import qualified Data.Map as Map
 import           Data.Tree (Tree(..), Forest)
 import qualified Data.Tree as Tree
+import           System.IO
+import           System.Environment
 
 import           Data.FileEmbed
 import           Data.Graph.Wrapper
+import           Data.Yaml
 import qualified Text.ShellEscape as Esc
 import qualified Language.Bash as Bash
+
+import           JSONTree
 
 
 data Task = Cmd Command [Argument] -- ^ A command to run.
@@ -99,4 +105,12 @@ frame            = $(embedFile "frame.bash")
                  . second (drop 1 . dropWhile (/= "}"))
                  . span (/= "function tasks {")
                  $ ByteString.lines frame
+
+
+main = do
+  args <- getArgs
+  Just (decls :: Forest String) <- decode <$> ByteString.hGetContents stdin
+  let task | h:_ <- args = ByteString.pack h
+           | otherwise   = "//"
+  putStr (Tree.drawForest decls)
 
