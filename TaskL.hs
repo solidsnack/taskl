@@ -142,9 +142,14 @@ main = do
   Just (decls :: Forest ByteString) <- decode <$> ByteString.hGetContents stdin
   let task | h:_ <- args = ByteString.pack h
            | otherwise   = "//"
-      parses = parseDeclaration <$> decls
-  printDeclarations `mapM_` parses
+      parses = declaration <$> decls
+      g = graph (backToTree <$> rights parses)
+  case script <$> schedule g of
+    Right bash  -> ByteString.putStr bash
+    Left cycles -> do hPutStrLn stderr "Not able to schedule:"
+                      hPutStrLn stderr (show cycles)
  where
+  backToTree (name, tasks) = Node (Module name) [ Node t [] | t <- tasks ]
   parseDeclaration node@(Node s _) = case declaration node of
                                        Left err      -> (s, Left err)
                                        Right (_, ts) -> (s, Right ts)
