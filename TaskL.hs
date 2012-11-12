@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings
+           , TupleSections
            , TemplateHaskell
            , ScopedTypeVariables
            , GeneralizedNewtypeDeriving #-}
@@ -6,6 +7,7 @@ module TaskL where
 
 import           Control.Applicative
 import           Control.Arrow
+import           Control.Monad
 import           Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as ByteString
 import           Data.Either
@@ -20,6 +22,7 @@ import qualified Data.Tree as Tree
 import           System.IO
 import           System.Environment
 
+import qualified Data.Attoparsec.ByteString.Char8 as Attoparsec
 import           Data.FileEmbed
 import           Data.Graph.Wrapper
 import           Data.Yaml
@@ -29,32 +32,32 @@ import qualified Language.Bash as Bash
 import           JSONTree
 
 
-data Task = Cmd Command [Argument] -- ^ A command to run.
-          | Msg Name               -- ^ Marks completion of a named task.
+data Task = Run Command [Argument] -- ^ A command to run.
+          | Module Name            -- ^ Marks completion of a named task.
              deriving (Eq, Ord, Show)
 
 data Command = ShHTTP ByteString | Path ByteString deriving (Eq, Ord, Show)
 
-data Argument = Literal ByteString deriving (Eq, Ord, Show)
-instance IsString Argument where fromString = Literal . ByteString.pack
+data Argument = Str ByteString deriving (Eq, Ord, Show)
+instance IsString Argument where fromString = Str . ByteString.pack
 
 newtype Name = Name ByteString deriving (Eq, Ord, Show, IsString)
 
 
 -- | Render a command section to a Bash command line.
 command :: Command -> [Argument] -> Bash.Statement ()
-command cmd args = case cmd of ShHTTP url -> bash "curl_sh" (Literal url:args)
+command cmd args = case cmd of ShHTTP url -> bash "curl_sh" (Str url:args)
                                Path path  -> bash path args
  where bash a b = Bash.SimpleCommand (Bash.literal a) (arg <$> b)
 
 -- | Render a task to an argument vector. Uses 'command' for commands and
 --   inserts a message, @..: job.name@, for completed jobs.
 compile :: Task -> Bash.Statement ()
-compile (Cmd cmd args) = command cmd args
-compile (Msg (Name b)) = Bash.SimpleCommand "msg" [Bash.literal (":)  "<>b)]
+compile (Run cmd args) = command cmd args
+compile (Module (Name b)) = Bash.SimpleCommand "msg" [Bash.literal (":)  "<>b)]
 
 arg :: Argument -> Bash.Expression ()
-arg (Literal b) = Bash.literal b
+arg (Str b) = Bash.literal b
 
 -- | Attempts to schedule a task graph. If there are cycles, scheduling fails
 --   and the cycles are returned.
@@ -107,10 +110,48 @@ frame            = $(embedFile "frame.bash")
                  $ ByteString.lines frame
 
 
+cmd ::  Attoparsec.Parser Command
+cmd  =  (ShHTTP <$> url) <|> (Path <$> Attoparsec.takeByteString)
+
+url :: Attoparsec.Parser ByteString
+url  = (<>) <$> (Attoparsec.string "http://" <|> Attoparsec.string "https://")
+            <*> Attoparsec.takeByteString
+
+name ::  Attoparsec.Parser Name
+name  =  Attoparsec.string "//"
+      *> (Name . ByteString.intercalate "." <$> labels) <* Attoparsec.endOfInput
+ where labels = Attoparsec.sepBy1 label (Attoparsec.char '.')
+
+label :: Attoparsec.Parser ByteString
+label  = label' <|> ByteString.singleton <$> ld
+ where ldu = Attoparsec.takeWhile1 (Attoparsec.inClass "a-zA-Z0-9_")
+       ld  = Attoparsec.satisfy (Attoparsec.inClass "a-zA-Z0-9")
+       label' = do b <- ByteString.cons <$> ld <*> ldu
+                   if ByteString.last b == '_' then mzero else return b
+
+task :: Tree ByteString -> Either String Task
+task (Node s ts)  =  either Module (`Run` (Str . rootLabel <$> ts))
+                 <$> Attoparsec.parseOnly (Attoparsec.eitherP name cmd) s
+
+declaration :: Tree ByteString -> Either String (Name, [Task])
+declaration (Node s ts) = (,) <$> Attoparsec.parseOnly name s <*> mapM task ts
+
+
 main = do
   args <- getArgs
-  Just (decls :: Forest String) <- decode <$> ByteString.hGetContents stdin
+  Just (decls :: Forest ByteString) <- decode <$> ByteString.hGetContents stdin
   let task | h:_ <- args = ByteString.pack h
            | otherwise   = "//"
-  putStr (Tree.drawForest decls)
+      parses = parseDeclaration <$> decls
+  printDeclarations `mapM_` parses
+ where
+  parseDeclaration node@(Node s _) = case declaration node of
+                                       Left err      -> (s, Left err)
+                                       Right (_, ts) -> (s, Right ts)
+  printDeclarations (s, Left err) = do
+    ByteString.hPutStrLn stderr s
+    hPutStrLn stderr ("  "++err)
+  printDeclarations (s, Right tasks) = do
+    ByteString.hPutStrLn stderr s
+    (hPutStrLn stderr . show) `mapM_` tasks
 
