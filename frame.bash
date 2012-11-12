@@ -5,7 +5,7 @@ function tasks {
   : # Replace with worker body.
 }
 
-function curl_sh {
+function shurl {
   local url="$1" ; shift
   curl_ "$url" | sh -s -- "$@"
 }

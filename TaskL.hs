@@ -46,7 +46,7 @@ newtype Name = Name ByteString deriving (Eq, Ord, Show, IsString)
 
 -- | Render a command section to a Bash command line.
 command :: Command -> [Argument] -> Bash.Statement ()
-command cmd args = case cmd of ShHTTP url -> bash "curl_sh" (Str url:args)
+command cmd args = case cmd of ShHTTP url -> bash "shurl" (Str url:args)
                                Path path  -> bash path args
  where bash a b = Bash.SimpleCommand (Bash.literal a) (arg <$> b)
 
