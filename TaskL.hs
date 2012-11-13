@@ -145,8 +145,8 @@ main = do
       g = graph (backToTree <$> rights parses)
   case script <$> schedule g of
     Right bash  -> ByteString.putStr bash
-    Left cycles -> do hPutStrLn stderr "Not able to schedule:"
-                      hPutStrLn stderr (show cycles)
+    Left cycles -> do hPutStrLn stderr "Not able to schedule due to cycles:"
+                      (hPutStrLn stderr . show) `mapM_` cycles
  where
   backToTree (name, tasks) = Node (Module name) [ Node t [] | t <- tasks ]
   parseDeclaration node@(Node s _) = case declaration node of
