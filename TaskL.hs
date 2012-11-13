@@ -54,7 +54,7 @@ command cmd args = case cmd of ShHTTP url -> bash "shurl" (Str url:args)
 --   inserts a message, @..: job.name@, for completed jobs.
 compile :: Task -> Bash.Statement ()
 compile (Run cmd args) = command cmd args
-compile (Module (Name b)) = Bash.SimpleCommand "msg" [Bash.literal (":)  "<>b)]
+compile (Module (Name b)) = Bash.SimpleCommand "msg" [":) ", Bash.literal b]
 
 arg :: Argument -> Bash.Expression ()
 arg (Str b) = Bash.literal b
@@ -74,7 +74,7 @@ tasks  = Bash.Function "tasks" . anno . and . (compile <$>)
  where anno = Bash.Annotated ()
        and cmds = case cmds of [   ] -> Bash.SimpleCommand "msg" ["No tasks."]
                                [cmd] -> cmd
-                               cmd:t -> Bash.AndAnd (anno cmd) (anno (and t))
+                               cmd:t -> Bash.Sequence (anno cmd) (anno (and t))
 
 
 script :: [Task] -> ByteString
