@@ -1,0 +1,53 @@
+
+How it works:
+
+  ByteString
+  ──╥───────
+    ╟╴JSON/YAML parsing
+    ╬
+  Tree ByteString
+  ──╥────────────
+    ╟╴Interpret tree levels as names
+    ║                            tasks
+    ║                              arguments
+    ╬
+  [Definition]
+  ──╥────────────
+    ╟╴Put definitions in map and make a graph of all dependencies
+    ╬
+ (Map Name [Cmd], Graph Name Name)
+  ──╥───────────  ─────╥─────────
+    ║                  ║
+    ║           Name   ║
+    ║           ─╥──   ║
+    ║            ╟─────╜
+    ║            ╟╴With user supplied task name, clip graph to relevant tasks
+    ║            ╬
+    ║           Graph Name Name
+    ║           ─╥─────────────
+    ║            ║
+    ╟────────────╜
+    ╟╴Use graph and map to determine if any referenced tasks are undefined. If
+    ║ so, signal error (loading multiple files is not supported yet). If not,
+    ║ unpack definitions to get a list of shell commands that depend on other
+    ║ shell commands.
+    ╬
+  [(Cmd, [Cmd])]
+  ──╥───────────
+    ╟╴Generate a graph of commands' dependencies on one another. Each unique
+    ║ combination of command and arguments appears *only once* in the
+    ║ resulting graph.
+    ╬
+  Graph Cmd Cmd
+  ──╥──────────
+    ╟╴Collapse graph to list of strongly connected components. If any cycles
+    ║ are found, fail with a message describing them; otherwise, return a list
+    ║ of the commands, dependencies before dependents.
+    ╬
+  [Cmd]
+  ──╥──
+    ╟╴Compile the commands to shell, inserting code to download "commands"
+    ║ which are HTTP URLs, and embed the commands in the template script.
+    ╬
+  ByteString
+
