@@ -116,10 +116,12 @@ url :: Attoparsec.Parser ByteString
 url  = (<>) <$> (Attoparsec.string "http://" <|> Attoparsec.string "https://")
             <*> Attoparsec.takeByteString
 
-name ::  Attoparsec.Parser Name
-name  =  Attoparsec.string "//"
-      *> (Name . ByteString.intercalate "." <$> labels) <* Attoparsec.endOfInput
+name :: Attoparsec.Parser Name
+name  = (Name . ByteString.intercalate "." <$> labels) <* Attoparsec.endOfInput
  where labels = Attoparsec.sepBy1 label (Attoparsec.char '.')
+
+call :: Attoparsec.Parser Name
+call  = Attoparsec.string "//" *> name
 
 label :: Attoparsec.Parser ByteString
 label  = label' <|> ByteString.singleton <$> ld
@@ -130,7 +132,7 @@ label  = label' <|> ByteString.singleton <$> ld
 
 task :: Tree ByteString -> Either String Task
 task (Node s ts)  =  either Module (`Run` (Str . rootLabel <$> ts))
-                 <$> Attoparsec.parseOnly (Attoparsec.eitherP name cmd) s
+                 <$> Attoparsec.parseOnly (Attoparsec.eitherP call cmd) s
 
 declaration :: Tree ByteString -> Either String (Name, [Task])
 declaration (Node s ts) = (,) <$> Attoparsec.parseOnly name s <*> mapM task ts
