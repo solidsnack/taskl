@@ -76,7 +76,6 @@ tasks  = Bash.Function "tasks" . anno . and . (compile <$>)
                                [cmd] -> cmd
                                cmd:t -> Bash.Sequence (anno cmd) (anno (and t))
 
-
 script :: [Task] -> ByteString
 script list = header <> Bash.bytes (tasks list) <> "\n" <> footer
 
