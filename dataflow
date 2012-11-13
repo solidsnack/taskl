@@ -12,7 +12,7 @@ How it works:
     ║                              arguments
     ╬
   [Definition]
-  ──╥────────────
+  ──╥─────────
     ╟╴Put definitions in map and make a graph of all dependencies
     ╬
  (Map Name [Cmd], Graph Name Name)
