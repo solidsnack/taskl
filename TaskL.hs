@@ -32,36 +32,26 @@ import qualified Language.Bash as Bash
 import           JSONTree
 
 
-data Task = Run Command [Argument] -- ^ A command to run.
-          | Module Name            -- ^ Marks completion of a named task.
-             deriving (Eq, Ord, Show)
+data Cmd = Cmd Program [Argument] deriving (Eq, Ord, Show)
 
-data Command = ShHTTP ByteString | Path ByteString deriving (Eq, Ord, Show)
+data Program = ShHTTP ByteString | Path ByteString deriving (Eq, Ord, Show)
 
 data Argument = Str ByteString deriving (Eq, Ord, Show)
 instance IsString Argument where fromString = Str . ByteString.pack
 
-newtype Name = Name ByteString deriving (Eq, Ord, Show, IsString)
-
 
 -- | Render a command section to a Bash command line.
-command :: Command -> [Argument] -> Bash.Statement ()
-command cmd args = case cmd of ShHTTP url -> bash "curl_sh" (Str url:args)
-                               Path path  -> bash path args
+command :: Cmd -> Bash.Statement ()
+command (Cmd p args) = case p of ShHTTP url -> bash "curl_sh" (Str url:args)
+                                 Path path  -> bash path args
  where bash a b = Bash.SimpleCommand (Bash.literal a) (arg <$> b)
-
--- | Render a task to an argument vector. Uses 'command' for commands and
---   inserts a message, @..: job.name@, for completed jobs.
-compile :: Task -> Bash.Statement ()
-compile (Run cmd args) = command cmd args
-compile (Module (Name b)) = Bash.SimpleCommand "msg" [":) ", Bash.literal b]
 
 arg :: Argument -> Bash.Expression ()
 arg (Str b) = Bash.literal b
 
--- | Attempts to schedule a task graph. If there are cycles, scheduling fails
---   and the cycles are returned.
-schedule :: Graph Task Task -> Either [[Task]] [Task]
+-- | Calculate a linear schedule from a graph if there are no cycles, or
+--   return the cycles.
+schedule :: (Eq t) => Graph t t -> Either [[t]] [t]
 schedule g | a == []   = Right b
            | otherwise = Left a
  where (a, b) = partitionEithers (scc2either <$> stronglyConnectedComponents g)
@@ -69,21 +59,21 @@ schedule g | a == []   = Right b
        scc2either (AcyclicSCC t) = Right t
 
 -- | Generate Bash function declaration for task schedule.
-tasks :: [Task] -> Bash.Statement ()
-tasks  = Bash.Function "tasks" . anno . and . (compile <$>)
+tasks :: [Cmd] -> Bash.Statement ()
+tasks  = Bash.Function "tasks" . anno . and . (command <$>)
  where anno = Bash.Annotated ()
        and cmds = case cmds of [   ] -> Bash.SimpleCommand "msg" ["No tasks."]
                                [cmd] -> cmd
                                cmd:t -> Bash.Sequence (anno cmd) (anno (and t))
 
-script :: [Task] -> ByteString
+script :: [Cmd] -> ByteString
 script list = header <> Bash.bytes (tasks list) <> "\n" <> footer
 
 
 -- | When input documents are read, they present tasks and dependencies as
 --   trees. These trees are collapsed to an adjacency list representation, for
 --   use by a graph library.
-adjacencies :: Tree Task -> [(Task, [Task])]
+adjacencies :: Tree t -> [(t, [t])]
 adjacencies (Node t [ ]) = (t, []) : []
 adjacencies (Node t sub) = (t, Tree.rootLabel <$> sub)
                          : concatMap adjacencies sub
@@ -91,14 +81,12 @@ adjacencies (Node t sub) = (t, Tree.rootLabel <$> sub)
 -- | A task could be present multiple times in a document or collection of
 --   documents. Dependencies are always merged across multiple definitions of
 --   a task, by taking the set union of them.
-merge :: [(Task, [Task])] -> Map Task (Set Task)
+merge :: (Ord t) => [(t, [t])] -> Map t (Set t)
 merge  = (Set.fromList <$>) . Map.fromListWith (++)
 
--- | Once input documents are parsed, they present a forest of tasks. These
---   tasks are merged to form the final, compilable graph.
-graph :: Forest Task -> Graph Task Task
-graph  = fromListSimple . Map.toAscList . (Set.toAscList <$>)
-       . merge . concatMap adjacencies
+-- | Merge adjacency lists and produce a graph.
+graph :: (Ord t) => [(t, [t])] -> Graph t t
+graph  = fromListSimple . Map.toAscList . (Set.toAscList <$>) . merge
 
 
 frame, header, footer :: ByteString
@@ -109,8 +97,12 @@ frame            = $(embedFile "frame.bash")
                  $ ByteString.lines frame
 
 
-cmd ::  Attoparsec.Parser Command
-cmd  =  (ShHTTP <$> url) <|> (Path <$> Attoparsec.takeByteString)
+data Definition = Definition Name [Cmd] [Name]
+
+newtype Name = Name ByteString deriving (Eq, Ord, Show, IsString)
+
+program :: Attoparsec.Parser Program
+program  = (ShHTTP <$> url) <|> (Path <$> Attoparsec.takeByteString)
 
 url :: Attoparsec.Parser ByteString
 url  = (<>) <$> (Attoparsec.string "http://" <|> Attoparsec.string "https://")
@@ -130,34 +122,44 @@ label  = label' <|> ByteString.singleton <$> ld
        label' = do b <- ByteString.cons <$> ld <*> ldu
                    if ByteString.last b == '_' then mzero else return b
 
-task :: Tree ByteString -> Either String Task
-task (Node s ts)  =  either Module (`Run` (Str . rootLabel <$> ts))
-                 <$> Attoparsec.parseOnly (Attoparsec.eitherP call cmd) s
+task :: Tree ByteString -> Either String (Either Name Cmd)
+task (Node s ts)  =  either Left (Right . (`Cmd` (Str . rootLabel <$> ts)))
+                 <$> Attoparsec.parseOnly (Attoparsec.eitherP call program) s
 
-declaration :: Tree ByteString -> Either String (Name, [Task])
-declaration (Node s ts) = (,) <$> Attoparsec.parseOnly name s <*> mapM task ts
+definition :: Tree ByteString -> Either (ByteString, String) Definition
+definition (Node s ts) = either (Left . (s,)) Right $ do
+  whoami              <- Attoparsec.parseOnly name s
+  (names, commands)   <- partitionEithers <$> mapM task ts
+  return $ Definition whoami commands names
+
+--definition (Node s ts) = either (s,) id $ do
+--  whoami              <- Attoparsec.parseOnly name s
+--  (names, commands)   <- partitionEithers <$> mapM task ts
+--  return $ Definition whoami commands names
 
 
+compiledModule :: Forest ByteString
+               -> ((Map Name [Cmd], Graph Name Name), [(ByteString, String)])
+compiledModule trees =
+  ( (Map.fromList bodies, graph (leaves ++ dependencies)), failed )
+ where (failed, defined) = partitionEithers (definition <$> trees)
+       (bodies, dependencies) = unzip [ ((name, body), (name, names))
+                                      | Definition name body names <- defined ]
+       leaves = (,[]) <$> (Set.toList . missing . merge) dependencies
+       missing m = Set.difference (Set.unions $ Map.elems m) (Map.keysSet m)
+
+
+main :: IO ()
 main = do
-  args <- getArgs
-  Just (decls :: Forest ByteString) <- decode <$> ByteString.hGetContents stdin
-  let task | h:_ <- args = ByteString.pack h
-           | otherwise   = "//"
-      parses = declaration <$> decls
-      g = graph (backToTree <$> rights parses)
-  case script <$> schedule g of
-    Right bash  -> ByteString.putStr bash
-    Left cycles -> do hPutStrLn stderr "Not able to schedule due to cycles:"
-                      (hPutStrLn stderr . show) `mapM_` cycles
- where
-  backToTree (name, tasks) = Node (Module name) [ Node t [] | t <- tasks ]
-  parseDeclaration node@(Node s _) = case declaration node of
-                                       Left err      -> (s, Left err)
-                                       Right (_, ts) -> (s, Right ts)
-  printDeclarations (s, Left err) = do
-    ByteString.hPutStrLn stderr s
-    hPutStrLn stderr ("  "++err)
-  printDeclarations (s, Right tasks) = do
-    ByteString.hPutStrLn stderr s
-    (hPutStrLn stderr . show) `mapM_` tasks
+  return ()
+--  args <- getArgs
+--  Just (decls :: Forest ByteString) <- decode <$> ByteString.hGetContents stdin
+--  let task | h:_ <- args = ByteString.pack h
+--           | otherwise   = "//"
+--      parses = declaration <$> decls
+--      g = graph (backToTree <$> rights parses)
+--  case script <$> schedule g of
+--    Right bash  -> ByteString.putStr bash
+--    Left cycles -> do hPutStrLn stderr "Not able to schedule due to cycles:"
+--                      (hPutStrLn stderr . show) `mapM_` cycles
 
