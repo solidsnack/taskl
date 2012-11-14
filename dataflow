@@ -11,22 +11,23 @@ How it works:
     ║                            tasks
     ║                              arguments
     ╬
-  [Definition]
-  ──╥─────────
+  [Definition Name [Cmd] [Name]]
+  ──╥───────────────────────────
     ╟╴Put definitions in map and make a graph of all dependencies
     ╬
- (Map Name [Cmd], Graph Name Name)
-  ──╥───────────  ─────╥─────────
-    ║                  ║
-    ║           Name   ║
-    ║           ─╥──   ║
-    ║            ╟─────╜
-    ║            ╟╴With user supplied task name, clip graph to relevant tasks
-    ║            ╬
-    ║           Graph Name Name
-    ║           ─╥─────────────
-    ║            ║
-    ╟────────────╜
+  Module (Map Name (Set Cmd)) (Map Name (Set Name))
+          ─╥────────────────   ─╥─────────────────
+           ║                    ║
+           ║                    ║
+           ║    Name            ║
+           ║    ─╥──            ║
+           ║     ╟──────────────╜
+           ║     ╟╴With user supplied task name, clip graph to relevant tasks
+           ║     ╬
+           ║    Map Name (Set Name)
+           ║    ─╥─────────────────
+           ║     ║
+    ╓──────╨─────╜
     ╟╴Use graph and map to determine if any referenced tasks are undefined. If
     ║ so, signal error (loading multiple files is not supported yet). If not,
     ║ unpack definitions to get a list of shell commands that depend on other
