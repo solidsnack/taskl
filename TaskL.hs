@@ -99,7 +99,7 @@ data Definition = Definition Name [Cmd] [Name]
 
 newtype Name = Name ByteString deriving (Eq, Ord, Show, IsString)
 
-data Module = Module (Map Name [Cmd]) (Map Name (Set Name))
+data Module = Module (Map Name (Set Cmd)) (Map Name (Set Name))
  deriving (Eq, Ord, Show)
 
 program :: Attoparsec.Parser Program
@@ -149,7 +149,8 @@ compiledModule trees = (mod, failed)
                                       | Definition name body names <- defined ]
        leaves    = (,[]) <$> (Set.toList . missing . merge) dependencies
        missing m = Set.difference (Set.unions $ Map.elems m) (Map.keysSet m)
-       mod       = Module (Map.fromList bodies) (merge (leaves ++ dependencies))
+       mod       = Module (Set.fromList <$> Map.fromList bodies)
+                          (merge (leaves ++ dependencies))
 
 -- | Clip an adjacency list to include only those entries reachable from the
 --   given key. If no key is given, then the key @_@ is used if it is
@@ -162,6 +163,23 @@ subMap name m = maybe (get "_" <|> Just m) get name
         where keys      = Set.fromList $ Graph.reachableVertices (graph m) key
               reachable = Map.fromList
                           [ (k,v) | (k,v) <- Map.toList m, Set.member k keys ]
+
+data MetaTask = Start Name | Done Name | Run Cmd deriving (Eq, Ord, Show)
+
+crush :: Module -> Map MetaTask (Set MetaTask)
+crush (Module defs deps) = Map.fromListWith Set.union $
+ [ (Run cmd, Set.singleton (Start n)) | (n, cmds)  <- Map.toList defs
+                                      , cmd        <- Set.toList cmds ] ++
+ [ (Done n, Set.map Run cmds)         | (n, cmds)  <- Map.toList defs ] ++
+ [ (Start n, Set.map Done names)      | (n, names) <- Map.toList deps ]
+
+undefinedTasks :: Module -> [Name]
+undefinedTasks (Module defs deps) = Set.toList $
+  Map.keysSet deps `Set.difference` Map.keysSet defs
+
+compile :: Module -> Either [Name] (Map MetaTask (Set MetaTask))
+compile mod = case undefinedTasks mod of h:t -> Left (h:t)
+                                         [ ] -> Right $ crush mod
 
 main :: IO ()
 main = do
