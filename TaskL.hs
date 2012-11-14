@@ -24,7 +24,8 @@ import           System.Environment
 
 import qualified Data.Attoparsec.ByteString.Char8 as Attoparsec
 import           Data.FileEmbed
-import           Data.Graph.Wrapper
+import           Data.Graph.Wrapper (Graph)
+import           Data.Graph.Wrapper as Graph
 import           Data.Yaml
 import qualified Text.ShellEscape as Esc
 import qualified Language.Bash as Bash
@@ -54,9 +55,10 @@ arg (Str b) = Bash.literal b
 schedule :: (Eq t) => Graph t t -> Either [[t]] [t]
 schedule g | a == []   = Right b
            | otherwise = Left a
- where (a, b) = partitionEithers (scc2either <$> stronglyConnectedComponents g)
-       scc2either (CyclicSCC ts) = Left ts
-       scc2either (AcyclicSCC t) = Right t
+ where (a, b) = partitionEithers
+                (scc2either <$> Graph.stronglyConnectedComponents g)
+       scc2either (Graph.CyclicSCC ts) = Left ts
+       scc2either (Graph.AcyclicSCC t) = Right t
 
 -- | Generate Bash function declaration for task schedule.
 tasks :: [Cmd] -> Bash.Statement ()
@@ -70,23 +72,19 @@ script :: [Cmd] -> ByteString
 script list = header <> Bash.bytes (tasks list) <> "\n" <> footer
 
 
--- | When input documents are read, they present tasks and dependencies as
---   trees. These trees are collapsed to an adjacency list representation, for
---   use by a graph library.
-adjacencies :: Tree t -> [(t, [t])]
-adjacencies (Node t [ ]) = (t, []) : []
-adjacencies (Node t sub) = (t, Tree.rootLabel <$> sub)
-                         : concatMap adjacencies sub
-
--- | A task could be present multiple times in a document or collection of
---   documents. Dependencies are always merged across multiple definitions of
---   a task, by taking the set union of them.
+-- | A task name could be present multiple times in a document or collection
+--   of documents (for example, the @_@ default task). The "leftmost"
+--   (earliest) definition overrides later definitions.
 merge :: (Ord t) => [(t, [t])] -> Map t (Set t)
-merge  = (Set.fromList <$>) . Map.fromListWith (++)
+merge  = (Set.fromList <$>) . Map.fromListWith const
+
+-- | Convert from a 'Map' of adjacencies to a list of adjacencies.
+adjacencies :: (Ord t) => Map t (Set t) -> [(t, [t])]
+adjacencies  = Map.toAscList . (Set.toAscList <$>)
 
 -- | Merge adjacency lists and produce a graph.
-graph :: (Ord t) => [(t, [t])] -> Graph t t
-graph  = fromListSimple . Map.toAscList . (Set.toAscList <$>) . merge
+graph :: (Ord t) => Map t (Set t) -> Graph t t
+graph  = Graph.fromListSimple . adjacencies
 
 
 frame, header, footer :: ByteString
@@ -100,6 +98,9 @@ frame            = $(embedFile "frame.bash")
 data Definition = Definition Name [Cmd] [Name]
 
 newtype Name = Name ByteString deriving (Eq, Ord, Show, IsString)
+
+data Module = Module (Map Name [Cmd]) (Map Name (Set Name))
+ deriving (Eq, Ord, Show)
 
 program :: Attoparsec.Parser Program
 program  = (ShHTTP <$> url) <|> (Path <$> Attoparsec.takeByteString)
@@ -126,28 +127,41 @@ task :: Tree ByteString -> Either String (Either Name Cmd)
 task (Node s ts)  =  either Left (Right . (`Cmd` (Str . rootLabel <$> ts)))
                  <$> Attoparsec.parseOnly (Attoparsec.eitherP call program) s
 
+-- | Parse a definition. Note that one may define @_@ (taken to be the default
+--   if a module is loaded but no specific task is asked for) but that name is
+--   not callable.
 definition :: Tree ByteString -> Either (ByteString, String) Definition
 definition (Node s ts) = either (Left . (s,)) Right $ do
-  whoami              <- Attoparsec.parseOnly name s
+  whoami              <- Attoparsec.parseOnly (main <|> name) s
   (names, commands)   <- partitionEithers <$> mapM task ts
   return $ Definition whoami commands names
+ where
+  main = Name <$> Attoparsec.string "_"
 
---definition (Node s ts) = either (s,) id $ do
---  whoami              <- Attoparsec.parseOnly name s
---  (names, commands)   <- partitionEithers <$> mapM task ts
---  return $ Definition whoami commands names
-
-
-compiledModule :: Forest ByteString
-               -> ((Map Name [Cmd], Graph Name Name), [(ByteString, String)])
-compiledModule trees =
-  ( (Map.fromList bodies, graph (leaves ++ dependencies)), failed )
+-- | Compile any number of loaded, semi-structured text trees to a module. Any
+--   trees that fail to parse are returned in a separate list, to be used for
+--   warnings. (At a later stage, absent definitions can result in compiler
+--   failure.)
+compiledModule :: Forest ByteString -> (Module, [(ByteString, String)])
+compiledModule trees = (mod, failed)
  where (failed, defined) = partitionEithers (definition <$> trees)
        (bodies, dependencies) = unzip [ ((name, body), (name, names))
                                       | Definition name body names <- defined ]
-       leaves = (,[]) <$> (Set.toList . missing . merge) dependencies
+       leaves    = (,[]) <$> (Set.toList . missing . merge) dependencies
        missing m = Set.difference (Set.unions $ Map.elems m) (Map.keysSet m)
+       mod       = Module (Map.fromList bodies) (merge (leaves ++ dependencies))
 
+-- | Clip an adjacency list to include only those entries reachable from the
+--   given key. If no key is given, then the key @_@ is used if it is
+--   in the map; otherwise, the entire adjacency list is returned.
+--
+--   If a key is given and it is not in the map, then 'Nothing' is returned.
+subMap :: Maybe Name -> Map Name (Set Name) -> Maybe (Map Name (Set Name))
+subMap name m = maybe (get "_" <|> Just m) get name
+ where get key = reachable <$ guard (Map.member key m)
+        where keys      = Set.fromList $ Graph.reachableVertices (graph m) key
+              reachable = Map.fromList
+                          [ (k,v) | (k,v) <- Map.toList m, Set.member k keys ]
 
 main :: IO ()
 main = do
