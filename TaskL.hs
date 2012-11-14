@@ -36,6 +36,7 @@ import           JSONTree
 data Cmd = Cmd Program [Argument] deriving (Eq, Ord, Show)
 
 data Program = ShHTTP ByteString | Path ByteString deriving (Eq, Ord, Show)
+instance IsString Program where fromString = Path . ByteString.pack
 
 data Argument = Str ByteString deriving (Eq, Ord, Show)
 instance IsString Argument where fromString = Str . ByteString.pack
@@ -164,6 +165,7 @@ subMap name m = maybe (get "_" <|> Just m) get name
               reachable = Map.fromList
                           [ (k,v) | (k,v) <- Map.toList m, Set.member k keys ]
 
+
 data MetaTask = Start Name | Done Name | Run Cmd deriving (Eq, Ord, Show)
 
 crush :: Module -> Map MetaTask (Set MetaTask)
@@ -177,9 +179,19 @@ undefinedTasks :: Module -> [Name]
 undefinedTasks (Module defs deps) = Set.toList $
   Map.keysSet deps `Set.difference` Map.keysSet defs
 
-compile :: Module -> Either [Name] (Map MetaTask (Set MetaTask))
-compile mod = case undefinedTasks mod of h:t -> Left (h:t)
-                                         [ ] -> Right $ crush mod
+taskSchedule :: Module -> Either [Name] (Either [[MetaTask]] [MetaTask])
+taskSchedule mod = case undefinedTasks mod of
+  [ ] -> Right . schedule . graph . crush $ mod
+  h:t -> Left (h:t)
+
+unMeta :: MetaTask -> Cmd
+unMeta (Start (Name b)) = Cmd "msg" ["-_-", Str b]
+unMeta (Done (Name b))  = Cmd "msg" ["^_^", Str b]
+unMeta (Run cmd)        = cmd
+
+shell :: [MetaTask] -> ByteString
+shell  = script . (unMeta <$>)
+
 
 main :: IO ()
 main = do
