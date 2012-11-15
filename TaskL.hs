@@ -11,6 +11,7 @@ import           Control.Monad
 import           Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as ByteString
 import           Data.Either
+import           Data.Maybe
 import           Data.Monoid
 import           Data.String
 import           Data.Set (Set)
@@ -21,6 +22,7 @@ import           Data.Tree (Tree(..), Forest)
 import qualified Data.Tree as Tree
 import           System.IO
 import           System.Environment
+import           System.Exit
 
 import qualified Data.Attoparsec.ByteString.Char8 as Attoparsec
 import           Data.FileEmbed
@@ -33,7 +35,12 @@ import qualified Language.Bash as Bash
 import           JSONTree
 
 
-data Cmd = Cmd Program [Argument] deriving (Eq, Ord, Show)
+data Cmd = Cmd Program [Argument] deriving (Eq, Ord)
+instance Show Cmd where
+  show (Cmd program args) = unwords (p2s program : map a2s args)
+   where p2s (ShHTTP b)   = ByteString.unpack b
+         p2s (Path b)     = ByteString.unpack b
+         a2s (Str b)      = ByteString.unpack b
 
 data Program = ShHTTP ByteString | Path ByteString deriving (Eq, Ord, Show)
 instance IsString Program where fromString = Path . ByteString.pack
@@ -100,9 +107,6 @@ data Definition = Definition Name [Cmd] [Name]
 
 newtype Name = Name ByteString deriving (Eq, Ord, Show, IsString)
 
-data Module = Module (Map Name (Set Cmd)) (Map Name (Set Name))
- deriving (Eq, Ord, Show)
-
 program :: Attoparsec.Parser Program
 program  = (ShHTTP <$> url) <|> (Path <$> Attoparsec.takeByteString)
 
@@ -139,6 +143,10 @@ definition (Node s ts) = either (Left . (s,)) Right $ do
  where
   main = Name <$> Attoparsec.string "_"
 
+
+data Module = Module (Map Name (Set Cmd)) (Map Name (Set Name))
+ deriving (Eq, Ord, Show)
+
 -- | Compile any number of loaded, semi-structured text trees to a module. Any
 --   trees that fail to parse are returned in a separate list, to be used for
 --   warnings. (At a later stage, absent definitions can result in compiler
@@ -166,14 +174,19 @@ subMap name m = maybe (get "_" <|> Just m) get name
                           [ (k,v) | (k,v) <- Map.toList m, Set.member k keys ]
 
 
-data MetaTask = Start Name | Done Name | Run Cmd deriving (Eq, Ord, Show)
+data MetaTask = Start Name | Done Name | Run Cmd deriving (Eq, Ord)
+instance Show MetaTask where
+  show (Start (Name b)) = "//" ++ ByteString.unpack b ++ " (start)"
+  show (Done (Name b))  = "//" ++ ByteString.unpack b ++ " (completion)"
+  show (Run cmd)        = show cmd
 
 crush :: Module -> Map MetaTask (Set MetaTask)
 crush (Module defs deps) = Map.fromListWith Set.union $
  [ (Run cmd, Set.singleton (Start n)) | (n, cmds)  <- Map.toList defs
                                       , cmd        <- Set.toList cmds ] ++
  [ (Done n, Set.map Run cmds)         | (n, cmds)  <- Map.toList defs ] ++
- [ (Start n, Set.map Done names)      | (n, names) <- Map.toList deps ]
+ [ (Start n, Set.map Done names)      | (n, names) <- Map.toList deps ] ++
+ [ (Done n, Set.singleton (Start n))  | (n, _)     <- Map.toList deps ]
 
 undefinedTasks :: Module -> [Name]
 undefinedTasks (Module defs deps) = Set.toList $
@@ -195,15 +208,29 @@ shell  = script . (unMeta <$>)
 
 main :: IO ()
 main = do
-  return ()
---  args <- getArgs
---  Just (decls :: Forest ByteString) <- decode <$> ByteString.hGetContents stdin
---  let task | h:_ <- args = ByteString.pack h
---           | otherwise   = "//"
---      parses = declaration <$> decls
---      g = graph (backToTree <$> rights parses)
---  case script <$> schedule g of
---    Right bash  -> ByteString.putStr bash
---    Left cycles -> do hPutStrLn stderr "Not able to schedule due to cycles:"
---                      (hPutStrLn stderr . show) `mapM_` cycles
+  arg <- (ByteString.pack <$>) . listToMaybe <$> getArgs
+  Just (trees :: Forest ByteString) <- decode <$> ByteString.hGetContents stdin
+  let (Module defs deps, failed) = compiledModule trees
+  task <- case arg of
+            Nothing -> return Nothing
+            Just b  -> case Attoparsec.parseOnly name b of
+                         Right name -> return (Just name)
+                         Left _     -> msg "Invalid task name." >> exitFailure
+  (failed /= []) `when` do msg "Some definitions were not loadable:"
+                           mapM_ (msg . ByteString.pack . show) failed
+  case subMap task deps of
+    Nothing    -> msg "Failed to find requested task." >> exitFailure
+    Just deps' -> tryCompile (Module defs deps')
+ where
+  unName (Name b) = b
+  msg = ByteString.hPutStrLn stderr
+  out = ByteString.hPutStrLn stdout
+  tryCompile mod = case taskSchedule mod of
+    Right (Right tasks) -> out (shell tasks)
+    Right (Left cycles) -> do msg "Scheduling failure due to cycles:"
+                              mapM_ (msg . ByteString.pack . show) cycles
+                              exitFailure
+    Left names          -> do msg "Can not compile these undefined tasks:"
+                              mapM_ (msg . unName) names
+                              exitFailure
 
