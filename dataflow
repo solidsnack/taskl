@@ -1,54 +1,51 @@
-
-How it works:
-
-  ByteString
+                                                ╬═════════════════════════════╗
+                                                ║ Task/L, from bytes to bytes ║
+  ByteString                                    ╚═════════════════════════════╬
   ──╥───────
-    ╟╴JSON/YAML parsing
+    ╟╴Parse as YAML (perhaps also JSON in the future).
     ╬
   Tree ByteString
   ──╥────────────
     ╟╴Interpret tree levels as names
     ║                            tasks
-    ║                              arguments
+    ║                              arguments to create definitions.
     ╬
   [Definition Name [Cmd] [Name]]
   ──╥───────────────────────────
-    ╟╴Put definitions in map and make a graph of all dependencies
+    ╟╴Split defintions into map of bodies (commands to run, once a task's
+    ║ dependencies are run) and dependencies (tasks which another task depends
+    ║ on). These together form a module.
     ╬
   Module (Map Name (Set Cmd)) (Map Name (Set Name))
-          ─╥────────────────   ─╥─────────────────
-           ║                    ║
-           ║                    ║
-           ║    Name            ║
-           ║    ─╥──            ║
-           ║     ╟──────────────╜
+          ─╥────────────────   ─╥─────────────────         Name
+           ║                    ║                          ─╥──
+           ║     ╓──────────────╨───────────────────────────╜
            ║     ╟╴With user supplied task name, clip graph to relevant tasks
            ║     ╬
            ║    Map Name (Set Name)
            ║    ─╥─────────────────
-           ║     ║
     ╓──────╨─────╜
-    ╟╴Use graph and map to determine if any referenced tasks are undefined. If
-    ║ so, signal error (loading multiple files is not supported yet). If not,
-    ║ unpack definitions to get a list of shell commands that depend on other
-    ║ shell commands.
+    ╟╴Use dependencies and definitions together to create a merged dependency
+    ║ list, where a task's "Start" depends on its dependencies "Done" action
+    ║ and the commands that define it depend on its own "Start" action. (If
+    ║ undefined tasks are encountered at this stage, it is an error.)
     ╬
-  [(Cmd, [Cmd])]
-  ──╥───────────
-    ╟╴Generate a graph of commands' dependencies on one another. Each unique
-    ║ combination of command and arguments appears *only once* in the
-    ║ resulting graph.
+  Map MetaTask (Set MetaTask)
+  ──╥────────────────────────
+    ╟╴Generate a graph of commands' dependencies on one another and examine
+    ║ the strongly connected components of the graph to produce a linear
+    ║ schedule. (If cycles are detected at this phase, it is an error.)
     ╬
-  Graph Cmd Cmd
-  ──╥──────────
-    ╟╴Collapse graph to list of strongly connected components. If any cycles
-    ║ are found, fail with a message describing them; otherwise, return a list
-    ║ of the commands, dependencies before dependents.
+  [MetaTask]
+  ──╥───────
+    ╟╴Reduce meta-tasks to simple shell commands. A task's "Start" and "Stop"
+    ║ become simple echo statements.
     ╬
   [Cmd]
   ──╥──
-    ╟╴Compile the commands to shell, inserting code to download "commands"
-    ║ which are HTTP URLs, and embed the commands in the template script.
+    ╟╴Compile the commands to shell, wrapping commands which are URLs in calls
+    ║ calls to cURL, and wrap them all together in a shell function
+    ║ definition. The shell function is embedded in the template script.
     ╬
   ByteString
 
