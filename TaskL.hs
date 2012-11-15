@@ -10,6 +10,7 @@ import           Control.Arrow
 import           Control.Monad
 import           Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as ByteString
+import qualified Data.ByteString.UTF8 as ByteString (fromString)
 import           Data.Either
 import           Data.Maybe
 import           Data.Monoid
@@ -228,9 +229,20 @@ main = do
   tryCompile mod = case taskSchedule mod of
     Right (Right tasks) -> out (shell tasks)
     Right (Left cycles) -> do msg "Scheduling failure due to cycles:"
-                              mapM_ (msg . ByteString.pack . show) cycles
+                              mapM_ (mapM_ msg . prettyPrintCycle) cycles
                               exitFailure
     Left names          -> do msg "Can not compile these undefined tasks:"
                               mapM_ (msg . unName) names
                               exitFailure
 
+prettyPrintCycle :: [MetaTask] -> [ByteString]
+prettyPrintCycle metas = withPrefixes False (meta <$> metas)
+ where meta (Start (Name b)) = "//" <> b <> " (start)"
+       meta (Done (Name b))  = "//" <> b <> " (done)"
+       meta (Run cmd)        = ByteString.pack (show cmd)
+       withPrefixes _     [     ] = [         ]
+       withPrefixes False [  h  ] = ["╳ " <<> h]
+       withPrefixes False (h:s:t) = ("╔ " <<> h) : withPrefixes True (s:t)
+       withPrefixes True  (h:s:t) = ("║ " <<> h) : withPrefixes True (s:t)
+       withPrefixes True  [  h  ] = ["╚ " <<> h]
+       s <<> b = ByteString.fromString s <> b
