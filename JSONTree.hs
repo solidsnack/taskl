@@ -7,6 +7,7 @@ import           Control.Applicative
 import           Control.Monad
 import           Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as ByteString
+import           Data.Maybe
 import           Data.Tree (Tree(..), Forest)
 
 import           Data.Aeson
@@ -49,4 +50,13 @@ instance FromJSON (Tree String) where
 
 instance FromJSON (Forest String) where
   parseJSON = (((Text.unpack <$>) <$>) <$>) . parseJSON
+
+tree2tree :: Tree t -> Tree (t, [t])
+tree2tree (Node t [])                   = Node (t,[]) []
+tree2tree (Node _ (Node t subs : tail)) = Node values subTrees
+ where subTrees      = maybeLoL [ tree2tree <$> f | f <- subForest <$> tail ]
+       maybeLoL      = fromMaybe [] . listToMaybe
+       values        = (t,[]) `fromMaybe` pointed (rootLabel <$> subs)
+       pointed [   ] = Nothing
+       pointed (h:t) = Just (h,t)
 
