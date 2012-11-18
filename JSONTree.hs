@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings
            , FlexibleInstances
   #-}
+-- | 'FromJSON' instances for text trees.
 module JSONTree where
 
 import           Control.Applicative
@@ -51,12 +52,11 @@ instance FromJSON (Tree String) where
 instance FromJSON (Forest String) where
   parseJSON = (((Text.unpack <$>) <$>) <$>) . parseJSON
 
-tree2tree :: Tree t -> Tree (t, [t])
-tree2tree (Node t [])                   = Node (t,[]) []
+-- | A way to interpret a tree of @t@ as a tree of @[t]@.
+tree2tree :: Tree t -> Tree [t]
+tree2tree (Node t [])                   = Node [t] []
 tree2tree (Node _ (Node t subs : tail)) = Node values subTrees
- where subTrees      = maybeLoL [ tree2tree <$> f | f <- subForest <$> tail ]
-       maybeLoL      = fromMaybe [] . listToMaybe
-       values        = (t,[]) `fromMaybe` pointed (rootLabel <$> subs)
-       pointed [   ] = Nothing
-       pointed (h:t) = Just (h,t)
+ where values   = if null subs then [t] else rootLabel <$> subs
+       subTrees = fromMaybe [] . listToMaybe
+                $ [ tree2tree <$> f | f <- subForest <$> tail ]
 

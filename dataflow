@@ -4,48 +4,38 @@
   ──╥───────
     ╟╴Parse as YAML (perhaps also JSON in the future).
     ╬
-  Tree ByteString
-  ──╥────────────
-    ╟╴Interpret tree levels as names
-    ║                            tasks
-    ║                              arguments to create definitions.
+  [Tree [ByteString]]
+  ──╥────────────────
+    ╟╴Interpret tree as patterns that depend on patterns that depend on
+    ║ patterns...patterns all the way down.
     ╬
-  [Definition Name [Cmd] [Name]]
-  ──╥───────────────────────────
-    ╟╴Split defintions into map of bodies (commands to run, once a task's
-    ║ dependencies are run) and dependencies (tasks which another task depends
-    ║ on). These together form a module.
+  [Tree Task]
+  ──╥────────
+    ╟╴Transform trees in to adjacency list format, for use with graph library.
     ╬
-  Module (Map Name (Set Cmd)) (Map Name (Set Name))
-          ─╥────────────────   ─╥─────────────────         Name
-           ║                    ║                          ─╥──
-           ║     ╓──────────────╨───────────────────────────╜
-           ║     ╟╴With user supplied task name, clip graph to relevant tasks
-           ║     ╬
-           ║    Map Name (Set Name)
-           ║    ─╥─────────────────
-    ╓──────╨─────╜
-    ╟╴Use dependencies and definitions together to create a merged dependency
-    ║ list, where a task's "Start" depends on its dependencies "Done" action
-    ║ and the commands that define it depend on its own "Start" action. (If
-    ║ undefined tasks are encountered at this stage, it is an error.)
+  [(Task, [Task])]                           Name
+  ──╥─────────────                           ─╥──
+    ╟─────────────────────────────────────────╜
+    ╟╴Create a graph and find all tasks needed to fulfill the task requested
+    ║ by the user (or just take all tasks, if the user does not specify).
+    ║ Filter the adjacency list to just these tasks.
     ╬
-  Map MetaTask (Set MetaTask)
-  ──╥────────────────────────
+  [(Task, [Task])]
+  ──╥─────────────
     ╟╴Generate a graph of commands' dependencies on one another and examine
     ║ the strongly connected components of the graph to produce a linear
     ║ schedule. (If cycles are detected at this phase, it is an error.)
     ╬
-  [MetaTask]
-  ──╥───────
-    ╟╴Reduce meta-tasks to simple shell commands. A task's "Start" and "Stop"
-    ║ become simple echo statements.
+  [Task]
+  ──╥───
+    ╟╴Reduce tasks to simple shell commands. Abstract tasks -- which serve to
+    ║ group tasks under a name -- are turned in to commands to print a
+    ║ message about the task.
     ╬
   [Cmd]
   ──╥──
     ╟╴Compile the commands to shell, wrapping commands which are URLs in calls
-    ║ calls to cURL, and wrap them all together in a shell function
-    ║ definition. The shell function is embedded in the template script.
+    ║ to cURL, and embed them in the template script.
     ╬
   ByteString
 
