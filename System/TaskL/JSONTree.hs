@@ -1,8 +1,9 @@
 {-# LANGUAGE OverloadedStrings
            , FlexibleInstances
+           , PatternGuards
   #-}
 -- | 'FromJSON' instances for text trees.
-module JSONTree where
+module System.TaskL.JSONTree where
 
 import           Control.Applicative
 import           Control.Monad

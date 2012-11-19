@@ -1,0 +1,74 @@
+name                          : taskl
+version                       : 0.0.0
+category                      : System
+license                       : BSD3
+license-file                  : LICENSE
+author                        : Jason Dusek
+maintainer                    : oss@solidsnack.be
+homepage                      : http://github.com/solidsnack/taskl
+synopsis                      : Make-style handling of any shell command.
+description                   :
+  From a tree-like input of tasks and their dependencies, generates a linear
+  schedule where each task is scheduled once and only once and then compiles
+  it to a Bash script. A task is any combination of command and arguments.
+  .
+  The command can be not only a path but also a URL, in which case, the tool
+  generates shell code to download the URL and run it with the assignend
+  arguments.
+
+cabal-version                 : >= 1.10
+build-type                    : Simple
+extra-source-files            : README
+                              , LICENSE
+
+source-repository               head
+  type                        : git
+  location                    : http://github.com/solidsnack/taskl.git
+
+
+flag no-cli
+  description                 : Disable command line tool.
+  default                     : False
+
+
+library
+  default-language            : Haskell98
+  build-depends               : base >= 2 && <= 5
+                              , bytestring >= 0.9
+                              , containers
+                              , aeson >= 0.6
+                              , attoparsec >= 0.10
+                              , bash >= 0.1.4
+                              , file-embed >= 0.0.4
+                              , graph-wrapper >= 0.2.4
+                              , shell-escape >= 0.1.2
+                              , text >= 0.11
+                              , unordered-containers >= 0.2.2
+                              , utf8-string >= 0.3.7
+                              , vector >= 0.10
+                              , yaml >= 0.8.1
+  exposed-modules             : System.TaskL
+                                System.TaskL.JSONTree
+
+
+executable                      taskl
+  default-language            : Haskell98
+  main-is                     : System/TaskL.hs
+  if flag(no-cli)
+    buildable                 : False
+  else
+    buildable                 : True
+  build-depends               : base >= 2 && <= 5
+                              , bytestring >= 0.9
+                              , containers
+                              , aeson >= 0.6
+                              , attoparsec >= 0.10
+                              , bash >= 0.1.4
+                              , file-embed >= 0.0.4
+                              , graph-wrapper >= 0.2.4
+                              , shell-escape >= 0.1.2
+                              , text >= 0.11
+                              , unordered-containers >= 0.2.2
+                              , utf8-string >= 0.3.7
+                              , vector >= 0.10
+                              , yaml >= 0.8.1

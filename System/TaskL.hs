@@ -3,7 +3,7 @@
            , TemplateHaskell
            , ScopedTypeVariables
            , GeneralizedNewtypeDeriving #-}
-module TaskL where
+module System.TaskL where
 
 import           Control.Applicative
 import           Control.Arrow
@@ -33,7 +33,7 @@ import           Data.Yaml
 import qualified Text.ShellEscape as Esc
 import qualified Language.Bash as Bash
 
-import           JSONTree
+import           System.TaskL.JSONTree
 
 
 data Task = Task Call [ByteString] deriving (Eq, Ord, Show)
