@@ -1,0 +1,25 @@
+
+Generating the shell scripts:
+
+ :; dist/build/taskl/taskl //web < example/servers.yaml > example/web.bash
+ :; dist/build/taskl/taskl //db  < example/servers.yaml > example/db.bash
+
+Using them to configure an Ubuntu Cloud Guest:
+
+ :; ssh le-server.aws.com sudo bash < example/web.bash
+
+Some things to notice about the generated scripts:
+
+  * A call to update the repo cache is specified for every PPA, but scheduled
+    only once; Task/L schedules one ARGV one time.
+
+  * In pg.root and pg.branch, the client libs are installed with Aptitude but
+    Task/L doesn't notice that they both request this because the two calls to
+    Aptitude are not syntactically alike. Thus it always tries to install
+    client libs twice.
+
+  * A bland smiley face is shown for each named task (//web, //db, &c.) when
+    it succeeds but there is no failure message. (This might change for it
+    might be that the many error messages provided by command line tools prove
+    to be sufficient.)
+

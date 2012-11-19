@@ -1,0 +1,39 @@
+
+
+- - [ //db ]
+  - - - [ //pg.root ]
+    - - [ //pg.branch ]
+
+- - [ //web ]
+  - - - [ //pg.branch ]
+    - - [ //node ]
+    - - [ //nginx ]
+
+- - [ //node ]
+  - - - [ aptitude, -y, install, nodejs, npm ]
+      - - - [ aptitude, update ]
+          - - - [ add-apt-repository, 'ppa:chris-lea/node.js' ]
+              - - - [ aptitude, -y, install, python-software-properties ]
+
+- - [ //nginx ]
+  - - - [ aptitude, -y, install, nginx-extras ]
+      - - - [ aptitude, update ]
+          - - - [ add-apt-repository, 'ppa:nginx/stable' ]
+              - - - [ aptitude, -y, install, python-software-properties ]
+
+- - [ //pg.root ]
+  - - - [ aptitude, -y, install,
+                    postgresql-9.2, postgresql-9.2-dbg, postgresql-contrib-9.2,
+                    postgresql-client-9.2, postgresql-doc-9.2,
+                    postgresql-server-dev-9.2 ]
+      - - - [ aptitude, update ]
+          - - - [ add-apt-repository, 'ppa:pitti/postgresql' ]
+              - - - [ aptitude, -y, install, python-software-properties ]
+
+- - [ //pg.branch ]
+  - - - [ aptitude, -y, install, postgresql-client-9.2 ]
+      - - - [ aptitude, update ]
+          - - - [ add-apt-repository, 'ppa:pitti/postgresql' ]
+              - - - [ aptitude, -y, install, python-software-properties ]
+
+
