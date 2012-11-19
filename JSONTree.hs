@@ -54,9 +54,9 @@ instance FromJSON (Forest String) where
 
 -- | A way to interpret a tree of @t@ as a tree of @[t]@.
 tree2tree :: Tree t -> Tree [t]
-tree2tree (Node t [])                   = Node [t] []
-tree2tree (Node _ (Node t subs : tail)) = Node values subTrees
- where values   = if null subs then [t] else rootLabel <$> subs
+tree2tree (Node _ [])                   = Node [] []
+tree2tree (Node _ (Node _ subs : tail)) = Node values subTrees
+ where values   = rootLabel <$> subs
        subTrees = fromMaybe [] . listToMaybe
                 $ [ tree2tree <$> f | f <- subForest <$> tail ]
 
