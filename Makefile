@@ -3,8 +3,8 @@
 # Prevents the .sha files from being deleted. Not sure what the story is.
 .SECONDARY:
 
-v = $(shell git describe || bin/dist cabal_version || echo '(unversioned)')
-tag = taskl-$(shell ./bin/dist tag)
+v = $(shell git describe || bin/tags cabal_version || echo '(unversioned)')
+tag = taskl-$(shell ./bin/tags tag)
 built = $(wildcard tmp/dist/*/taskl)
 tarballs = $(built:%/arx=%.tbz)
 

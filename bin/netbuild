@@ -10,7 +10,7 @@ USAGE
 };function -h { usage ;};function --help { usage ;};function help { usage ;}
 
 function source_archive {
-  tar -c --exclude tmp --exclude .git --exclude dist/* .
+  tar -c --exclude tmp --exclude .git --exclude dist/'*' .
 }
 
 function netbuild {
