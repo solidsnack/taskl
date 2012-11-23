@@ -55,7 +55,7 @@ main = do
               Nothing   -> return map
               Just name -> maybe (err "Failed to find requested task.") return
                                  (cull name map)
-    case what of List -> ByteString.putStr . draw $ dependencies map'
+    case what of List    -> ByteString.putStr . draw $ dependencies map'
                  Compile -> tryCompile map'
 
 
