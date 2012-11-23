@@ -1,3 +1,4 @@
+#!/usr/bin/env runhaskell
 {-# LANGUAGE OverloadedStrings #-}
 
 import           Control.Applicative
@@ -20,38 +21,42 @@ import           System.TaskL
 import           System.TaskL.JSONTree
 
 
+data WhatDo = List | Compile deriving (Eq, Ord, Show)
+
 main :: IO ()
 main = do
-  taskPattern <- getTask
-  Just trees  <- getTrees
-  let (failed, compiled) = partitionEithers (tasks <$> trees)
-      graphMap           = forestMap compiled
-  (failed /= []) `when` do msg "Some definitions were not loadable:"
-                           mapM_ (msg . ByteString.pack . show) failed
-  case taskPattern of
-    Nothing  -> tryCompile graphMap
-    Just pat -> case cull pat graphMap of
-                  Nothing  -> err "Failed to find requested task."
-                  Just sub -> tryCompile sub
+  todo   <- whatdo
+  loaded <- load <$> ByteString.getContents
+  case loaded of ([  ], [  ]) -> err "No tasks loaded."
+                 (ss:_, [  ]) -> err ("Failed to load tasks. " <>> ss)
+                 ([  ], code) -> gogogo todo (forestMap code)
+                 (errs, code) -> do msg "Some definitions were not loadable:"
+                                    mapM_ (msg . ByteString.pack) errs
+                                    gogogo todo (forestMap code)
  where
-  getTask = do arg <- (ByteString.pack <$>) . listToMaybe <$> getArgs
-               case arg of
-                  Nothing -> return Nothing
-                  Just b  -> case Attoparsec.parseOnly name b of
-                              Right name -> return . Just $ wrap name
-                              Left _     -> err "Invalid task name."
-   where wrap name = Task (Abstract name) []
-  getTrees :: IO (Maybe (Forest [ByteString]))
-  getTrees  = do forest <- decode <$> ByteString.hGetContents stdin
-                 return ((tree2tree <$>) <$> forest)
   msg = ByteString.hPutStrLn stderr
   out = ByteString.hPutStrLn stdout
-  err = (>> exitFailure) . msg . ("o.O" <>)
+  err = (>> exitFailure) . msg . ("o.O " <>)
   tryCompile mod = case schedule (graph mod) of
     Right traversal -> out . script $ command <$> traversal
     Left cycles     -> do msg "Scheduling failure due to cycles:"
                           mapM_ (mapM_ msg . prettyPrintCycle) cycles
                           exitFailure
+  whatdo = do arg <- (ByteString.pack <$>) . listToMaybe <$> getArgs
+              case arg of
+                Nothing     -> return (Compile, Nothing)
+                Just "list" -> return (List, Nothing)
+                Just b      -> case Attoparsec.parseOnly name b of
+                                 Right name -> return (Compile, wrap name)
+                                 Left _     -> err "Invalid task name."
+   where wrap name = Just $ Task (Abstract name) []
+  gogogo (what, selection) map = do
+    map' <- case selection of
+              Nothing   -> return map
+              Just name -> maybe (err "Failed to find requested task.") return
+                                 (cull name map)
+    case what of List -> ByteString.putStr . draw $ dependencies map'
+                 Compile -> tryCompile map'
 
 
  ---------------------------- Pretty printing tools ---------------------------
@@ -63,7 +68,6 @@ prettyPrintCycle = withPrefixes False . (prettyPrintTask <$>)
        withPrefixes False (h:s:t) = ("╔ " <<> h) : withPrefixes True (s:t)
        withPrefixes True  (h:s:t) = ("║ " <<> h) : withPrefixes True (s:t)
        withPrefixes True  [  h  ] = ["╚ " <<> h]
-       s <<> b = ByteString.fromString s <> b
 
 prettyPrintTask :: Task -> ByteString
 prettyPrintTask (Task call args) = ByteString.unwords
@@ -73,4 +77,10 @@ prettyPrintCall :: Call -> ByteString
 prettyPrintCall (Cmd (ShHTTP b)) = b
 prettyPrintCall (Cmd (Path b))   = b
 prettyPrintCall (Abstract b)     = b
+
+(<<>) :: String -> ByteString -> ByteString
+s <<> b = ByteString.fromString s <> b
+
+(<>>) :: ByteString -> String -> ByteString
+b <>> s = b <> ByteString.fromString s
 

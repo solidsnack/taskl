@@ -23,7 +23,10 @@ import qualified Data.Attoparsec.ByteString.Char8 as Attoparsec
 import           Data.FileEmbed
 import           Data.Graph.Wrapper (Graph)
 import qualified Data.Graph.Wrapper as Graph
+import           Data.Yaml
 import qualified Language.Bash as Bash
+
+import           System.TaskL.JSONTree
 
 
 data Task = Task Call [ByteString] deriving (Eq, Ord, Show)
@@ -66,7 +69,7 @@ label  = label' <|> ByteString.singleton <$> ld
                    if ByteString.last b == '_' then mzero else return b
 
 
- ------------ Graph utilities (works with multiple representations) -----------
+ --------- Graph utilities (many representations of graphs are used) ----------
 
 -- | Provide a traversal of the graph that visits each node once if there are
 --   no cycles or return the cycles.
@@ -144,4 +147,37 @@ frame            = $(embedFile "frame.bash")
                  . second (drop 1 . dropWhile (/= "}"))
                  . span (/= "function tasks {")
                  $ ByteString.lines frame
+
+
+ --------------------------- Serialization routines ---------------------------
+
+-- | Load a YAML document (and maybe JSON document?) as a tree of 'ByteString'.
+trees :: ByteString -> Maybe (Forest ByteString)
+trees  = decode
+
+-- | Load a document acceptable to 'trees' and try to parse the tasks.
+load :: ByteString -> ([String], Forest Task)
+load  = maybe (["Unparseable input."],[])
+              (partitionEithers . (tasks . tree2tree <$>))
+      . trees
+
+-- | Present each abstract task with its abstract dependencies below it.
+dependencies :: Map Task (Set Task) -> Forest ByteString
+dependencies m =
+  [ node | node@(Node s c) <- walk Set.empty <$> Map.keys m, s /= "" ]
+ where lm = Set.toAscList <$> m
+       walk :: Set Task -> Task -> Tree ByteString
+       walk set task = Node label (maybe [] id children)
+        where cycle = Set.member task set
+              label = case task of
+                Task (Abstract b) _ -> if cycle then "!!! "<>b else b
+                _                   -> ""
+              recurse  = stepOverEmpties . walk (Set.insert task set)
+              children = concatMap recurse <$> Map.lookup task lm
+       stepOverEmpties (Node s c) = if s == "" then c' else [Node s c']
+        where c' = concatMap stepOverEmpties c
+
+draw :: Forest ByteString -> ByteString
+draw  = ByteString.unlines . concatMap (draw' "")
+ where draw' a (Node b c) = a <> b : concatMap (draw' ("  "<>a)) c
 
