@@ -11,7 +11,7 @@ function curl_sh {
 }
 
 function curl_ {
-  curl -sSfL --retry 4 "$1"
+  curl -sSfL "$1" || err "Failed URL: $1"
 }
 
 function msg { out "$*" 1>&2 ;}
