@@ -117,29 +117,28 @@ cull key m = reachable <$ guard (Map.member key m)
  ----------------------------- Shell generation -------------------------------
 
 -- | Embed commands in the template script.
-script :: [(Cmd, [ByteString])] -> ByteString
+script :: [(ByteString, [ByteString])] -> ByteString
 script list = header <> Bash.bytes (functionTasks list) <> "\n" <> footer
 
 -- | Render a command to abstract Bash.
-compile :: (Cmd, [ByteString]) -> Bash.Statement ()
-compile (cmd, args) = case cmd of ShHTTP url -> bash curlSh (url:args)
-                                  Path path  -> bash path args
- where bash a b = Bash.SimpleCommand (Bash.literal a) (Bash.literal <$> b)
-       curlSh   = "curl_sh"
+compile :: (ByteString, [ByteString]) -> Bash.Statement ()
+compile (cmd, args) = Bash.SimpleCommand (Bash.literal cmd)
+                                         (Bash.literal <$> args)
 
 -- | Translate a task to a concrete shell command. Abstract tasks become a
 --   message announcing their completion.
-command :: Task -> (Cmd, [ByteString])
-command (Task (Cmd cmd)    args) = (cmd, args)
-command (Task (Abstract name) _) = (Path "msg", ["-_-", name])
+command :: Task -> (ByteString, [ByteString])
+command (Task (Cmd (ShHTTP url)) args) = ("tailed", "curl_sh":url:args)
+command (Task (Cmd (Path path))  args) = ("tailed", path:args)
+command (Task (Abstract name)       _) = ("msg",    name:[])
 
 -- | Generate Bash function, called @tasks@, with the commands in sequence.
-functionTasks :: [(Cmd, [ByteString])] -> Bash.Statement ()
+functionTasks :: [(ByteString, [ByteString])] -> Bash.Statement ()
 functionTasks  = Bash.Function "tasks" . anno . and . (compile <$>)
  where anno = Bash.Annotated ()
        and cmds = case cmds of [   ] -> Bash.SimpleCommand "msg" ["No tasks."]
                                [cmd] -> cmd
-                               cmd:t -> Bash.Sequence (anno cmd) (anno (and t))
+                               cmd:t -> Bash.AndAnd (anno cmd) (anno (and t))
 
 frame, header, footer :: ByteString
 frame            = $(embedFile "frame.bash")

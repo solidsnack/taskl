@@ -38,7 +38,7 @@ library
                               , containers
                               , aeson >= 0.6
                               , attoparsec >= 0.10
-                              , bash >= 0.1.4
+                              , bash >= 0.1.6
                               , file-embed >= 0.0.4
                               , graph-wrapper >= 0.2.4
                               , shell-escape >= 0.1.2
@@ -63,7 +63,7 @@ executable                      taskl
                               , containers
                               , aeson >= 0.6
                               , attoparsec >= 0.10
-                              , bash >= 0.1.4
+                              , bash >= 0.1.6
                               , file-embed >= 0.0.4
                               , graph-wrapper >= 0.2.4
                               , shell-escape >= 0.1.2
