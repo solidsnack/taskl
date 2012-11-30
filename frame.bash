@@ -22,8 +22,8 @@ function tmp {
 
 function tailed {
   tmp
-  if ( exec 1> >(tail -n20 > "$tmp"/o)
-       exec 2> >(tail -n20 > "$tmp"/e)
+  if ( exec 1> >(exec tail -n20 > "$tmp"/o)
+       exec 2> >(exec tail -n20 > "$tmp"/e)
        "$@" )
   then : # Do nothing.
   else
