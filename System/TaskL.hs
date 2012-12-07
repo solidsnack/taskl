@@ -106,12 +106,12 @@ graph :: (Ord t) => Map t (Set t) -> Graph t t
 graph  = Graph.fromListSimple . unMap
 
 -- | Clip an adjacency list to include only those entries reachable from the
---   given key. If the key given is not in the map, then 'Nothing' is returned.
-cull :: (Ord t) => t -> Map t (Set t) -> Maybe (Map t (Set t))
-cull key m = reachable <$ guard (Map.member key m)
- where keys      = Set.fromList $ Graph.reachableVertices (graph m) key
+--   given keys. If any keys aren't in the map, then 'Nothing' is returned.
+cull :: (Ord t) => [t] -> Map t (Set t) -> Maybe (Map t (Set t))
+cull list m = reachable <$ guard (all (flip Map.member m) list)
+ where keys = Set.fromList (concatMap (Graph.reachableVertices (graph m)) list)
        reachable = Map.fromList [ (k,v) | (k,v) <- Map.toList m
-                                        , Set.member k keys     ]
+                                        , Set.member k keys ]
 
 
  ----------------------------- Shell generation -------------------------------

@@ -42,19 +42,20 @@ main = do
     Left cycles     -> do msg "Scheduling failure due to cycles:"
                           mapM_ (mapM_ msg . prettyPrintCycle) cycles
                           exitFailure
-  whatdo = do arg <- (ByteString.pack <$>) . listToMaybe <$> getArgs
-              case arg of
-                Nothing     -> return (Compile, Nothing)
-                Just "list" -> return (List, Nothing)
-                Just b      -> case Attoparsec.parseOnly name b of
-                                 Right name -> return (Compile, wrap name)
-                                 Left _     -> err "Invalid task name."
-   where wrap name = Just $ Task (Abstract name) []
-  gogogo (what, selection) map = do
-    map' <- case selection of
-              Nothing   -> return map
-              Just name -> maybe (err "Failed to find requested task.") return
-                                 (cull name map)
+  whatdo = do args <- (ByteString.pack <$>) <$> getArgs
+              case args of
+                [      ] -> return (Compile, [])
+                ["list"] -> return (List, [])
+                _:_      -> do let parsed  = Attoparsec.parseOnly name <$> args
+                                   (e, ok) = partitionEithers parsed
+                               if e /= [] then err "Invalid task name."
+                                          else return (Compile, wrap <$> ok)
+   where wrap name = Task (Abstract name) []
+  gogogo (what, selections) map = do
+    map' <- case selections of
+              [ ] -> return map
+              _:_ -> maybe (err "Failed to find requested task.") return
+                           (cull selections map)
     case what of List    -> ByteString.putStr . draw $ dependencies map'
                  Compile -> tryCompile map'
 
