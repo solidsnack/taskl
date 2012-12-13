@@ -163,7 +163,7 @@ load  = maybe (["Unparseable input."],[])
 -- | Present each abstract task with its abstract dependencies below it.
 dependencies :: Map Task (Set Task) -> Forest ByteString
 dependencies m =
-  [ node | node@(Node s c) <- walk Set.empty <$> Map.keys m, s /= "" ]
+  [ node | node@(Node s _) <- walk Set.empty <$> Map.keys m, s /= "" ]
  where lm = Set.toAscList <$> m
        walk :: Set Task -> Task -> Tree ByteString
        walk set task = Node label (maybe [] id children)
