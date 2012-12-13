@@ -11,6 +11,7 @@ import           Control.Monad
 import           Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as ByteString
 import           Data.Either
+import           Data.Foldable (toList)
 import           Data.Monoid
 import           Data.Set (Set)
 import qualified Data.Set as Set
@@ -112,6 +113,15 @@ cull list m = reachable <$ guard (all (flip Map.member m) list)
  where keys = Set.fromList (concatMap (Graph.reachableVertices (graph m)) list)
        reachable = Map.fromList [ (k,v) | (k,v) <- Map.toList m
                                         , Set.member k keys ]
+
+roots :: (Ord t) => Forest t -> Map t (Forest t)
+roots f = Map.fromListWith (++) [ (t, sub) | Node t sub <- f, sub /= [] ]
+
+rootsReachable :: (Ord t) => [t] -> Map t (Forest t) -> Map t (Forest t)
+rootsReachable ts m = Map.filterWithKey f m
+ where f k _  = Set.member k set
+       set    = Set.fromList (concatMap (maybe [] id . keys) ts)
+       keys t = filter (`Map.member` m) . concatMap toList <$> Map.lookup t m
 
 
  ----------------------------- Shell generation -------------------------------
