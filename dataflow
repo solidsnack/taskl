@@ -9,16 +9,16 @@
     ╟╴Interpret tree as patterns that depend on patterns that depend on
     ║ patterns...patterns all the way down.
     ╬
+  [Tree Task]                              [Name]
+  ──╥────────                              ──╥───
+    ╟────────────────────────────────────────╜
+    ╟╴Treat the tree of tasks as a tree of defintions trim it to include only
+    ║ the definitions specififed by the user (or just take all tasks, if the
+    ║ user does not specify).
+    ╬
   [Tree Task]
   ──╥────────
     ╟╴Transform trees in to adjacency list format, for use with graph library.
-    ╬
-  [(Task, [Task])]                           Name
-  ──╥─────────────                           ─╥──
-    ╟─────────────────────────────────────────╜
-    ╟╴Create a graph and find all tasks needed to fulfill the task requested
-    ║ by the user (or just take all tasks, if the user does not specify).
-    ║ Filter the adjacency list to just these tasks.
     ╬
   [(Task, [Task])]
   ──╥─────────────
