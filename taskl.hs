@@ -29,10 +29,10 @@ main = do
   loaded <- load <$> ByteString.getContents
   case loaded of ([  ], [  ]) -> err "No tasks loaded."
                  (ss:_, [  ]) -> err ("Failed to load tasks. " <>> ss)
-                 ([  ], code) -> gogogo todo (forestMap code)
-                 (errs, code) -> do msg "Some definitions were not loadable:"
+                 ([  ], defs) -> gogogo todo defs
+                 (errs, defs) -> do msg "Some definitions were not loadable:"
                                     mapM_ (msg . ByteString.pack) errs
-                                    gogogo todo (forestMap code)
+                                    gogogo todo defs
  where
   msg = ByteString.hPutStrLn stderr
   out = ByteString.hPutStrLn stdout
@@ -51,13 +51,14 @@ main = do
                                if e /= [] then err "Invalid task name."
                                           else return (Compile, wrap <$> ok)
    where wrap name = Task (Abstract name) []
-  gogogo (what, selections) map = do
-    map' <- case selections of
-              [ ] -> return map
-              _:_ -> maybe (err "Failed to find requested task.") return
-                           (cull selections map)
-    case what of List    -> ByteString.putStr . draw $ dependencies map'
-                 Compile -> tryCompile map'
+  gogogo (what, selections) forest = do
+    code <- forestMap <$> case selections of
+              [ ] -> return forest
+              _:_ -> case trim selections forest of
+                       [ ] -> err "Failed to find requested task."
+                       frs -> return frs
+    case what of List    -> ByteString.putStr . draw $ dependencies code
+                 Compile -> tryCompile code
 
 
  ---------------------------- Pretty printing tools ---------------------------
