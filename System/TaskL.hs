@@ -114,14 +114,25 @@ cull list m = reachable <$ guard (all (flip Map.member m) list)
        reachable = Map.fromList [ (k,v) | (k,v) <- Map.toList m
                                         , Set.member k keys ]
 
-roots :: (Ord t) => Forest t -> Map t (Forest t)
-roots f = Map.fromListWith (++) [ (t, sub) | Node t sub <- f, sub /= [] ]
+-- | Each of the elements in the list is used to filter the forest, marking
+--   subtrees for inclusion if they are rooted in one of these elements. The
+--   elements of the subtrees so marked are then checked against the top
+--   level, and their subtrees included if found. This goes on until there is
+--   nothing left to add.
+trim :: (Ord t) => [t] -> Forest t -> Forest t
+trim ts forest = [ Node k v | (k, v) <- Map.toList (Map.filterWithKey f map) ]
+ where f k _ = Set.member k (reachable (Set.fromList ts) map)
+       map   = roots forest
 
-rootsReachable :: (Ord t) => [t] -> Map t (Forest t) -> Map t (Forest t)
-rootsReachable ts m = Map.filterWithKey f m
- where f k _  = Set.member k set
-       set    = Set.fromList (concatMap (maybe [] id . keys) ts)
-       keys t = filter (`Map.member` m) . concatMap toList <$> Map.lookup t m
+roots :: (Ord t) => Forest t -> Map t (Forest t)
+roots f = Map.fromListWith (++) [ (t, sub) | Node t sub <- f ]
+
+reachable :: (Ord t) => Set t -> Map t (Forest t) -> Set t
+reachable ts m = recurse ts
+ where keys t  = filter (`Map.member` m) . concatMap toList <$> Map.lookup t m
+       recurse set = if set' == set then set else recurse set'
+        where set_ = Set.fromList (concatMap (maybe [] id . keys) $ toList set)
+              set' = set_ <> set
 
 
  ----------------------------- Shell generation -------------------------------
