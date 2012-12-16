@@ -1,5 +1,4 @@
 
-
 - - [ //db ]
   - - - [ //pg.root ]
     - - [ //pg.branch ]
@@ -10,30 +9,29 @@
     - - [ //nginx ]
 
 - - [ //node ]
-  - - - [ aptitude, -y, install, nodejs, npm ]
-      - - - [ aptitude, update ]
-          - - - [ add-apt-repository, 'ppa:chris-lea/node.js' ]
-              - - - [ aptitude, -y, install, python-software-properties ]
+  - - - [ //apt, nodejs, npm ]
+      - - - [ //apt.repo, 'ppa:chris-lea/node.js' ]
 
 - - [ //nginx ]
-  - - - [ aptitude, -y, install, nginx-extras ]
-      - - - [ aptitude, update ]
-          - - - [ add-apt-repository, 'ppa:nginx/stable' ]
-              - - - [ aptitude, -y, install, python-software-properties ]
+  - - - [ //apt, nginx-extras ]
+      - - - [ //apt.repo, 'ppa:nginx/stable' ]
 
 - - [ //pg.root ]
-  - - - [ aptitude, -y, install,
-                    postgresql-9.2, postgresql-9.2-dbg, postgresql-contrib-9.2,
-                    postgresql-client-9.2, postgresql-doc-9.2,
-                    postgresql-server-dev-9.2 ]
-      - - - [ aptitude, update ]
-          - - - [ add-apt-repository, 'ppa:pitti/postgresql' ]
-              - - - [ aptitude, -y, install, python-software-properties ]
+  - - - [ //apt, postgresql-9.2, postgresql-9.2-dbg, postgresql-contrib-9.2,
+                 postgresql-client-9.2, postgresql-doc-9.2,
+                 postgresql-server-dev-9.2 ]
+      - - - [ //apt.repo, 'ppa:pitti/postgresql' ]
 
 - - [ //pg.branch ]
-  - - - [ aptitude, -y, install, postgresql-client-9.2 ]
-      - - - [ aptitude, update ]
-          - - - [ add-apt-repository, 'ppa:pitti/postgresql' ]
-              - - - [ aptitude, -y, install, python-software-properties ]
+  - - - [ //apt, postgresql-client-9.2 ]
+      - - - [ //apt.repo, 'ppa:pitti/postgresql' ]
 
+- - [ //apt ]
+  - - - [ aptitude, -y, install ]
+      - - - [ aptitude, -y, install, --schedule-only, {$@} ]
+          - - - [ aptitude, update ]
+
+- - [ //apt.repo ]
+  - - - [ add-apt-repository, {$1} ]
+      - - - [ aptitude, -y, install, python-software-properties ]
 
