@@ -56,7 +56,14 @@ newtype TemplateString = TemplateString [Either Var ByteString]
 
 
 declarations :: Aeson.Value -> Aeson.Parser [Declaration]
-declarations (Aeson.Object o) = undefined
+declarations (Aeson.Object o) = case parseableKeys name o of
+  [ ] -> mzero
+  h:t -> sequence [ decl pair | pair@(_, Aeson.Object _) <- h:t ]
+   where decl (name, json) = Declaration name <$> parseJSON json
+   -- We pattern match above so that only things resembling names that point
+   -- to objects are parsed and we only fail if these objects are unparseable.
+   -- People can put whatever other stuff they like in the input file; Task/L
+   -- is indifferent.
 declarations _                = mzero
 
 instance Aeson.FromJSON Definition where
