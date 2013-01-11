@@ -9,6 +9,28 @@
 
 module System.TaskL.Parser where
 
+{-
+
+  <declaration>  =  <name>:
+                      _: [<declaration>]  ?    // Optional declarations.
+                      <op>: <calls>
+
+  <calls>        =  - (<command>|<url>|<name>): [<string>|<reference>]
+                      <op>: <calls>  ?         // Optional subcalls.
+                    - ...
+
+  <op>           =  .:                         // Parallel combinator.
+                 |  ;:                         // Sequential combinator.
+
+  <name>         =  //<ldh>(.<ldh>)*
+
+  <reference>    =  {<ldh>}
+
+  <declaration>  =  <ldh>                      // Plain variable name.
+                 |  {<ldh>: <string>}          // Variable with default value.
+
+ -}
+
 import           Control.Applicative
 import           Control.Arrow
 import           Control.Monad
@@ -67,8 +89,18 @@ declarations (Aeson.Object o) = case parseableKeys name o of
 declarations _                = mzero
 
 instance Aeson.FromJSON Definition where
-  parseJSON json@(Aeson.Object o) = Definition [] <$> parseForest json
-   where vars = HashMap.lookup "_" o
+  parseJSON json@(Aeson.Object o) = Definition <$> vars <*> parseForest json
+   where vars = maybe (return []) multiple (HashMap.lookup "_" o)
+         multiple json = mapM single $ case json of Aeson.Array v -> toList v
+                                                    _             -> [json]
+         single (Aeson.Object o) = case HashMap.toList o of
+           [(k, v)] -> case v of Aeson.String s -> var k (Just (utf8 s))
+                                 Aeson.Null     -> var k Nothing
+                                 _              -> mzero
+           _        -> mzero
+         single (Aeson.String t) = var t Nothing
+         single _                = mzero
+         var name value = Var <$> parsifal label name <*> pure value
   parseJSON _ = mzero
 
 instance Aeson.FromJSON Call where
@@ -87,7 +119,7 @@ instance Aeson.FromJSON TemplateString where
     Aeson.Object _ -> TemplateString . (:[]) <$> pick json
     Aeson.Array v  -> TemplateString <$> mapM pick (toList v) 
     _              -> mzero
-   where bytes = Right . Text.encodeUtf8
+   where bytes = Right . utf8
          pick (Aeson.String t) = return $ bytes t
          pick (Aeson.Object o) = case parseableKeys label o of
                                    [(t,_)] -> return . Left $ Var t Nothing
@@ -115,9 +147,8 @@ parseForest _ = mzero
 -- | Scan a JSON object for keys that match a certain parser.
 parseableKeys :: Attoparsec.Parser t -> Aeson.Object -> [(t, Aeson.Value)]
 parseableKeys p m = (snd . partitionEithers) (parse <$> HashMap.toList m)
- where parse (k, v) = (,v) <$> Attoparsec.parseOnly p (Text.encodeUtf8 k)
+ where parse (k, v) = (,v) <$> Attoparsec.parseOnly p (utf8 k)
 
- ----------------- Parsing (input in raw and semi-raw forms) ------------------
 
 url :: Attoparsec.Parser ByteString
 url  = (<>) <$> (Attoparsec.string "http://" <|> Attoparsec.string "https://")
@@ -131,8 +162,16 @@ name  = (<>) <$> Attoparsec.string "//"
 
 label :: Attoparsec.Parser ByteString
 label  = label' <|> ByteString.singleton <$> ld
- where ldu = Attoparsec.takeWhile1 (Attoparsec.inClass "a-zA-Z0-9_")
+ where ldu = Attoparsec.takeWhile1 (Attoparsec.inClass "a-zA-Z0-9-")
        ld  = Attoparsec.satisfy (Attoparsec.inClass "a-zA-Z0-9")
        label' = do b <- ByteString.cons <$> ld <*> ldu
-                   if ByteString.last b == '_' then mzero else return b
+                   if ByteString.last b == '-' then mzero else return b
+
+class Parsifal t where parsifal :: Attoparsec.Parser t' -> t -> Aeson.Parser t'
+instance Parsifal Text where parsifal p = parsifal p . utf8
+instance Parsifal ByteString where parsifal p b = either (const mzero) return
+                                                $ Attoparsec.parseOnly p b
+
+utf8 :: Text -> ByteString
+utf8  = Text.encodeUtf8
 
