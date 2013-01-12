@@ -77,13 +77,14 @@ newtype TemplateString = TemplateString [Either Var ByteString]
  deriving (Eq, Ord, Show)
 
 
-declarations :: Aeson.Value -> Aeson.Parser [Declaration]
+declarations :: Aeson.Value -> Aeson.Parser [Either Aeson.Value Declaration]
 declarations (Aeson.Object o) = case parseableKeys name o of
   [ ] -> mzero
-  h:t -> sequence [ decl pair | pair@(_, Aeson.Object _) <- h:t ]
-   where decl (name, json) = Declaration name <$> parseJSON json
+  h:t -> sequence [ parse pair | pair@(_, Aeson.Object _) <- h:t ]
+   where parse (name, json)  =  Right . Declaration name <$> parseJSON json
+                            <|> Left <$> pure json
    -- We pattern match above so that only things resembling names that point
-   -- to objects are parsed and we only fail if these objects are unparseable.
+   -- to objects are parsed and we only warn if these objects are unparseable.
    -- People can put whatever other stuff they like in the input file; Task/L
    -- is indifferent.
 declarations _                = mzero
@@ -105,12 +106,10 @@ instance Aeson.FromJSON Definition where
 
 instance Aeson.FromJSON Call where
   parseJSON (Aeson.Object o) = maybe mzero call (listToMaybe cmds)
-   where cmds    =  parseableKeys cmdStr o
-         cmdStr  =  (Task,) <$> name
-                <|> (HTTP,) <$> url
-                <|> (Path,) <$> Attoparsec.takeByteString
+   where cmds = parseableKeys cmdStr o
          call ((t,b), Aeson.Array v) = Call (t,b) <$> mapM parseJSON (toList v)
          call _                      = mzero
+  parseJSON (Aeson.String t) = Call <$> parsifal cmdStr t <*> pure []
   parseJSON _ = mzero
 
 instance Aeson.FromJSON TemplateString where
@@ -128,6 +127,7 @@ instance Aeson.FromJSON TemplateString where
 
 parseTree :: Aeson.Value -> Aeson.Parser (Tree Call)
 parseTree json@(Aeson.Object _) = Node <$> parseJSON json <*> parseForest json
+parseTree json@(Aeson.String _) = Node <$> parseJSON json <*> parseForest json
 parseTree _                     = mzero
 
 parseForest :: Aeson.Value -> Aeson.Parser [Tree Call]
@@ -135,7 +135,7 @@ parseForest (Aeson.Object o)
   | Just _ <- forest >> branch     = mzero -- Fail if both are present.
   | Just (Aeson.Array v) <- forest = parseTrees v
   | Just (Aeson.Array v) <- branch = biasForest <$> parseTrees v
-  | otherwise                      = mzero
+  | otherwise                      = return []
  where branch = HashMap.lookup ";" o
        forest = HashMap.lookup "." o
        parseTrees = mapM parseTree . toList
@@ -149,6 +149,10 @@ parseableKeys :: Attoparsec.Parser t -> Aeson.Object -> [(t, Aeson.Value)]
 parseableKeys p m = (snd . partitionEithers) (parse <$> HashMap.toList m)
  where parse (k, v) = (,v) <$> Attoparsec.parseOnly p (utf8 k)
 
+
+cmdStr :: Attoparsec.Parser (Type, ByteString)
+cmdStr  = (Task,) <$> name <|> (HTTP,) <$> url
+                           <|> (Path,) <$> Attoparsec.takeByteString
 
 url :: Attoparsec.Parser ByteString
 url  = (<>) <$> (Attoparsec.string "http://" <|> Attoparsec.string "https://")
