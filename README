@@ -1,0 +1,19 @@
+
+Task/L is a principled approach to describing, sharing and composing system
+configurations.
+
+  * Task/L input files are YAML or JSON: configurations are data, easy to
+    generate and easy to introspect.
+
+  * Task/L tasks can reference tasks in other files or at HTTP URLs,
+    simplifying modularization and sharing.
+
+  * The basic building blocks of Task/L are Bash fragments and arrays of
+    commands, so it's easy to extend (and in the latter format, free of
+    escaping headaches).
+
+  * Commands can be URLs, too; these are downloaded and run.
+
+  * Task/L generates a Bash script for applying a configuration. There is no
+    runtime, no agent, no bootstrapping.
+
