@@ -34,7 +34,7 @@ data Task = Task Call [ByteString] deriving (Eq, Ord, Show)
 
 data Call = Cmd Cmd | Abstract ByteString deriving (Eq, Ord, Show)
 
-data Cmd = ShHTTP ByteString | Path ByteString deriving (Eq, Ord, Show)
+data Cmd = HTTPx ByteString | Path ByteString deriving (Eq, Ord, Show)
 
 
  ----------------- Parsing (input in raw and semi-raw forms) ------------------
@@ -50,7 +50,7 @@ call :: Attoparsec.Parser Call
 call  = (Abstract <$> name) <|> (Cmd <$> cmd)
 
 cmd :: Attoparsec.Parser Cmd
-cmd  = (ShHTTP <$> url) <|> (Path <$> Attoparsec.takeByteString)
+cmd  = (HTTPx <$> url) <|> (Path <$> Attoparsec.takeByteString)
 
 url :: Attoparsec.Parser ByteString
 url  = (<>) <$> (Attoparsec.string "http://" <|> Attoparsec.string "https://")
@@ -149,7 +149,7 @@ compile (cmd, args) = Bash.SimpleCommand (Bash.literal cmd)
 -- | Translate a task to a concrete shell command. Abstract tasks become a
 --   message announcing their completion.
 command :: Task -> (ByteString, [ByteString])
-command (Task (Cmd (ShHTTP url)) args) = ("tailed", "curl_sh":url:args)
+command (Task (Cmd (HTTPx url)) args) = ("tailed", "curlx":url:args)
 command (Task (Cmd (Path path))  args) = ("tailed", path:args)
 command (Task (Abstract name)       _) = ("msg",    name:[])
 

@@ -76,9 +76,9 @@ prettyPrintTask (Task call args) = ByteString.unwords
                                  $ prettyPrintCall call : args
 
 prettyPrintCall :: Call -> ByteString
-prettyPrintCall (Cmd (ShHTTP b)) = b
-prettyPrintCall (Cmd (Path b))   = b
-prettyPrintCall (Abstract b)     = b
+prettyPrintCall (Cmd (HTTPx b)) = b
+prettyPrintCall (Cmd (Path b))  = b
+prettyPrintCall (Abstract b)    = b
 
 (<<>) :: String -> ByteString -> ByteString
 s <<> b = ByteString.fromString s <> b
