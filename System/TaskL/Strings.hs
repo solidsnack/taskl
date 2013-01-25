@@ -4,7 +4,8 @@
            , FlexibleContexts
            , UndecidableInstances
   #-}
--- | Utilities for plain text and restricted syntaxes for names.
+-- | Utilities for plain text and the restricted syntax of names for tasks and
+--   labels.
 module System.TaskL.Strings where
 
 import           Control.Applicative
@@ -17,9 +18,11 @@ import           Data.Text (Text)
 import qualified Data.Text.Encoding as Text
 
 
-newtype Name  = Name [Label] deriving (Eq, Ord, Show)     -- ^ Dots and labels.
+-- | Dots and labels.
+newtype Name  = Name [Label] deriving (Eq, Ord, Show)
+
+-- | A string matching @[a-zA-Z0-9-]+@.
 newtype Label = Label ByteString deriving (Eq, Ord, Show)
-                                         -- ^ A string matching @[a-zA-Z0-9-]+@
 
 class Str t s where
   unStr :: s -> Either String t

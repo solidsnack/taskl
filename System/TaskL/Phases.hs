@@ -2,7 +2,7 @@
            , TypeOperators
            , TypeFamilies
            , UndecidableInstances #-}
-module System.TaskL where
+module System.TaskL.Phases where
 
 import           Data.ByteString.Char8 (ByteString)
 import           Data.Map (Map)
@@ -15,27 +15,29 @@ import           System.TaskL.Strings (Label(), Name())
 
 class Task phase where
   type Arg phase
-  type Cmd phase
-  type Cmd phase = Arg phase
+  data Cmd phase
   type Ref phase
   type Ref phase = Name
 
 -- | Type of inputs that are allowed to contain template variables.
-data Template = Template [Label] (Knot Template) deriving (Eq, Ord, Show)
-instance Task Template where
-  type Arg Template = [Either Label ByteString]
-  type Ref Template = [Either Label Name]
+data Templated = Templated [Label] (Knot Templated) deriving (Eq, Ord, Show)
+instance Task Templated where
+  type Arg Templated = [Either Label ByteString]
+  type Ref Templated = [Either Label Name]
+  data Cmd Templated = TemplatedCmd (Arg Templated) deriving (Eq, Ord, Show)
 
 -- | Type of inputs with remote references, requiring download.
-newtype Partial = Partial (Knot Partial) deriving (Eq, Ord, Show)
-instance Task Partial where
-  type Arg Partial = ByteString
-  type Cmd Partial = Either ByteString ByteString
+newtype WithURLs = WithURLs (Knot WithURLs) deriving (Eq, Ord, Show)
+instance Task WithURLs where
+  type Arg WithURLs = ByteString
+  data Cmd WithURLs = Remote ByteString | Local (Cmd Static)
+   deriving (Eq, Ord, Show)
 
 -- | Type of inputs that are ready for serialization as Bash.
 newtype Static = Static (Knot Static) deriving (Eq, Ord, Show)
 instance Task Static where
   type Arg Static = ByteString
+  data Cmd Static = Path ByteString | Exec ByteString deriving (Eq, Ord, Show)
 
 data Use t = Use { task :: Ref t,
                    args :: [Arg t],
@@ -62,13 +64,16 @@ data Module t = Module { from :: ByteString, defs :: Map Name t }
 -- | Compiler passes.
 type a :~ b = a -> IO b 
 
-template :: Module Template -> Map Name ByteString :~ Module Partial
+template :: Module Templated -> Map Name ByteString :~ Module WithURLs
 template  = undefined
 
-fetch :: Module Partial :~ Module Static
-fetch  = undefined
+remotes :: Bool -- ^ If true, retrieve remote commands at compile time and
+                --   inline them; otherwise, generate shell code to retrieve
+                --   the commands with cURL and execute them.
+        -> Module WithURLs :~ Module Static
+remotes  = undefined
 
-bash :: Module Static :~ Bash.Annotated ()
+bash :: Module Static -> Bash.Annotated ()
 bash  = undefined
 
 deriving instance (Ord t) => Ord (Tree t)
