@@ -1,45 +1,62 @@
 //db:
- .:
+  uses:
   - //pg.root
   - //pg.branch
 
 //web:
- .:
+  uses:
   - //pg.branch
   - //node
   - //nginx
 
 //node:
- .:
-  - aptitude: [-y, install, nodejs, npm]
-#   .: //apt.ppa: [chris-lea/node.js]
+  uses:
+  - //apt: [-y, install, nodejs, npm]
+    with:
+    - //apt.ppa: [chris-lea/node.js]
 
 //nginx:
- .:
-  - aptitude: [-y, install, nginx-extras]
-#   .: //apt.ppa: [nginx/stable]
+  uses:
+  - //apt: [-y, install, nginx-extras]
+    with:
+    - //apt.ppa: [nginx/stable]
 
 //pg.root:
- _: [{version: "9.2"}]  # Variable with default.
- .:
-  - aptitude: [ -y, install,
-                    [postgresql-,{version}], [postgresql-,{version},-dbg],
-                    [postgresql-contrib-,{version}],
-                    [postgresql-client-,{version}],
-                    [postgresql-doc-,{version}],
-                    [postgresql-server-dev-,{version}] ]
-#   .: //apt.ppa: [ pitti/postgresql ]
+  vars: [{version: "9.2"}]  # Variable with default.
+  uses:
+  - //apt:
+    - [postgresql-,{version}], [postgresql-,{version},-dbg]
+    - [postgresql-contrib-,{version}]
+    - [postgresql-client-,{version}]
+    - [postgresql-doc-,{version}]
+    - [postgresql-server-dev-,{version}]
+    with:
+    - //apt.ppa: [ pitti/postgresql ]
 
 //pg.branch:
- _: [{version: "9.2"}]  # Variable with default.
- .:
-  - aptitude: [ -y, install, [postgresql-client-,{version}] ]
-#   .: //apt.ppa: [ pitti/postgresql ]
+  vars: [{version: "9.2"}]  # Variable with default.
+  uses:
+  - //apt: [ -y, install, [postgresql-client-,{version}] ]
+    deps:
+    - //apt.ppa: [pitti/postgresql]
 
 //apt.ppa:
- _: [ppa]
- ;:
-  - aptitude: [ -y, install, python-software-properties ]
-  - add-apt-repository: [ ['ppa:',{ppa}] ]
-  - aptitude: [ update ]
+  vars: [ppa]
+  uses: //apt.ppa.setup
+  cmds:
+  - [add-apt-repository, ['ppa:',{ppa}]]
+
+//apt.ppa.setup:
+  cmds:
+  - [aptitude, update]
+  - [aptitude, -y, install, python-software-properties]
+
+//apt.up:
+  cmds:
+  - [aptitude, update]
+
+//apt:
+  uses: //apt.up
+  cmds:
+  - [aptitude, -y, install, {...}]
 
