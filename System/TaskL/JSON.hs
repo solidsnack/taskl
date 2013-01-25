@@ -6,7 +6,7 @@ import           Control.Monad
 
 import           Data.Aeson
 
-import System.TaskL.Phases
+import           System.TaskL.Phases
 
 
 instance FromJSON (Module Templated) where
