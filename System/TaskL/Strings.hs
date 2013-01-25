@@ -2,8 +2,7 @@
            , FlexibleInstances
            , MultiParamTypeClasses
            , FlexibleContexts
-           , UndecidableInstances
-  #-}
+           , UndecidableInstances #-}
 -- | Utilities for plain text and the restricted syntax of names for tasks and
 --   labels.
 module System.TaskL.Strings where

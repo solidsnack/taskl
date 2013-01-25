@@ -13,6 +13,9 @@ import qualified Language.Bash as Bash
 import           System.TaskL.Strings (Label(), Name())
 
 
+-- | Tasks take different forms depending on the compiler phase. Intermediate
+--   formats can contain URLs to remote commands or template variables; a
+--   final, static format can be compiled to Bash.
 class Task phase where
   type Arg phase
   data Cmd phase
