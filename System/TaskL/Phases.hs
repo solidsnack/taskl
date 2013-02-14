@@ -42,13 +42,16 @@ instance Task Static where
   type Arg Static = ByteString
   data Cmd Static = Path ByteString | Exec ByteString deriving (Eq, Ord, Show)
 
+-- | An instance of task use, which may have additional dependencies.
 data Use t = Use { task :: Ref t,
                    args :: [Arg t],
-                   with :: Forest (Use t) }
+                   adds :: Forest (Use t) }
 deriving instance (Eq (Arg t), Eq (Ref t)) => Eq (Use t)
 deriving instance (Ord (Arg t), Ord (Ref t)) => Ord (Use t)
 deriving instance (Show (Arg t), Show (Ref t)) => Show (Use t)
 
+-- | Type of connector between task code, a task's dependencies and a task's
+--   requested post-actions.
 data Knot t = Knot { code :: Code t,
                      uses :: Forest (Use t),
                      asks :: Forest (Use t) }
@@ -56,16 +59,18 @@ deriving instance (Eq (Code t), Eq (Use t)) => Eq (Knot t)
 deriving instance (Ord (Code t), Ord (Use t)) => Ord (Knot t)
 deriving instance (Show (Code t), Show (Use t)) => Show (Knot t)
 
+-- | A task body which, at present, is just a sequence of commands and their
+--   arguments.
 data Code t = Commands [(Cmd t, [Arg t])]
 deriving instance (Eq (Arg t), Eq (Cmd t)) => Eq (Code t)
 deriving instance (Ord (Arg t), Ord (Cmd t)) => Ord (Code t)
 deriving instance (Show (Arg t), Show (Cmd t)) => Show (Code t)
 
-data Module t = Module { from :: ByteString, defs :: Map Name t } 
+data Module t = Module { from :: ByteString, defs :: Map Name t }
 
 
--- | Compiler passes.
-type a :~ b = a -> IO b 
+-- | The type of compiler passes.
+type a :~ b = a -> IO b
 
 template :: Module Templated -> Map Name ByteString :~ Module WithURLs
 template  = undefined
