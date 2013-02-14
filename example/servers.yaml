@@ -12,13 +12,13 @@
 //node:
   uses:
   - //apt: [-y, install, nodejs, npm]
-    with:
+    uses:
     - //apt.ppa: [chris-lea/node.js]
 
 //nginx:
   uses:
   - //apt: [-y, install, nginx-extras]
-    with:
+    uses:
     - //apt.ppa: [nginx/stable]
 
 //pg.root:
@@ -30,14 +30,14 @@
     - [postgresql-client-,{version}]
     - [postgresql-doc-,{version}]
     - [postgresql-server-dev-,{version}]
-    with:
+    uses:
     - //apt.ppa: [ pitti/postgresql ]
 
 //pg.branch:
   vars: [{version: "9.2"}]  # Variable with default.
   uses:
   - //apt: [ -y, install, [postgresql-client-,{version}] ]
-    deps:
+    uses:
     - //apt.ppa: [pitti/postgresql]
 
 //apt.ppa:
