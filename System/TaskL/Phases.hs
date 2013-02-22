@@ -42,10 +42,8 @@ instance Task Static where
   type Arg Static = ByteString
   data Cmd Static = Path ByteString | Exec ByteString deriving (Eq, Ord, Show)
 
--- | An instance of task use, which may have additional dependencies.
-data Use t = Use { task :: Ref t,
-                   args :: [Arg t],
-                   adds :: Forest (Use t) }
+-- | An instance of task use, similar to a command.
+data Use t = Use { task :: Ref t, args :: [Arg t] }
 deriving instance (Eq (Arg t), Eq (Ref t)) => Eq (Use t)
 deriving instance (Ord (Arg t), Ord (Ref t)) => Ord (Use t)
 deriving instance (Show (Arg t), Show (Ref t)) => Show (Use t)
@@ -53,7 +51,7 @@ deriving instance (Show (Arg t), Show (Ref t)) => Show (Use t)
 -- | Type of connector between task code, a task's dependencies and a task's
 --   requested post-actions.
 data Knot t = Knot { code :: Code t,
-                     uses :: Forest (Use t),
+                     deps :: Forest (Use t),
                      asks :: Forest (Use t) }
 deriving instance (Eq (Code t), Eq (Use t)) => Eq (Knot t)
 deriving instance (Ord (Code t), Ord (Use t)) => Ord (Knot t)
