@@ -1,48 +1,48 @@
 //db:
-  uses:
+  deps:
   - //pg.root
   - //pg.branch
 
 //web:
-  uses:
+  deps:
   - //pg.branch
   - //node
   - //nginx
 
 //node:
-  uses:
+  deps:
   - //apt: [-y, install, nodejs, npm]
-    uses:
+    deps:
     - //apt.ppa: [chris-lea/node.js]
 
 //nginx:
-  uses:
+  deps:
   - //apt: [-y, install, nginx-extras]
-    uses:
+    deps:
     - //apt.ppa: [nginx/stable]
 
 //pg.root:
   vars: [{version: "9.2"}]  # Variable with default.
-  uses:
+  deps:
   - //apt:
     - [postgresql-,{version}], [postgresql-,{version},-dbg]
     - [postgresql-contrib-,{version}]
     - [postgresql-client-,{version}]
     - [postgresql-doc-,{version}]
     - [postgresql-server-dev-,{version}]
-    uses:
+    deps:
     - //apt.ppa: [ pitti/postgresql ]
 
 //pg.branch:
   vars: [{version: "9.2"}]  # Variable with default.
-  uses:
+  deps:
   - //apt: [ -y, install, [postgresql-client-,{version}] ]
-    uses:
+    deps:
     - //apt.ppa: [pitti/postgresql]
 
 //apt.ppa:
   vars: [ppa]
-  uses: //apt.ppa.setup
+  deps: //apt.ppa.setup
   cmds:
   - [add-apt-repository, ['ppa:',{ppa}]]
 
@@ -56,7 +56,7 @@
   - [aptitude, update]
 
 //apt:
-  uses: //apt.up
+  deps: //apt.up
   cmds:
   - [aptitude, -y, install, {...}]
 
