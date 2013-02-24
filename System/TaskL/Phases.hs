@@ -23,7 +23,8 @@ class Task phase where
   type Ref phase = Name
 
 -- | Type of inputs that are allowed to contain template variables.
-data Templated = Templated [Label] (Knot Templated) deriving (Eq, Ord, Show)
+data Templated = Templated [(Label, Maybe ByteString)] (Knot Templated)
+ deriving (Eq, Ord, Show)
 instance Task Templated where
   type Arg Templated = [Either Label ByteString]
   data Cmd Templated = TemplatedCmd (Arg Templated) deriving (Eq, Ord, Show)
