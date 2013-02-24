@@ -26,7 +26,6 @@ class Task phase where
 data Templated = Templated [Label] (Knot Templated) deriving (Eq, Ord, Show)
 instance Task Templated where
   type Arg Templated = [Either Label ByteString]
-  type Ref Templated = [Either Label Name]
   data Cmd Templated = TemplatedCmd (Arg Templated) deriving (Eq, Ord, Show)
 
 -- | Type of inputs with remote references, requiring download.
