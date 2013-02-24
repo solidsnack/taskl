@@ -20,7 +20,7 @@ import           Data.Tree (Tree(..), Forest)
 import           Data.Aeson
 import           Data.Aeson.Types
 import qualified Data.HashMap.Strict as HashMap
-import           Data.Text
+import           Data.Text (Text)
 import qualified Data.Text.Encoding as Text
 import qualified Data.Vector as Vector
 
@@ -34,7 +34,7 @@ instance FromJSON (Module Templated) where
       Module "" . Map.fromList <$>
         sequence [ (name,) <$> body .: text | (name, text) <- names ]
 instance ToJSON (Module Templated) where
-  toJSON _ = undefined
+  toJSON Module{..} = object [ toStr k .= toJSON v | (k,v) <- Map.toList defs ]
 
 instance FromJSON Templated where
   parseJSON = withObject "TaskL.Task" template where
@@ -43,25 +43,45 @@ instance FromJSON Templated where
     knot body = Knot <$> body .:? "cmds" .!= Commands []
                      <*> body .:? "deps" .!= mempty
                      <*> body .:? "asks" .!= mempty
+instance ToJSON Templated where
+  toJSON (Templated vars Knot{..}) = object $ filter nonEmpty
+    [ "deps" .= array (toJSON <$> deps), "cmds" .= toJSON code,
+      "asks" .= array (toJSON <$> asks), "vars" .= array (toJSON <$> vars) ]
+   where nonEmpty (_, Array a) = a /= mempty
+         nonEmpty _            = False
 
 instance FromJSON (Use Templated) where
-  parseJSON = withObject "TaskL.Use" $ \body ->
-   do scanned <- scanKeys body
-      case scanned of [(ref, name)] -> Use ref <$> body .: name
-                      _             -> mzero
+  parseJSON (Object o) = do
+    scanned <- scanKeys o
+    case scanned of [(ref, name)] -> Use ref <$> o .: name
+                    _             -> mzero
+  parseJSON (String s) = flip Use [] <$> parseJSON (String s)
+  parseJSON _          = mzero
 instance ToJSON (Use Templated) where
   toJSON Use{..} = object [toStr task .= array (toJSON <$> args)]
 
 instance FromJSON (Tree (Use Templated)) where
-  parseJSON = withObject "Tree(TaskL.Use)" $ \body ->
-   do deps <- body .:? "deps" .!= mempty
-      Node <$> parseJSON (Object body) <*> mapM parseJSON deps
+  parseJSON (Object o) = do
+    deps <- o .:? "deps" .!= mempty
+    Node <$> parseJSON (Object o) <*> mapM parseJSON deps
+  parseJSON (String s) = flip Node [] <$> parseJSON (String s)
+  parseJSON _          = mzero
 instance ToJSON (Tree (Use Templated)) where
   toJSON Node{..} | [] <- subForest = Object o
                   | otherwise       = Object (uncurry HashMap.insert deps o)
    where Object o = toJSON rootLabel
          deps     = "deps" .= array (toJSON <$> subForest)
 
+instance FromJSON (Label, Maybe ByteString) where
+  parseJSON (Object o) = case [ (unStr k, v) | (k, v) <- HashMap.toList o ] of
+    [(Right l, String s)] -> return (l, Just (Text.encodeUtf8 s))
+    [(Right l, Number n)] -> return (l, Just (ByteString.pack $ show n))
+    _                     -> mzero
+  parseJSON (String s) = (,Nothing) <$> parseJSON (String s)
+  parseJSON _          = mzero
+instance ToJSON (Label, Maybe ByteString) where
+  toJSON (l, Nothing) = String (toStr l)
+  toJSON (l, Just b)  = object [toStr l .= String (Text.decodeUtf8 b)]
 
 -- Single element hashes are treated as variable references.
 instance FromJSON [Either Label ByteString] where
