@@ -65,7 +65,9 @@ deriving instance (Ord (Arg t), Ord (Cmd t)) => Ord (Code t)
 deriving instance (Show (Arg t), Show (Cmd t)) => Show (Code t)
 
 data Module t = Module { from :: ByteString, defs :: Map Name t }
-
+deriving instance (Eq t) => Eq (Module t)
+deriving instance (Ord t) => Ord (Module t)
+deriving instance (Show t) => Show (Module t)
 
 -- | The type of compiler passes.
 type a :~ b = a -> IO b
