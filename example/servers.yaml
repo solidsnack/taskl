@@ -25,7 +25,8 @@
   vars: [{version: "9.2"}]  # Variable with default.
   deps:
   - //apt:
-    - [postgresql-,{version}], [postgresql-,{version},-dbg]
+    - [postgresql-,{version}]
+    - [postgresql-,{version},-dbg]
     - [postgresql-contrib-,{version}]
     - [postgresql-client-,{version}]
     - [postgresql-doc-,{version}]
@@ -42,7 +43,7 @@
 
 //apt.ppa:
   vars: [ppa]
-  deps: //apt.ppa.setup
+  deps: [//apt.ppa.setup]
   cmds:
   - [add-apt-repository, ['ppa:',{ppa}]]
 
@@ -56,7 +57,7 @@
   - [aptitude, update]
 
 //apt:
-  deps: //apt.up
+  deps: [//apt.up]
   cmds:
-  - [aptitude, -y, install, {...}]
+  - [aptitude, -y, install, {all}]
 
