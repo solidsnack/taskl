@@ -1,5 +1,4 @@
 {-# LANGUAGE StandaloneDeriving
-           , TypeOperators
            , TypeFamilies
            , UndecidableInstances #-}
 module System.TaskL.Phases where
@@ -7,8 +6,6 @@ module System.TaskL.Phases where
 import           Data.ByteString.Char8 (ByteString)
 import           Data.Map (Map)
 import           Data.Tree (Tree(..), Forest)
-
-import qualified Language.Bash as Bash
 
 import           System.TaskL.Strings (Label(), Name())
 
@@ -68,21 +65,6 @@ data Module t = Module { from :: ByteString, defs :: Map Name t }
 deriving instance (Eq t) => Eq (Module t)
 deriving instance (Ord t) => Ord (Module t)
 deriving instance (Show t) => Show (Module t)
-
--- | The type of compiler passes.
-type a :~ b = a -> IO b
-
-template :: Module Templated -> Map Name ByteString :~ Module WithURLs
-template  = undefined
-
-remotes :: Bool -- ^ If true, retrieve remote commands at compile time and
-                --   inline them; otherwise, generate shell code to retrieve
-                --   the commands with cURL and execute them.
-        -> Module WithURLs :~ Module Static
-remotes  = undefined
-
-bash :: Module Static -> Bash.Annotated ()
-bash  = undefined
 
 deriving instance (Ord t) => Ord (Tree t)
 
