@@ -4,6 +4,7 @@
            , TypeOperators
            , TypeFamilies
            , FlexibleInstances
+           , FlexibleContexts
            , RecordWildCards
            , UndecidableInstances #-}
 module System.TaskL.Compiler where
@@ -14,6 +15,7 @@ import qualified Data.ByteString.Char8 as ByteString
 import           Control.Arrow
 import           Control.Applicative
 import           Control.Exception
+import           Control.Monad
 import           Data.Char
 import           Data.Either
 import           Data.Map (Map)
@@ -81,6 +83,10 @@ yamlErrorInfo (Data.Yaml.InvalidYaml exc) = case exc of
     "The YAML was invalid (at " <> i yamlProblemMark <> "):\n  " <> yamlProblem
     where i Text.Libyaml.YamlMark{..} = show yamlLine <>":"<> show yamlColumn
 
+renderModule :: (Aeson.ToJSON (Module t)) => Module t :~ ()
+renderModule m@Module{..} = do when (from /= mempty) (out comment)
+                               out (Data.Yaml.encode m)
+ where comment = ByteString.unlines (("# " <>) <$> ByteString.lines from)
 
 template :: Module Templated -> Map Name ByteString :~ Module WithURLs
 template  = undefined
