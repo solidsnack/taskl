@@ -3,6 +3,7 @@
            , ScopedTypeVariables
            , TypeOperators
            , TypeFamilies
+           , TupleSections
            , FlexibleInstances
            , FlexibleContexts
            , RecordWildCards
@@ -44,30 +45,39 @@ import           System.TaskL.JSON
 --   AST transformations and the eventual compilation to Bash.
 type a :~ b = a -> IO b
 
-loadYAML :: FilePath :~ Module Templated
-loadYAML path = do
-  res :: Maybe Aeson.Value <- catch (Data.Yaml.decodeFile path) yamlErr
-  halfParsed <- case res of Nothing -> err' "No YAML data!"
-                            Just (Data.Yaml.Object o) -> return (halfParse o)
-                            Just _ -> err' "YAML root should be a map."
-  case partitionEithers (partition <$> halfParsed) of
-    ([      ], [  ]) -> return (Module path' mempty)
+openModule :: FilePath :~ (ByteString, Handle)
+openModule path = (ByteString.pack path,) <$> openFile path ReadMode
+
+loadModule :: (ByteString, Handle) :~ Module Templated
+loadModule (name, handle) = do
+  parseResult <- yamlDecode =<< ByteString.hGetContents handle
+  mapping     <- yamlProcessErrors parseResult
+  case partitionEithers (partition <$> halfParse mapping) of
+    ([      ], [  ]) -> return (Module name mempty)
     (warnings, [  ]) -> sequence_ warnings >> err' "No tasks were valid :("
-    (warnings, defs) -> Module path' (Map.fromList defs) <$ sequence_ warnings
- where err'       :: String -> IO any
-       err'        = err . (<>) (path <> ": ")
-       msg'       :: String -> IO ()
-       msg'        = msg . (<>) (path <> ": ")
-       path'       = ByteString.pack path
-       yamlErr exc = err' (yamlErrorInfo exc)
-       halfParse o = p <$> HashMap.toList o
-        where p = ((Text.unpack &&& unStr) *** eitherJSON)
-       eitherJSON json = case Aeson.fromJSON json of Aeson.Error s   -> Left s
-                                                     Aeson.Success v -> Right v
-       partition result = case result of
-         ((k, Left  _), _)       -> Left $ msg' ("Bad task name: " <> k)
-         ((k, Right _), Left _)  -> Left $ msg' ("Bad task body for: " <> k)
-         ((_, Right n), Right b) -> Right (n, b)
+    (warnings, defs) -> Module name (Map.fromList defs) <$ sequence_ warnings
+ where
+  err'       :: String -> IO any
+  err'        = err . (<>) (ByteString.unpack name <> ": ")
+  msg'       :: String -> IO ()
+  msg'        = msg . (<>) (ByteString.unpack name <> ": ")
+  halfParse o = ((Text.unpack &&& unStr) *** eitherJSON) <$> HashMap.toList o
+  eitherJSON json = case Aeson.fromJSON json of
+    Aeson.Error s   -> Left s
+    Aeson.Success v -> Right v
+  partition result = case result of
+    ((k, Left  _), _)       -> Left $ msg' ("Bad task name: " <> k)
+    ((k, Right _), Left _)  -> Left $ msg' ("Bad task body for: " <> k)
+    ((_, Right n), Right b) -> Right (n, b)
+  yamlProcessErrors yamlProcessingResult = case yamlProcessingResult of
+     Left exc                           -> err' (yamlErrorInfo exc)
+     Right (Left s)                     -> err' ("YAML Error: " <> s)
+     Right (Right (Data.Yaml.Object o)) -> return o
+     Right (Right _)                    -> err' "YAML root should be a map."
+
+yamlDecode :: ByteString -> IO (Either Data.Yaml.ParseException
+                                       (Either String Aeson.Value))
+yamlDecode  = Data.Yaml.decodeHelper . Text.Libyaml.decode
 
 yamlErrorInfo :: Data.Yaml.ParseException -> String
 yamlErrorInfo Data.Yaml.NonScalarKey =
