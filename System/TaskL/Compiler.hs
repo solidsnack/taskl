@@ -45,6 +45,8 @@ import           System.TaskL.JSON
 --   AST transformations and the eventual compilation to Bash.
 type a :~ b = a -> IO b
 
+ -------------------------------- Loading Files -------------------------------
+
 openModule :: FilePath :~ (ByteString, Handle)
 openModule path = (ByteString.pack path,) <$> openFile path ReadMode
 
@@ -93,10 +95,14 @@ yamlErrorInfo (Data.Yaml.InvalidYaml exc) = case exc of
     "The YAML was invalid (at " <> i yamlProblemMark <> "):\n  " <> yamlProblem
     where i Text.Libyaml.YamlMark{..} = show yamlLine <>":"<> show yamlColumn
 
+ ------------------------------ Pretty Printing -------------------------------
+
 renderModule :: (Aeson.ToJSON (Module t)) => Module t :~ ()
 renderModule m@Module{..} = do when (from /= mempty) (out comment)
                                out (Data.Yaml.encode m)
  where comment = ByteString.unlines (("# " <>) <$> ByteString.lines from)
+
+ ------------------------------ Compiling Stuff -------------------------------
 
 template :: Module Templated -> Map Name ByteString :~ Module WithURLs
 template  = undefined
@@ -110,6 +116,7 @@ remotes  = undefined
 bash :: Module Static -> Bash.Annotated ()
 bash  = undefined
 
+ --------------------------------- Utilities ----------------------------------
 
 -- | Functions for informational, diagnostic and warning messages published by
 --   the compiler pipeline.
