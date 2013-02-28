@@ -19,10 +19,14 @@ import           Control.Exception
 import           Control.Monad
 import           Data.Char
 import           Data.Either
+import           Data.Foldable hiding (sequence_)
 import           Data.Map (Map)
 import qualified Data.Map as Map
 import           Data.Monoid
+import           Data.Set (Set)
+import qualified Data.Set as Set
 import           Data.Tree (Tree(..), Forest)
+import qualified Data.Tree as Tree
 import           System.Exit
 import           System.IO
 
@@ -101,6 +105,20 @@ renderModule :: (Aeson.ToJSON (Module t)) => Module t :~ ()
 renderModule m@Module{..} = do when (from /= mempty) (out comment)
                                out (Data.Yaml.encode m)
  where comment = ByteString.unlines (("# " <>) <$> ByteString.lines from)
+
+ ----------------------- Narrow Module To Required Tasks ----------------------
+
+reachable :: Set Name -> Map Name Templated -> Set Name
+reachable requested available = search requested
+ where onlyNames  = names <$> available
+       subTasks k = maybe mempty id (Map.lookup k onlyNames)
+       search    :: Set Name -> Set Name
+       search set = if next == set then set else search next
+        where next = fold (set : (subTasks <$> toList set))
+
+names :: Templated -> Set Name
+names (Templated _ Knot{..}) = fold [ toSet tree | tree <- asks <> deps ]
+ where toSet tree = Set.fromList $ Tree.flatten (task <$> tree)
 
  ------------------------------ Compiling Stuff -------------------------------
 
