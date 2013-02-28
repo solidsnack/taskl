@@ -24,7 +24,7 @@ data Templated = Templated [(Label, Maybe ByteString)] (Knot Templated)
  deriving (Eq, Ord, Show)
 instance Task Templated where
   type Arg Templated = [Either Label ByteString]
-  data Cmd Templated = TemplatedCmd (Arg Templated) deriving (Eq, Ord, Show)
+  data Cmd Templated = TemplatedCmd ByteString deriving (Eq, Ord, Show)
 
 -- | Type of inputs with remote references, requiring download.
 newtype WithURLs = WithURLs (Knot WithURLs) deriving (Eq, Ord, Show)
