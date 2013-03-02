@@ -1,7 +1,5 @@
-{-# LANGUAGE StandaloneDeriving
-           , TypeFamilies
-           , UndecidableInstances #-}
-module System.TaskL.Phases where
+{-# LANGUAGE StandaloneDeriving #-}
+module System.TaskL.Task where
 
 import           Data.ByteString.Char8 (ByteString)
 import           Data.Map (Map)

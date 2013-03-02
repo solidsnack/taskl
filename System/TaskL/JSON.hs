@@ -1,7 +1,5 @@
 {-# LANGUAGE OverloadedStrings
-           , GeneralizedNewtypeDeriving
            , TupleSections
-           , ScopedTypeVariables
            , RecordWildCards
            , FlexibleContexts
            , FlexibleInstances #-}
@@ -24,49 +22,49 @@ import           Data.Text (Text)
 import qualified Data.Text.Encoding as Text
 import qualified Data.Vector as Vector
 
-import           System.TaskL.Phases
+import           System.TaskL.Task
 import           System.TaskL.Strings
 
 
-instance FromJSON (Module Templated) where
+instance FromJSON Module where
   parseJSON = withObject "TaskL.Module" $ \body ->
    do names <- scanKeys body
       Module "" . Map.fromList <$>
         sequence [ (name,) <$> body .: text | (name, text) <- names ]
-instance ToJSON (Module Templated) where
+instance ToJSON Module where
   toJSON Module{..} = object [ toStr k .= toJSON v | (k,v) <- Map.toList defs ]
 
-instance FromJSON Templated where
+instance FromJSON Task where
   parseJSON = withObject "TaskL.Task" template where
-    template body = Templated <$> body .:? "vars" .!= mempty
+    template body = Task <$> body .:? "vars" .!= mempty
                               <*> knot body
     knot body = Knot <$> body .:? "cmds" .!= Commands []
                      <*> body .:? "deps" .!= mempty
                      <*> body .:? "asks" .!= mempty
-instance ToJSON Templated where
-  toJSON (Templated vars Knot{..}) = object $ filter nonEmpty
+instance ToJSON Task where
+  toJSON (Task vars Knot{..}) = object $ filter nonEmpty
     [ "deps" .= array (toJSON <$> deps), "cmds" .= toJSON code,
       "asks" .= array (toJSON <$> asks), "vars" .= array (toJSON <$> vars) ]
    where nonEmpty (_, Array a) = a /= mempty
          nonEmpty _            = False
 
-instance FromJSON (Use Templated) where
+instance FromJSON Use where
   parseJSON (Object o) = do
     scanned <- scanKeys o
     case scanned of [(ref, name)] -> Use ref <$> o .: name
                     _             -> mzero
   parseJSON (String s) = flip Use [] <$> parseJSON (String s)
   parseJSON _          = mzero
-instance ToJSON (Use Templated) where
+instance ToJSON Use where
   toJSON Use{..} = object [toStr task .= array (toJSON <$> args)]
 
-instance FromJSON (Tree (Use Templated)) where
+instance FromJSON (Tree Use) where
   parseJSON (Object o) = do
     deps <- o .:? "deps" .!= mempty
     Node <$> parseJSON (Object o) <*> mapM parseJSON deps
   parseJSON (String s) = flip Node [] <$> parseJSON (String s)
   parseJSON _          = mzero
-instance ToJSON (Tree (Use Templated)) where
+instance ToJSON (Tree Use) where
   toJSON Node{..} | [] <- subForest = Object o
                   | otherwise       = Object (uncurry HashMap.insert deps o)
    where Object o = toJSON rootLabel
@@ -107,14 +105,14 @@ instance FromJSON Label where
   parseJSON = withText "Label" (either (const mzero) return . unStr)
 instance ToJSON Label where toJSON = String . toStr
 
-instance FromJSON (Code Templated) where
+instance FromJSON Code where
   parseJSON = withArray "TaskL.Code" ((Commands <$>) . mapM parseOne . toList)
    where parseOne = withArray "Task.Code/..." (cmd <=< mapM parseJSON . toList)
-          where cmd (h:t) = return (TemplatedCmd h, t)
+          where cmd (h:t) = return (h, t)
                 cmd _     = mzero
-instance ToJSON (Code Templated) where
+instance ToJSON Code where
   toJSON (Commands cmds) =
-    array [ array (toJSON <$> cmd:args) | (TemplatedCmd cmd, args) <- cmds ]
+    array [ array (toJSON <$> cmd:args) | (cmd, args) <- cmds ]
 
 scanKeys :: (Str s Text) => Object -> Parser [(s, Text)]
 scanKeys  = return . rights . (parse <$>) . HashMap.keys
