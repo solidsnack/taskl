@@ -12,6 +12,8 @@ function tmp {
   chmod =t,u=rxw,g=rxs "$tmp"
 }
 
+# Every action is run in a subshell, with log tailing. If the action's
+# "command" part is a URL then we use curlx to download and run the URL.
 function run {
   case "$1" in
     http://*|https://*) local cmd=( curlx "$@" ) ;;
