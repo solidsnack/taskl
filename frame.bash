@@ -5,18 +5,6 @@ function tasks {
   : # Replace with worker body.
 }
 
-function curlx {
-  local url="$1" ; shift
-  local bin="$tmp"/x
-  curl_ "$url" > "$bin"
-  chmod u+rx "$bin"
-  "$bin" "$@"
-}
-
-function curl_ {
-  curl -sSfL --retry 2 "$1"
-}
-
 tmp=/tmp/"$(printf 'taskl.%04x%04x.%d\n' $RANDOM $RANDOM $$)"
 function tmp {
   trap "rm -rf $tmp" EXIT
@@ -24,11 +12,15 @@ function tmp {
   chmod =t,u=rxw,g=rxs "$tmp"
 }
 
-function tailed {
+function run {
+  case "$1" in
+    http://*|https://*) local cmd=( curlx "$@" ) ;;
+    *)                  local cmd=( exec  "$@" ) ;;
+  esac
   tmp
   if ( exec 1> >(exec tail -n20 > "$tmp"/o)
        exec 2> >(exec tail -n20 > "$tmp"/e)
-       "$@" )
+       "${cmd[@]}" )
   then : # Do nothing.
   else
     local x=$?
@@ -44,6 +36,14 @@ function tailed {
     fi
     return $(( $x == 0 ? 1 : $x ))
   fi
+}
+
+function curlx {
+  local url="$1" ; shift
+  local bin="$tmp"/x
+  curl -sSfL --retry 2 "$url" > "$bin"
+  chmod u+rx "$bin"
+  exec "$bin" "$@"
 }
 
 function out { printf '%s\n' "$*" ;}
