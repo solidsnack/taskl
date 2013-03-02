@@ -41,7 +41,7 @@ import qualified Text.Libyaml
 import qualified Language.Bash as Bash
 
 import           System.TaskL.Strings
-import           System.TaskL.Phases
+import           System.TaskL.Task
 import           System.TaskL.JSON
 
 
@@ -54,7 +54,7 @@ type a :~ b = a -> IO b
 openModule :: FilePath :~ (ByteString, Handle)
 openModule path = (ByteString.pack path,) <$> openFile path ReadMode
 
-loadModule :: (ByteString, Handle) :~ Module Templated
+loadModule :: (ByteString, Handle) :~ Module
 loadModule (name, handle) = do
   parseResult <- yamlDecode =<< ByteString.hGetContents handle
   mapping     <- yamlProcessErrors parseResult
@@ -101,14 +101,14 @@ yamlErrorInfo (Data.Yaml.InvalidYaml exc) = case exc of
 
  ------------------------------ Pretty Printing -------------------------------
 
-renderModule :: (Aeson.ToJSON (Module t)) => Module t :~ ()
+renderModule :: (Aeson.ToJSON Module) => Module :~ ()
 renderModule m@Module{..} = do when (from /= mempty) (out comment)
                                out (Data.Yaml.encode m)
  where comment = ByteString.unlines (("# " <>) <$> ByteString.lines from)
 
  ----------------------- Narrow Module To Required Tasks ----------------------
 
-reachable :: Set Name -> Map Name Templated -> Set Name
+reachable :: Set Name -> Map Name Task -> Set Name
 reachable requested available = search requested
  where onlyNames  = names <$> available
        subTasks k = maybe mempty id (Map.lookup k onlyNames)
@@ -116,22 +116,16 @@ reachable requested available = search requested
        search set = if next == set then set else search next
         where next = fold (set : (subTasks <$> toList set))
 
-names :: Templated -> Set Name
-names (Templated _ Knot{..}) = fold [ toSet tree | tree <- asks <> deps ]
+names :: Task -> Set Name
+names (Task _ Knot{..}) = fold [ toSet tree | tree <- asks <> deps ]
  where toSet tree = Set.fromList $ Tree.flatten (task <$> tree)
 
  ------------------------------ Compiling Stuff -------------------------------
 
-template :: Module Templated -> Map Name ByteString :~ Module WithURLs
+template :: Module -> Map Name ByteString :~ Module
 template  = undefined
 
-remotes :: Bool -- ^ If true, retrieve remote commands at compile time and
-                --   inline them; otherwise, generate shell code to retrieve
-                --   the commands with cURL and execute them.
-        -> Module WithURLs :~ Module Static
-remotes  = undefined
-
-bash :: Module Static -> Bash.Annotated ()
+bash :: Module -> Bash.Annotated ()
 bash  = undefined
 
  --------------------------------- Utilities ----------------------------------
