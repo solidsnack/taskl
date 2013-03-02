@@ -5,19 +5,23 @@ function tasks {
   : # Replace with worker body.
 }
 
-function curl_sh {
+function curlx {
   local url="$1" ; shift
-  curl_ "$url" | sh -s -- "$@"
+  local bin="$tmp"/x
+  curl_ "$url" > "$bin"
+  chmod u+rx "$bin"
+  "$bin" "$@"
 }
 
 function curl_ {
-  curl -sSfL "$1"
+  curl -sSfL --retry 2 "$1"
 }
 
 tmp=/tmp/"$(printf 'taskl.%04x%04x.%d\n' $RANDOM $RANDOM $$)"
 function tmp {
   trap "rm -rf $tmp" EXIT
   mkdir -p "$tmp"
+  chmod =t,u=rxw,g=rxs "$tmp"
 }
 
 function tailed {
