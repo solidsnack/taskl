@@ -49,13 +49,78 @@ import           System.TaskL.JSON
 --   AST transformations and the eventual compilation to Bash.
 type a :~ b = a -> IO b
 
+ ----------------------------- Compilation Steps ------------------------------
+
+load :: [(ByteString, Handle)] :~ [Module]
+load  = mapM loadYAML
+
+merge :: [Module] :~ Module
+merge modules = return Module{ from = froms, defs = map }
+ where (froms, map) = foldl' f ("",mempty) modules
+       f (s, map) Module{..} = (s <> from <> "\n", map <> defs)
+
+filter :: Set Name -> Module :~ Module
+filter set mod@Module{..} = return mod{ defs = filtered }
+ where requested k _ = Set.member k (reachable set defs)
+       filtered = Map.filterWithKey requested defs
+
+-- | Plans a task request, returning a tree of calls to needed tasks.
+expand :: [(Name, [ByteString])] -> Module :~ Tree (Name, [ByteString])
+expand requests Module{..} = undefined
+
+bodies :: Module :~ Map Name (Bash.Annotated ())
+bodies  = undefined
+
+check :: Tree (Name, [ByteString]) :~ ()
+check  = undefined
+
+bash :: Map Name (Bash.Annotated ()) -> Tree (Name, [ByteString])
+     :~ Bash.Annotated ()
+bash  = undefined
+
+ ---------------------- Work With Bindings & Request Lists --------------------
+
+reachable :: Set Name -> Map Name Task -> Set Name
+reachable requested available = search requested
+ where onlyNames  = names <$> available
+       subTasks k = maybe mempty id (Map.lookup k onlyNames)
+       search :: Set Name -> Set Name
+       search set = if next == set then set else search next
+        where next = fold (set : (subTasks <$> toList set))
+
+names :: Task -> Set Name
+names (Task _ Knot{..}) = fold [ toSet tree | tree <- asks <> deps ]
+ where toSet tree = Set.fromList $ Tree.flatten (task <$> tree)
+
+bind :: [ByteString] -> [(Label, Maybe String)]
+bind  = undefined
+
+ --------------------------------- Utilities ----------------------------------
+
+-- | Functions for informational, diagnostic and warning messages published by
+--   the compiler pipeline.
+msg, out :: (Echo t) => t :~ ()
+msg = echo stderr
+out = echo stdout
+
+-- | A way to signal an error in the compiler pipeline, terminating it and
+--   providing a message.
+err :: (Echo t) => t :~ any
+err = (>> exitFailure) . echo stderr
+
+class Echo t where echo :: Handle -> t -> IO ()
+instance Echo ByteString where
+  echo h = ByteString.hPutStrLn h . fst . ByteString.spanEnd isSpace
+instance Echo Text where echo h = Text.hPutStrLn h . Text.stripEnd
+instance Echo String where echo h = echo h . Text.pack
+
  -------------------------------- Loading Files -------------------------------
 
 openModule :: FilePath :~ (ByteString, Handle)
 openModule path = (ByteString.pack path,) <$> openFile path ReadMode
 
-loadModule :: (ByteString, Handle) :~ Module
-loadModule (name, handle) = do
+loadYAML :: (ByteString, Handle) :~ Module
+loadYAML (name, handle) = do
   parseResult <- yamlDecode =<< ByteString.hGetContents handle
   mapping     <- yamlProcessErrors parseResult
   case partitionEithers (partition <$> halfParse mapping) of
@@ -73,7 +138,7 @@ loadModule (name, handle) = do
     Aeson.Success v -> Right v
   partition result = case result of
     ((k, Left  _), _)       -> Left $ msg' ("Bad task name: " <> k)
-    ((k, Right _), Left _)  -> Left $ msg' ("Bad task body for: " <> k)
+    ((k, Right _), Left s)  -> Left $ msg' ("Bad task body for: "<>k<>"\n "<>s)
     ((_, Right n), Right b) -> Right (n, b)
   yamlProcessErrors yamlProcessingResult = case yamlProcessingResult of
      Left exc                           -> err' (yamlErrorInfo exc)
@@ -105,45 +170,4 @@ renderModule :: (Aeson.ToJSON Module) => Module :~ ()
 renderModule m@Module{..} = do when (from /= mempty) (out comment)
                                out (Data.Yaml.encode m)
  where comment = ByteString.unlines (("# " <>) <$> ByteString.lines from)
-
- ----------------------- Narrow Module To Required Tasks ----------------------
-
-reachable :: Set Name -> Map Name Task -> Set Name
-reachable requested available = search requested
- where onlyNames  = names <$> available
-       subTasks k = maybe mempty id (Map.lookup k onlyNames)
-       search    :: Set Name -> Set Name
-       search set = if next == set then set else search next
-        where next = fold (set : (subTasks <$> toList set))
-
-names :: Task -> Set Name
-names (Task _ Knot{..}) = fold [ toSet tree | tree <- asks <> deps ]
- where toSet tree = Set.fromList $ Tree.flatten (task <$> tree)
-
- ------------------------------ Compiling Stuff -------------------------------
-
-template :: Module -> Map Name ByteString :~ Module
-template  = undefined
-
-bash :: Module -> Bash.Annotated ()
-bash  = undefined
-
- --------------------------------- Utilities ----------------------------------
-
--- | Functions for informational, diagnostic and warning messages published by
---   the compiler pipeline.
-msg, out :: (Echo t) => t :~ ()
-msg = echo stderr
-out = echo stdout
-
--- | A way to signal an error in the compiler pipeline, terminating it and
---   providing a message.
-err :: (Echo t) => t :~ any
-err = (>> exitFailure) . echo stderr
-
-class Echo t where echo :: Handle -> t -> IO ()
-instance Echo ByteString where
-  echo h = ByteString.hPutStrLn h . fst . ByteString.spanEnd isSpace
-instance Echo Text where echo h = Text.hPutStrLn h . Text.stripEnd
-instance Echo String where echo h = echo h . Text.pack
 
