@@ -92,8 +92,17 @@ names :: Task -> Set Name
 names (Task _ Knot{..}) = fold [ toSet tree | tree <- asks <> deps ]
  where toSet tree = Set.fromList $ Tree.flatten (task <$> tree)
 
-bind :: [ByteString] -> [(Label, Maybe String)]
-bind  = undefined
+-- | Bind vector of arguments to variables and return leftover variables (if
+--   there are too few arguments) or arguments (if there are too few
+--   variables).
+bind :: [ByteString] -> [(Label, Maybe ByteString)]
+     -> (Map Label ByteString, Either [(Label, Maybe ByteString)] [ByteString])
+bind values variables = (Map.fromList found, leftover)
+ where (found, leftover) = f [] values variables
+       f found (h:t) ((l, _)     :labels)        = f ((l, h):found) t  labels
+       f found [   ] ((l, Just b):labels)        = f ((l, b):found) [] labels
+       f found [   ] labels@((label, Nothing):_) = (found, Left labels)
+       f found rest  [                      ]    = (found, Right rest)
 
  --------------------------------- Utilities ----------------------------------
 
