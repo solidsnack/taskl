@@ -125,8 +125,8 @@ scanKeys  = return . rights . (parse <$>) . HashMap.keys
 
 varOrLit :: Value -> Parser (Either Label ByteString)
 varOrLit (Object o) = case [ (unStr k, v) | (k, v) <- HashMap.toList o ] of
-  [(Right l, Null     )] -> return . Left $ l
-  _                      -> mzero
+  [(Right l, Null)] -> return . Left $ l
+  _                 -> mzero
 varOrLit (String s) = return . Right . Text.encodeUtf8 $ s
 varOrLit (Number n) = return . Right . ByteString.pack . show $ n
 varOrLit _          = mzero
