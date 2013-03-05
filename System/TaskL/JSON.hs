@@ -37,7 +37,7 @@ instance ToJSON Module where
 instance FromJSON Task where
   parseJSON = withObject "TaskL.Task" template where
     template body = Task <$> body .:? "vars" .!= mempty
-                              <*> knot body
+                         <*> knot body
     knot body = Knot <$> body .:? "cmds" .!= Commands []
                      <*> body .:? "deps" .!= mempty
                      <*> body .:? "asks" .!= mempty
