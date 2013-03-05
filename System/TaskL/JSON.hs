@@ -11,7 +11,7 @@ import           Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as ByteString
 import           Data.Either
 import qualified Data.Map as Map
-import           Data.Monoid
+import           Data.Monoid hiding (All)
 import           Data.Foldable (toList)
 import           Data.Tree (Tree(..), Forest)
 
@@ -82,20 +82,25 @@ instance ToJSON (Label, Maybe ByteString) where
   toJSON (l, Just b)  = object [toStr l .= String (Text.decodeUtf8 b)]
 
 -- Single element hashes are treated as variable references.
-instance FromJSON [Either Label ByteString] where
-  parseJSON (Array  a)   = mapM varOrLit (toList a)
-  parseJSON v@(Object _) = (:[]) <$> varOrLit v
-  parseJSON v@(String _) = (:[]) <$> varOrLit v
-  parseJSON v@(Number _) = (:[]) <$> varOrLit v
+instance FromJSON Arg where
+  parseJSON (Array  a)   = Scalar <$> mapM varOrLit (toList a)
+  parseJSON v@(String _) = Scalar . (:[]) <$> varOrLit v
+  parseJSON v@(Number _) = Scalar . (:[]) <$> varOrLit v
+  parseJSON v@(Object o) = case HashMap.toList o of
+                             [("...", Null)] -> return Tail
+                             [("~~~", Null)] -> return All
+                             _               -> Scalar . (:[]) <$> varOrLit v
   parseJSON _            = mzero
-instance ToJSON [Either Label ByteString] where
-  toJSON items = case items of
+instance ToJSON Arg where
+  toJSON (Scalar items) = case items of
     [       ] -> String ""
     [Left l ] -> var l
     [Right b] -> val b
     _         -> Array . Vector.fromList $ either var val <$> items
-   where var = object . (:[]) . (.= String "") . toStr
+   where var = object . (:[]) . (.= Null) . toStr
          val = String . Text.decodeUtf8
+  toJSON Tail = object ["..." .= Null]
+  toJSON All  = object ["~~~" .= Null]
 
 instance FromJSON Name where
   parseJSON = withText "Name" (either (const mzero) return . unStr)
@@ -107,12 +112,12 @@ instance ToJSON Label where toJSON = String . toStr
 
 instance FromJSON Code where
   parseJSON = withArray "TaskL.Code" ((Commands <$>) . mapM parseOne . toList)
-   where parseOne = withArray "Task.Code/..." (cmd <=< mapM parseJSON . toList)
-          where cmd (h:t) = return (h, t)
-                cmd _     = mzero
+   where parseOne = withArray "Task.Code/..." (cmd . toList)
+          where cmd (h:t) = (,) <$> parseJSON h <*> mapM parseJSON t
+                cmd [   ] = mzero
 instance ToJSON Code where
   toJSON (Commands cmds) =
-    array [ array (toJSON <$> cmd:args) | (cmd, args) <- cmds ]
+    array [ array (toJSON cmd : (toJSON <$> args)) | (cmd, args) <- cmds ]
 
 scanKeys :: (Str s Text) => Object -> Parser [(s, Text)]
 scanKeys  = return . rights . (parse <$>) . HashMap.keys
@@ -120,7 +125,6 @@ scanKeys  = return . rights . (parse <$>) . HashMap.keys
 
 varOrLit :: Value -> Parser (Either Label ByteString)
 varOrLit (Object o) = case [ (unStr k, v) | (k, v) <- HashMap.toList o ] of
-  [(Right l, String "")] -> return . Left $ l
   [(Right l, Null     )] -> return . Left $ l
   _                      -> mzero
 varOrLit (String s) = return . Right . Text.encodeUtf8 $ s

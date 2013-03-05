@@ -13,7 +13,7 @@ data Task = Task [(Label, Maybe ByteString)] Knot
  deriving (Eq, Ord, Show)
 
 -- | An instance of task use, similar to a command.
-data Use = Use { task :: Name, args :: [[Either Label ByteString]] }
+data Use = Use { task :: Name, args :: [Arg] }
  deriving (Eq, Ord, Show)
 
 -- | Type of connector between task code, a task's dependencies and a task's
@@ -25,7 +25,10 @@ data Knot = Knot { code :: Code,
 
 -- | A task body which, at present, is just a sequence of commands and their
 --   arguments.
-data Code = Commands [([Either Label ByteString], [[Either Label ByteString]])]
+data Code = Commands [([Either Label ByteString], [Arg])]
+ deriving (Eq, Ord, Show)
+
+data Arg = Scalar [Either Label ByteString] | Tail | All
  deriving (Eq, Ord, Show)
 
 data Module = Module { from :: ByteString, defs :: Map Name Task }
