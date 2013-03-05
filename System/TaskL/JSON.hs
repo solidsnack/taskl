@@ -112,9 +112,11 @@ instance ToJSON Label where toJSON = String . toStr
 
 instance FromJSON Code where
   parseJSON = withArray "TaskL.Code" ((Commands <$>) . mapM parseOne . toList)
-   where parseOne = withArray "Task.Code/..." (cmd . toList)
-          where cmd (h:t) = (,) <$> parseJSON h <*> mapM parseJSON t
-                cmd [   ] = mzero
+   where parseOne = withArray "Task.Code/..." (argv . toList)
+          where argv (h:t) = (,) <$> cmd h <*> mapM parseJSON t
+                argv [   ] = mzero
+                cmd v  =  (:[]) <$> varOrLit v
+                      <|> withArray "Task.Code/..." (mapM varOrLit . toList) v
 instance ToJSON Code where
   toJSON (Commands cmds) =
     array [ array (toJSON cmd : (toJSON <$> args)) | (cmd, args) <- cmds ]
