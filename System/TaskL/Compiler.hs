@@ -20,9 +20,10 @@ import           Control.Monad
 import           Data.Char
 import           Data.Either
 import           Data.Foldable hiding (sequence_)
+import qualified Data.List as List
 import           Data.Map (Map)
 import qualified Data.Map as Map
-import           Data.Monoid
+import           Data.Monoid hiding (All)
 import           Data.Set (Set)
 import qualified Data.Set as Set
 import           Data.Tree (Tree(..), Forest)
@@ -59,14 +60,20 @@ merge modules = return Module{ from = froms, defs = map }
  where (froms, map) = foldl' f ("",mempty) modules
        f (s, map) Module{..} = (s <> from <> "\n", map <> defs)
 
-filter :: Set Name -> Module :~ Module
-filter set mod@Module{..} = return mod{ defs = filtered }
+trim :: Set Name -> Module :~ Module
+trim set mod@Module{..} = return mod{ defs = trimmed }
  where requested k _ = Set.member k (reachable set defs)
-       filtered = Map.filterWithKey requested defs
+       trimmed       = Map.filterWithKey requested defs
 
 -- | Plans a task request, returning a tree of calls to needed tasks.
-expand :: [(Name, [ByteString])] -> Module :~ Tree (Name, [ByteString])
-expand requests Module{..} = undefined
+edges :: [(Name, [ByteString])] -> Module :~ Tree (Name, [ByteString])
+edges requests mod@Module{..} = undefined
+ where inUse = trim (Set.fromList (fst <$> requests)) mod
+       use bound Use{..} = (task,) . mconcat <$> mapM arg args
+        where arg = either (err . unboundVariable) return . bind bound
+              unboundVariable :: Label -> Text
+              unboundVariable label = "Unbound variable: " <> toStr label <>
+                                      "\n  in call to: "   <> toStr task
 
 bodies :: Module :~ Map Name (Bash.Annotated ())
 bodies  = undefined
@@ -95,14 +102,23 @@ names (Task _ Knot{..}) = fold [ toSet tree | tree <- asks <> deps ]
 -- | Bind vector of arguments to variables and return leftover variables (if
 --   there are too few arguments) or arguments (if there are too few
 --   variables).
-bind :: [ByteString] -> [(Label, Maybe ByteString)]
-     -> (Map Label ByteString, Either [(Label, Maybe ByteString)] [ByteString])
-bind values variables = (Map.fromList found, leftover)
- where (found, leftover) = f [] values variables
-       f found (h:t) ((l, _)     :labels)    = f ((l, h):found) t  labels
+binding :: [ByteString] -> [(Label, Maybe ByteString)]
+        -> ( [(Label, ByteString)],
+             Either [(Label, Maybe ByteString)] [ByteString] )
+binding values variables = f [] values variables
+ where f found (h:t) ((l, _)     :labels)    = f ((l, h):found) t  labels
        f found [   ] ((l, Just b):labels)    = f ((l, b):found) [] labels
        f found [   ] labels@((_, Nothing):_) = (found, Left labels)
        f found rest  [ ]                     = (found, Right rest)
+
+bind :: Binding -> Arg -> Either Label [ByteString]
+bind Binding{..} Tail        = Right rest
+bind Binding{..} All         = Right ((snd <$> bound) <> rest)
+bind Binding{..} (Scalar ss) = (:[]) . mconcat <$> mapM (either lk Right) ss
+ where lk label = maybe (Left label) Right (List.lookup label bound)
+
+data Binding = Binding { bound :: [(Label, ByteString)], rest :: [ByteString] }
+ deriving (Eq, Ord, Show)
 
  --------------------------------- Utilities ----------------------------------
 
