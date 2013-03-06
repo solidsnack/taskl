@@ -99,10 +99,10 @@ bind :: [ByteString] -> [(Label, Maybe ByteString)]
      -> (Map Label ByteString, Either [(Label, Maybe ByteString)] [ByteString])
 bind values variables = (Map.fromList found, leftover)
  where (found, leftover) = f [] values variables
-       f found (h:t) ((l, _)     :labels)        = f ((l, h):found) t  labels
-       f found [   ] ((l, Just b):labels)        = f ((l, b):found) [] labels
-       f found [   ] labels@((label, Nothing):_) = (found, Left labels)
-       f found rest  [                      ]    = (found, Right rest)
+       f found (h:t) ((l, _)     :labels)    = f ((l, h):found) t  labels
+       f found [   ] ((l, Just b):labels)    = f ((l, b):found) [] labels
+       f found [   ] labels@((_, Nothing):_) = (found, Left labels)
+       f found rest  [ ]                     = (found, Right rest)
 
  --------------------------------- Utilities ----------------------------------
 
