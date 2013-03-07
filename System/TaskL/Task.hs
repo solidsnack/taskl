@@ -18,9 +18,7 @@ data Use = Use { task :: Name, args :: [Arg] }
 
 -- | Type of connector between task code, a task's dependencies and a task's
 --   requested post-actions.
-data Knot = Knot { code :: Code,
-                   deps :: Forest Use,
-                   asks :: Forest Use }
+data Knot = Knot { code :: Code, deps :: Forest Use }
  deriving (Eq, Ord, Show)
 
 -- | A task body which, at present, is just a sequence of commands and their

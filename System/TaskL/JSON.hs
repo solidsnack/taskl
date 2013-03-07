@@ -40,11 +40,10 @@ instance FromJSON Task where
                          <*> knot body
     knot body = Knot <$> body .:? "cmds" .!= Commands []
                      <*> body .:? "deps" .!= mempty
-                     <*> body .:? "asks" .!= mempty
 instance ToJSON Task where
   toJSON (Task vars Knot{..}) = object $ filter nonEmpty
-    [ "deps" .= array (toJSON <$> deps), "cmds" .= toJSON code,
-      "asks" .= array (toJSON <$> asks), "vars" .= array (toJSON <$> vars) ]
+    [ "deps" .= array (toJSON <$> deps),
+      "vars" .= array (toJSON <$> vars), "cmds" .= toJSON code ]
    where nonEmpty (_, Array a) = a /= mempty
          nonEmpty _            = False
 
