@@ -10,16 +10,17 @@
            , UndecidableInstances #-}
 module System.TaskL.Compiler where
 
-import           Prelude hiding (catch)
+import           Prelude hiding (catch, mapM)
 import           Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as ByteString
 import           Control.Arrow
 import           Control.Applicative
 import           Control.Exception
-import           Control.Monad
+import           Control.Monad hiding (mapM)
 import           Data.Char
 import           Data.Either
 import           Data.Foldable hiding (sequence_)
+import           Data.Traversable
 import qualified Data.List as List
 import           Data.Map (Map)
 import qualified Data.Map as Map
@@ -65,16 +66,6 @@ trim set mod@Module{..} = return mod{ defs = trimmed }
  where requested k _ = Set.member k (reachable set defs)
        trimmed       = Map.filterWithKey requested defs
 
--- | Plans a task request, returning a tree of calls to needed tasks.
-edges :: [(Name, [ByteString])] -> Module :~ Tree (Name, [ByteString])
-edges requests mod@Module{..} = undefined
- where inUse = trim (Set.fromList (fst <$> requests)) mod
-       use bound Use{..} = (task,) . mconcat <$> mapM arg args
-        where arg = either (err . unboundVariable) return . bind bound
-              unboundVariable :: Label -> Text
-              unboundVariable label = "Unbound variable: " <> toStr label <>
-                                      "\n  in call to: "   <> toStr task
-
 bodies :: Module :~ Map Name (Bash.Annotated ())
 bodies  = undefined
 
@@ -87,6 +78,17 @@ bash  = undefined
 
  ---------------------- Work With Bindings & Request Lists --------------------
 
+template :: Task -> [ByteString] -> Either Text (Forest (Name, [ByteString]))
+template (Task vars Knot{..}) vals = do
+  bound <- left insufficientE (binding vals vars)
+  mapM (use bound `mapM`) deps
+ where left f = either (Left . f) Right
+       unboundE label = "Unbound variable: " <> toStr label
+       insufficientE labels = Text.unwords
+         ("Insufficient arguments; missing:" : (toStr <$> labels))
+       use bound Use{..}  =  (task,) . mconcat
+                         <$> left unboundE (mapM (bind bound) args)
+
 reachable :: Set Name -> Map Name Task -> Set Name
 reachable requested available = search requested
  where onlyNames  = names <$> available
@@ -96,20 +98,19 @@ reachable requested available = search requested
         where next = fold (set : (subTasks <$> toList set))
 
 names :: Task -> Set Name
-names (Task _ Knot{..}) = fold [ toSet tree | tree <- asks <> deps ]
+names (Task _ Knot{..}) = fold [ toSet tree | tree <- deps ]
  where toSet tree = Set.fromList $ Tree.flatten (task <$> tree)
 
 -- | Bind vector of arguments to variables and return leftover variables (if
 --   there are too few arguments) or arguments (if there are too few
 --   variables).
 binding :: [ByteString] -> [(Label, Maybe ByteString)]
-        -> ( [(Label, ByteString)],
-             Either [(Label, Maybe ByteString)] [ByteString] )
+        -> Either [Label] Binding
 binding values variables = f [] values variables
  where f found (h:t) ((l, _)     :labels)    = f ((l, h):found) t  labels
        f found [   ] ((l, Just b):labels)    = f ((l, b):found) [] labels
-       f found [   ] labels@((_, Nothing):_) = (found, Left labels)
-       f found rest  [ ]                     = (found, Right rest)
+       f _     [   ] labels@((_, Nothing):_) = Left (fst <$> labels)
+       f found rest  [ ]                     = Right (Binding found rest)
 
 bind :: Binding -> Arg -> Either Label [ByteString]
 bind Binding{..} Tail        = Right rest
