@@ -37,7 +37,7 @@ import           Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Text (Text)
 import qualified Data.Text as Text
-import qualified Data.Text.IO as Text
+import qualified Data.Text.Encoding as Text
 import qualified Data.Yaml
 import qualified Text.Libyaml
 import qualified Language.Bash as Bash
@@ -47,29 +47,37 @@ import           System.TaskL.Task
 import           System.TaskL.JSON
 
 
--- | The type of compiler actions, including loading files, parsing, internal
---   AST transformations and the eventual compilation to Bash.
-type a :~ b = a -> IO b
+-- | The type of compiler phases, including, parsing, internal AST
+--   transformations and the eventual compilation to Bash.
+type a :~ b = a -> Either Text b
+
+-- | The type of compiler phases which perform IO, including loading files and
+--   terminating the program.
+type a :@ b = a -> IO b
+
+-- | Providing a contextual error message prefix and transform a pure phase
+--   into a side-effecting phase.
+(@~) :: ByteString -> a :~ b -> a :@ b
+(@~) prefix f = either (err . (prefix <>) . Text.encodeUtf8) return . f
+infixl 2 @~
 
  ----------------------------- Compilation Steps ------------------------------
 
-load :: [(ByteString, Handle)] :~ [Module]
+load :: [(ByteString, Handle)] :@ [Module]
 load  = mapM loadYAML
 
-merge :: [Module] :~ Module
+merge :: [Module] :@ Module
 merge modules = return Module{ from = froms, defs = map }
  where (froms, map) = foldl' f ("",mempty) modules
        f (s, map) Module{..} = (s <> from <> "\n", map <> defs)
 
-trim :: Set Name -> Module :~ Module
-trim set mod@Module{..} = return mod{ defs = trimmed }
- where requested k _ = Set.member k (reachable set defs)
-       trimmed       = Map.filterWithKey requested defs
+calls :: [(Name, [ByteString])] -> Module :@ Forest (Name, [ByteString])
+calls requests Module{..} = (from <> ": " @~ mapM (down defs)) requests
 
-bodies :: Module :~ Map Name (Bash.Annotated ())
+bodies :: Module :@ Map Name (Bash.Annotated ())
 bodies  = undefined
 
-check :: Tree (Name, [ByteString]) :~ ()
+check :: Tree (Name, [ByteString]) :@ ()
 check  = undefined
 
 bash :: Map Name (Bash.Annotated ()) -> Tree (Name, [ByteString])
@@ -78,7 +86,7 @@ bash  = undefined
 
  ---------------------- Work With Bindings & Request Lists --------------------
 
-template :: Task -> [ByteString] -> Either Text (Forest (Name, [ByteString]))
+template :: Task -> [ByteString] :~ Forest (Name, [ByteString])
 template (Task vars Knot{..}) vals = do
   bound <- left insufficientE (binding vals vars)
   mapM (use bound `mapM`) deps
@@ -88,6 +96,26 @@ template (Task vars Knot{..}) vals = do
          ("Insufficient arguments; missing:" : (toStr <$> labels))
        use bound Use{..}  =  (task,) . mconcat
                          <$> left unboundE (mapM (bind bound) args)
+
+down :: Map Name Task -> (Name, [ByteString]) :~ Tree (Name, [ByteString])
+down defs (task, args) = do
+  body    <- maybe (left "Task not found!") Right (Map.lookup task defs)
+  shallow <- either left return (template body args)
+  deep    <- mapM (across (Map.delete task defs)) shallow
+  return (Node (task, args) deep)
+ where left   :: Text -> Either Text t
+       left    = Left . ((toStr task <> ": ") <>)
+
+across :: Map Name Task -> Tree (Name, [ByteString])
+       :~ Tree (Name, [ByteString])
+across defs (Node (task, args) forest) = do
+  Node _ forest' <- down defs (task, args)
+  forest''       <- mapM (across (Map.delete task defs)) forest
+  return (Node (task, args) (merge (forest' ++ forest'')))
+ where merge things = [ Node a (merge b) | Node a b <- toForest merged ]
+        where merged = Map.toList $ Map.fromListWith (<>) (unForest things)
+              unForest f = [ (a, b)   | Node a b <- f ]
+              toForest l = [ Node a b | (a, b)   <- l ]
 
 reachable :: Set Name -> Map Name Task -> Set Name
 reachable requested available = search requested
@@ -125,27 +153,24 @@ data Binding = Binding { bound :: [(Label, ByteString)], rest :: [ByteString] }
 
 -- | Functions for informational, diagnostic and warning messages published by
 --   the compiler pipeline.
-msg, out :: (Echo t) => t :~ ()
+msg, out :: ByteString :@ ()
 msg = echo stderr
 out = echo stdout
 
 -- | A way to signal an error in the compiler pipeline, terminating it and
 --   providing a message.
-err :: (Echo t) => t :~ any
+err :: ByteString :@ any
 err = (>> exitFailure) . echo stderr
 
-class Echo t where echo :: Handle -> t -> IO ()
-instance Echo ByteString where
-  echo h = ByteString.hPutStrLn h . fst . ByteString.spanEnd isSpace
-instance Echo Text where echo h = Text.hPutStrLn h . Text.stripEnd
-instance Echo String where echo h = echo h . Text.pack
+echo :: Handle -> ByteString -> IO ()
+echo h = ByteString.hPutStrLn h . fst . ByteString.spanEnd isSpace
 
  -------------------------------- Loading Files -------------------------------
 
-openModule :: FilePath :~ (ByteString, Handle)
+openModule :: FilePath :@ (ByteString, Handle)
 openModule path = (ByteString.pack path,) <$> openFile path ReadMode
 
-loadYAML :: (ByteString, Handle) :~ Module
+loadYAML :: (ByteString, Handle) :@ Module
 loadYAML (name, handle) = do
   parseResult <- yamlDecode =<< ByteString.hGetContents handle
   mapping     <- yamlProcessErrors parseResult
@@ -155,9 +180,9 @@ loadYAML (name, handle) = do
     (warnings, defs) -> Module name (Map.fromList defs) <$ sequence_ warnings
  where
   err'       :: String -> IO any
-  err'        = err . (<>) (ByteString.unpack name <> ": ")
+  err'        = err . (<>) (name <> ": ") . ByteString.pack
   msg'       :: String -> IO ()
-  msg'        = msg . (<>) (ByteString.unpack name <> ": ")
+  msg'        = msg . (<>) (name <> ": ") . ByteString.pack
   halfParse o = ((Text.unpack &&& unStr) *** eitherJSON) <$> HashMap.toList o
   eitherJSON json = case Aeson.fromJSON json of
     Aeson.Error s   -> Left s
@@ -192,7 +217,7 @@ yamlErrorInfo (Data.Yaml.InvalidYaml exc) = case exc of
 
  ------------------------------ Pretty Printing -------------------------------
 
-renderModule :: (Aeson.ToJSON Module) => Module :~ ()
+renderModule :: (Aeson.ToJSON Module) => Module :@ ()
 renderModule m@Module{..} = do when (from /= mempty) (out comment)
                                out (Data.Yaml.encode m)
  where comment = ByteString.unlines (("# " <>) <$> ByteString.lines from)
