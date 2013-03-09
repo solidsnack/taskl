@@ -99,12 +99,13 @@ template (Task vars Knot{..}) vals = do
 
 down :: Map Name Task -> (Name, [ByteString]) :~ Tree (Name, [ByteString])
 down defs (task, args) = do
-  body    <- maybe (left "Task not found!") Right (Map.lookup task defs)
+  body    <- maybe (left undef) Right (Map.lookup task defs)
   shallow <- either left return (template body args)
   deep    <- mapM (across (Map.delete task defs)) shallow
   return (Node (task, args) deep)
- where left   :: Text -> Either Text t
-       left    = Left . ((toStr task <> ": ") <>)
+ where left :: Text -> Either Text t
+       left  = Left . ((toStr task <> ": ") <>)
+       undef = "No such task! (Or a cycle was found)."
 
 across :: Map Name Task -> Tree (Name, [ByteString])
        :~ Tree (Name, [ByteString])
