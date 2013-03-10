@@ -10,7 +10,7 @@
            , UndecidableInstances #-}
 module System.TaskL.Compiler where
 
-import           Prelude hiding (catch, mapM)
+import           Prelude hiding (catch, mapM, any, concatMap)
 import           Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as ByteString
 import           Control.Arrow
@@ -20,6 +20,8 @@ import           Control.Monad hiding (mapM)
 import           Data.Char
 import           Data.Either
 import           Data.Foldable hiding (sequence_)
+import           Data.Graph (Graph, Vertex)
+import qualified Data.Graph as Graph
 import           Data.Traversable
 import qualified Data.List as List
 import           Data.Map (Map)
@@ -222,4 +224,39 @@ renderModule :: (Aeson.ToJSON Module) => Module :@ ()
 renderModule m@Module{..} = do when (from /= mempty) (out comment)
                                out (Data.Yaml.encode m)
  where comment = ByteString.unlines (("# " <>) <$> ByteString.lines from)
+
+ --------- Graph utilities (many representations of graphs are used) ----------
+
+-- | Ensure that edges in each tree are reflected in all trees.
+unify :: (Ord t) => Forest t :~ Forest t
+unify forest | cyclic           = Left "Cycle detected."
+             | Just vs <- roots = Right [ f <$> tree | tree <- Graph.dfs g vs ]
+             | otherwise        = Left "Impossible error!"
+ where (g, f, v) = graph . asMap $ concatMap adjacencies forest
+       roots     = mapM v [ a | Node a _ <- forest ]
+       cyclic    = any (/=[]) [ sub | Node _ sub <- Graph.scc g ]
+
+-- | Transform a tree to an adjacency list representation of its edges.
+--   Duplicate edges are retained.
+adjacencies :: Tree t -> [(t, [t])]
+adjacencies (Node t [ ]) = (t, []) : []
+adjacencies (Node t sub) = (t, Tree.rootLabel <$> sub)
+                         : concatMap adjacencies sub
+
+-- | Merge an adjacency list represented as tuples to a representation backed
+--   by maps of sets, eliminating duplicate edges.
+asMap :: (Ord t) => [(t, [t])] -> Map t (Set t)
+asMap  = (Set.fromList <$>) . Map.fromListWith (++)
+
+-- | Convert from a 'Map' representation of adjacency lists to a list backed
+--   representation.
+unMap :: (Ord t) => Map t (Set t) -> [(t, [t])]
+unMap  = Map.toAscList . (Set.toAscList <$>)
+
+-- | Merge adjacency lists and produce a graph.
+graph :: (Ord t) => Map t (Set t) -> (Graph, Vertex -> t, t -> Maybe Vertex)
+graph map = (g, restore, v)
+ where restore x = y where (y, _, _) = f x
+       (g, f, v) = Graph.graphFromEdges
+                   [ (main, main, deps) | (main, deps) <- unMap map ]
 
