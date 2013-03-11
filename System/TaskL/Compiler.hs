@@ -7,6 +7,7 @@
            , FlexibleInstances
            , FlexibleContexts
            , RecordWildCards
+           , NoMonomorphismRestriction
            , UndecidableInstances #-}
 module System.TaskL.Compiler where
 
@@ -51,44 +52,45 @@ import           System.TaskL.JSON
 
 -- | The type of compiler phases, including, parsing, internal AST
 --   transformations and the eventual compilation to Bash.
-type a :~ b = a -> Either Text b
+type a :- b = a -> Either Text b
 
 -- | The type of compiler phases which perform IO, including loading files and
 --   terminating the program.
-type a :@ b = a -> IO b
+type a :~ b = a -> IO b
 
--- | Providing a contextual error message prefix and transform a pure phase
---   into a side-effecting phase.
-(@~) :: ByteString -> a :~ b -> a :@ b
-(@~) prefix f = either (err . (prefix <>) . Text.encodeUtf8) return . f
-infixl 2 @~
+-- | Provide a contextual error message prefix and transform a pure phase into
+--   a side-effecting phase.
+lift :: ByteString -> a :- b -> a :~ b
+lift prefix f = either (err . (prefix <>) . Text.encodeUtf8) return . f
 
  ----------------------------- Compilation Steps ------------------------------
 
-load :: [(ByteString, Handle)] :@ [Module]
+load :: [(ByteString, Handle)] :~ [Module]
 load  = mapM loadYAML
 
-merge :: [Module] :@ Module
+merge :: [Module] :~ Module
 merge modules = return Module{ from = froms, defs = map }
  where (froms, map) = foldl' f ("",mempty) modules
-       f (s, map) Module{..} = (s <> from <> "\n", map <> defs)
+       f (s, map) Module{..} = (if s == "" then from
+                                           else s <> "\n" <> from, map <> defs)
 
-calls :: [(Name, [ByteString])] -> Module :@ Forest (Name, [ByteString])
-calls requests Module{..} = (from <> ": " @~ mapM (down defs)) requests
+plan :: [(Name, [ByteString])] -> Module :~ [(ByteString, [ByteString])]
+plan requests Module{..} =
+  commands <$> lift (from <> ": ") (unify <=< mapM (down defs)) requests
 
-bodies :: Module :@ Map Name (Bash.Annotated ())
+bodies :: Module :~ Map Name (Bash.Annotated ())
 bodies  = undefined
 
-check :: Tree (Name, [ByteString]) :@ ()
+check :: Tree (Name, [ByteString]) :~ ()
 check  = undefined
 
 bash :: Map Name (Bash.Annotated ()) -> Tree (Name, [ByteString])
-     :~ Bash.Annotated ()
+     :- Bash.Annotated ()
 bash  = undefined
 
  ---------------------- Work With Bindings & Request Lists --------------------
 
-template :: Task -> [ByteString] :~ Forest (Name, [ByteString])
+template :: Task -> [ByteString] :- Forest (Name, [ByteString])
 template (Task vars Knot{..}) vals = do
   bound <- left insufficientE (binding vals vars)
   mapM (use bound `mapM`) deps
@@ -99,7 +101,7 @@ template (Task vars Knot{..}) vals = do
        use bound Use{..}  =  (task,) . mconcat
                          <$> left unboundE (mapM (bind bound) args)
 
-down :: Map Name Task -> (Name, [ByteString]) :~ Tree (Name, [ByteString])
+down :: Map Name Task -> (Name, [ByteString]) :- Tree (Name, [ByteString])
 down defs (task, args) = do
   body    <- maybe (left undef) Right (Map.lookup task defs)
   shallow <- either left return (template body args)
@@ -110,7 +112,7 @@ down defs (task, args) = do
        undef = "No such task! (Or a cycle was found)."
 
 across :: Map Name Task -> Tree (Name, [ByteString])
-       :~ Tree (Name, [ByteString])
+       :- Tree (Name, [ByteString])
 across defs (Node (task, args) forest) = do
   Node _ forest' <- down defs (task, args)
   forest''       <- mapM (across (Map.delete task defs)) forest
@@ -120,17 +122,10 @@ across defs (Node (task, args) forest) = do
               unForest f = [ (a, b)   | Node a b <- f ]
               toForest l = [ Node a b | (a, b)   <- l ]
 
-reachable :: Set Name -> Map Name Task -> Set Name
-reachable requested available = search requested
- where onlyNames  = names <$> available
-       subTasks k = maybe mempty id (Map.lookup k onlyNames)
-       search :: Set Name -> Set Name
-       search set = if next == set then set else search next
-        where next = fold (set : (subTasks <$> toList set))
-
-names :: Task -> Set Name
-names (Task _ Knot{..}) = fold [ toSet tree | tree <- deps ]
- where toSet tree = Set.fromList $ Tree.flatten (task <$> tree)
+commands :: Forest (Name, [ByteString]) -> [(ByteString, [ByteString])]
+commands forest = concatMap cmds forest
+ where cmds (Node (t, bs) forest) = enter : commands forest ++ [try, leave]
+        where [enter,try,leave] = (, toStr t : bs) <$> ["enter","try","leave"]
 
 -- | Bind vector of arguments to variables and return leftover variables (if
 --   there are too few arguments) or arguments (if there are too few
@@ -156,13 +151,13 @@ data Binding = Binding { bound :: [(Label, ByteString)], rest :: [ByteString] }
 
 -- | Functions for informational, diagnostic and warning messages published by
 --   the compiler pipeline.
-msg, out :: ByteString :@ ()
+msg, out :: ByteString :~ ()
 msg = echo stderr
 out = echo stdout
 
 -- | A way to signal an error in the compiler pipeline, terminating it and
 --   providing a message.
-err :: ByteString :@ any
+err :: ByteString :~ any
 err = (>> exitFailure) . echo stderr
 
 echo :: Handle -> ByteString -> IO ()
@@ -170,10 +165,10 @@ echo h = ByteString.hPutStrLn h . fst . ByteString.spanEnd isSpace
 
  -------------------------------- Loading Files -------------------------------
 
-openModule :: FilePath :@ (ByteString, Handle)
+openModule :: FilePath :~ (ByteString, Handle)
 openModule path = (ByteString.pack path,) <$> openFile path ReadMode
 
-loadYAML :: (ByteString, Handle) :@ Module
+loadYAML :: (ByteString, Handle) :~ Module
 loadYAML (name, handle) = do
   parseResult <- yamlDecode =<< ByteString.hGetContents handle
   mapping     <- yamlProcessErrors parseResult
@@ -220,7 +215,7 @@ yamlErrorInfo (Data.Yaml.InvalidYaml exc) = case exc of
 
  ------------------------------ Pretty Printing -------------------------------
 
-renderModule :: (Aeson.ToJSON Module) => Module :@ ()
+renderModule :: (Aeson.ToJSON Module) => Module :~ ()
 renderModule m@Module{..} = do when (from /= mempty) (out comment)
                                out (Data.Yaml.encode m)
  where comment = ByteString.unlines (("# " <>) <$> ByteString.lines from)
@@ -228,7 +223,7 @@ renderModule m@Module{..} = do when (from /= mempty) (out comment)
  --------- Graph utilities (many representations of graphs are used) ----------
 
 -- | Ensure that edges in each tree are reflected in all trees.
-unify :: (Ord t) => Forest t :~ Forest t
+unify :: (Ord t) => Forest t :- Forest t
 unify forest | cyclic           = Left "Cycle detected."
              | Just vs <- roots = Right [ f <$> tree | tree <- Graph.dfs g vs ]
              | otherwise        = Left "Impossible error!"
