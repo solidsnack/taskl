@@ -78,11 +78,20 @@ plan :: [(Name, [ByteString])] -> Module :~ [(ByteString, [ByteString])]
 plan requests Module{..} =
   commands <$> lift (from <> ": ") (unify <=< mapM (down defs)) requests
 
-bodies :: Module :~ Map Name (Bash.Annotated ())
-bodies  = undefined
-
-check :: Tree (Name, [ByteString]) :~ ()
-check  = undefined
+bodies :: [(Name, [ByteString])] -> Module :~ Map Name (Bash.Annotated ())
+bodies requests Module{..} =  lift' $ do
+  needed   <- if missing /= mempty
+              then Left $ Text.unwords ("Missing:":(toStr <$> toList missing))
+              else Right needed
+  narrowed <- (defs !?) `mapM` Set.toList needed
+  undefined
+ where needed    = reachable requested defs
+       requested = Set.fromList (fst <$> requests)
+       missing   = requested `Set.difference` needed
+       lift'    :: Either Text b -> IO b
+       lift' x   = lift (from <> ": ") (const x) . const $ () -- Hmmmmmmm
+       map !? k  = maybe (Left ("Missing: " <> toStr k)) (Right . (k,))
+                         (Map.lookup k map)
 
 bash :: Map Name (Bash.Annotated ()) -> Tree (Name, [ByteString])
      :- Bash.Annotated ()
@@ -146,6 +155,18 @@ bind Binding{..} (Scalar ss) = (:[]) . mconcat <$> mapM (either lk Right) ss
 
 data Binding = Binding { bound :: [(Label, ByteString)], rest :: [ByteString] }
  deriving (Eq, Ord, Show)
+
+reachable :: Set Name -> Map Name Task -> Set Name
+reachable requested available = search requested
+ where onlyNames  = names <$> available
+       subTasks k = maybe mempty id (Map.lookup k onlyNames)
+       search :: Set Name -> Set Name
+       search set = if next == set then set else search next
+        where next = fold (set : (subTasks <$> toList set))
+
+names :: Task -> Set Name
+names (Task _ Knot{..}) = fold [ toSet tree | tree <- deps ]
+ where toSet tree = Set.fromList $ Tree.flatten (task <$> tree)
 
  --------------------------------- Utilities ----------------------------------
 
