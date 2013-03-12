@@ -81,7 +81,7 @@ plan requests Module{..} =
 bodies :: [(Name, [ByteString])] -> Module :~ Map Name (Bash.Annotated ())
 bodies requests Module{..} =  lift' $ do
   needed   <- if missing /= mempty
-              then Left $ Text.unwords ("Missing:":(toStr <$> toList missing))
+              then Left $ Text.unwords ("Missing: ":(toStr <$> toList missing))
               else Right needed
   narrowed <- (defs !?) `mapM` Set.toList needed
   undefined
