@@ -93,7 +93,7 @@ bodies requests Module{..} =  lift' $ do
        map !? k  = maybe (Left ("Missing: " <> toStr k)) (Right . (k,))
                          (Map.lookup k map)
 
-bash :: Map Name (Bash.Annotated ()) -> Tree (Name, [ByteString])
+bash :: Map Name (Bash.Annotated ()) -> [(ByteString, [ByteString])]
      :- Bash.Annotated ()
 bash  = undefined
 
