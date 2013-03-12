@@ -84,12 +84,12 @@ bodies requests Module{..} = lift' $ do
               then Left $ Text.unwords ("Missing: ":(toStr <$> toList missing))
               else Right needed
   narrowed <- (defs !?) `mapM` Set.toList needed
+
   undefined
  where needed    = reachable requested defs
        requested = Set.fromList (fst <$> requests)
        missing   = requested `Set.difference` needed
-       lift'    :: Either Text b -> IO b
-       lift' x   = lift (from <> ": ") (const x) . const $ () -- Hmmmmmmm
+       lift' m   = lift (from <> ": ") (const m) . const $ () -- Hmmmmmmm
        map !? k  = maybe (Left ("Missing: " <> toStr k)) (Right . (k,))
                          (Map.lookup k map)
 
