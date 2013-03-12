@@ -79,7 +79,7 @@ plan requests Module{..} =
   commands <$> lift (from <> ": ") (unify <=< mapM (down defs)) requests
 
 bodies :: [(Name, [ByteString])] -> Module :~ Map Name (Bash.Annotated ())
-bodies requests Module{..} =  lift' $ do
+bodies requests Module{..} = lift' $ do
   needed   <- if missing /= mempty
               then Left $ Text.unwords ("Missing: ":(toStr <$> toList missing))
               else Right needed
