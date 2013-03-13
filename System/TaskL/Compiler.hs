@@ -27,7 +27,9 @@ import           Data.Traversable
 import qualified Data.List as List
 import           Data.Map (Map)
 import qualified Data.Map as Map
+import           Data.Maybe
 import           Data.Monoid hiding (All)
+import           Data.Ord
 import           Data.Set (Set)
 import qualified Data.Set as Set
 import           Data.Tree (Tree(..), Forest)
@@ -78,14 +80,13 @@ plan :: [(Name, [ByteString])] -> Module :~ [(ByteString, [ByteString])]
 plan requests Module{..} =
   commands <$> lift (from <> ": ") (unify <=< mapM (down defs)) requests
 
-bodies :: [(Name, [ByteString])] -> Module :~ Map Name (Bash.Annotated ())
+bodies :: [(Name, [ByteString])] -> Module :~ [Bash.Annotated ()]
 bodies requests Module{..} = lift' $ do
   needed   <- if missing /= mempty
               then Left $ Text.unwords ("Missing: ":(toStr <$> toList missing))
               else Right needed
   narrowed <- (defs !?) `mapM` Set.toList needed
-
-  undefined
+  mapM (uncurry body) (List.sortBy (comparing fst) narrowed)
  where needed    = reachable requested defs
        requested = Set.fromList (fst <$> requests)
        missing   = requested `Set.difference` needed
@@ -96,6 +97,55 @@ bodies requests Module{..} = lift' $ do
 bash :: Map Name (Bash.Annotated ()) -> [(ByteString, [ByteString])]
      :- Bash.Annotated ()
 bash  = undefined
+
+ ------------------------------ Bash Generation -------------------------------
+
+-- | Translate a named task to Bash.
+body :: Name -> Task :- Bash.Annotated ()
+body name (Task vars Knot{..}) = do
+  fname <- Bash.funcName (toStr name) !? ("Bad function name: " <> toStr name)
+  undefined
+ where (!?) :: Maybe t -> Text :- t
+       (!?) m text = maybe (Left text) Right m
+       cast (var, val) = (label2ident var, Bash.literal <$> val)
+       initVars = set . cast <$> vars
+       ann stmt       = Bash.Annotated () stmt
+       stmt &&> stmt' = ann stmt `Bash.AndAnd`   ann stmt'
+       stmt ||> stmt' = ann stmt `Bash.OrOr`     ann stmt'
+       stmt >>> stmt' = ann stmt `Bash.Sequence` ann stmt'
+       sequenceStatements [    ] = Bash.NoOp ""
+       sequenceStatements [stmt] = stmt
+       sequenceStatements (h:t)  = h >>> sequenceStatements t
+       -- This is fairly tricky. If the var is not set and there is no default,
+       -- then it is an error; but if there is a default, we should use it and
+       -- not call shift (which might result in script failure).
+       set (var, val)          = maybe pop id (defaultTo <$> val)
+        where pop              = local var (Bash.ReadVar "$1") >>> shift
+              defaultTo expr   = (Bash.IsSet "$1" &&> pop) ||> local var expr
+              shift            = Bash.SimpleCommand "shift" []
+              local ident expr = Bash.Local (Bash.Var ident expr)
+
+cmd :: ([Either Label ByteString], [Arg]) -> Bash.Statement ()
+cmd (command, args) = Bash.SimpleCommand (singleArgument command)
+                                         [compoundArgument arg | arg <- args]
+
+singleArgument :: [Either Label ByteString] -> Bash.Expression ()
+singleArgument pieces = joined (expr <$> pieces)
+ where expr (Left l)  = Bash.ReadVar (Bash.VarIdent (label2ident l))
+       expr (Right b) = Bash.literal b
+       joined [   ] = ""
+       joined [ h ] = h
+       joined (h:t) = Bash.Concat h (joined t)
+
+compoundArgument :: Arg -> Bash.Expression ()
+compoundArgument (Scalar simple) = singleArgument simple
+compoundArgument Tail            = Bash.ARGVElements
+compoundArgument All             = error "All is not implemented :("
+
+label2ident :: Label -> Bash.Identifier
+label2ident label = fromJust (Bash.identifier . ByteString.map f $ toStr label)
+ where f c = if c == '-' then '_' else c
+
 
  ---------------------- Work With Bindings & Request Lists --------------------
 
