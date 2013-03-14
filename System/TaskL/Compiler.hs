@@ -80,7 +80,7 @@ plan :: [(Name, [ByteString])] -> Module :~ [(ByteString, [ByteString])]
 plan requests Module{..} =
   commands <$> lift (from <> ": ") (unify <=< mapM (down defs)) requests
 
-bodies :: [(Name, [ByteString])] -> Module :~ [Bash.Annotated ()]
+bodies :: [(Name, [ByteString])] -> Module :~ [Bash.Statement ()]
 bodies requests Module{..} = lift' $ do
   needed   <- if missing /= mempty
               then Left $ Text.unwords ("Missing: ":(toStr <$> toList missing))
@@ -101,14 +101,16 @@ bash  = undefined
  ------------------------------ Bash Generation -------------------------------
 
 -- | Translate a named task to Bash.
-body :: Name -> Task :- Bash.Annotated ()
+body :: Name -> Task :- Bash.Statement ()
 body name (Task vars Knot{..}) = do
   fname <- Bash.funcName (toStr name) !? ("Bad function name: " <> toStr name)
-  undefined
- where (!?) :: Maybe t -> Text :- t
+  return (Bash.Function fname (ann statements))
+ where statements = sequenceStatements (initVars <> commands)
+       initVars = set . cast <$> vars
+       commands = cmd <$> argvs where Commands argvs = code
+       (!?) :: Maybe t -> Text :- t
        (!?) m text = maybe (Left text) Right m
        cast (var, val) = (label2ident var, Bash.literal <$> val)
-       initVars = set . cast <$> vars
        ann stmt       = Bash.Annotated () stmt
        stmt &&> stmt' = ann stmt `Bash.AndAnd`   ann stmt'
        stmt ||> stmt' = ann stmt `Bash.OrOr`     ann stmt'
@@ -145,7 +147,6 @@ compoundArgument All             = error "All is not implemented :("
 label2ident :: Label -> Bash.Identifier
 label2ident label = fromJust (Bash.identifier . ByteString.map f $ toStr label)
  where f c = if c == '-' then '_' else c
-
 
  ---------------------- Work With Bindings & Request Lists --------------------
 
