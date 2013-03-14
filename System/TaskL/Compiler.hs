@@ -18,6 +18,8 @@ import           Control.Arrow
 import           Control.Applicative
 import           Control.Exception
 import           Control.Monad hiding (mapM)
+import           Control.Monad.State.Strict (State)
+import qualified Control.Monad.State.Strict as State
 import           Data.Char
 import           Data.Either
 import           Data.Foldable hiding (sequence_)
@@ -76,9 +78,31 @@ merge modules = return Module{ from = froms, defs = map }
        f (s, map) Module{..} = (if s == "" then from
                                            else s <> "\n" <> from, map <> defs)
 
-plan :: [(Name, [ByteString])] -> Module :~ [(ByteString, [ByteString])]
-plan requests Module{..} =
-  commands <$> lift (from <> ": ") (unify <=< mapM (down defs)) requests
+--plan :: [(Name, [ByteString])] -> Module :~ [(ByteString, [ByteString])]
+--plan requests Module{..} =
+--  commands <$> lift (from <> ": ") (unify <=< mapM (down defs)) requests
+
+tasks :: [(Name, [ByteString])] -> Module :~ [Bash.Statement ()]
+tasks requests Module{..} = do
+  expanded <- lift (from <> ": ") (unify <=< mapM (down defs)) requests
+  let (numberedForest, mapping) = index expanded
+      reformatted = [ printf (Map.size mapping) <$> t | t <- numberedForest ]
+      tasks = Bash.Function "tasks" (statements (concatMap plan reformatted))
+  return (tasks --> statements (arrays mapping))
+ where arrays :: Map (Name, [ByteString]) Int -> [Bash.Statement ()]
+       arrays m = uncurry argv <$> Map.toAscList m
+        where argv ((name, args), i) = Bash.Assign (Bash.Array var literals)
+               where Just var = Bash.identifier (printf (Map.size m) i)
+                     literals = Bash.literal <$> (toStr name : args)
+       plan :: Tree ByteString -> [Bash.Statement ()]
+       plan (Node b forest) = cmd "enter"
+                            : concatMap plan forest ++ [cmd "try", cmd "leave"]
+        where cmd action = Bash.SimpleCommand action [b]
+       argv w i (name, args) = Bash.Assign (Bash.Array var literals)
+        where Just var = Bash.identifier (printf w i)
+              literals = Bash.literal <$> (toStr name : args)
+       printf w i = ByteString.pack (Printf.printf strFormat i)
+        where strFormat = "argv%0" <> show (length $ show w) <> "d"
 
 bodies :: [(Name, [ByteString])] -> Module :~ [Bash.Statement ()]
 bodies requests Module{..} = lift' $ do
@@ -104,25 +128,17 @@ bash  = undefined
 body :: Name -> Task :- Bash.Statement ()
 body name (Task vars Knot{..}) = do
   fname <- Bash.funcName (toStr name) !? ("Bad function name: " <> toStr name)
-  return (Bash.Function fname (ann statements))
- where statements = sequenceStatements (initVars <> commands)
-       initVars = set . cast <$> vars
+  return (Bash.Function fname (statements (initVars <> commands)))
+ where initVars = set . cast <$> vars
        commands = cmd <$> argvs where Commands argvs = code
        (!?) :: Maybe t -> Text :- t
        (!?) m text = maybe (Left text) Right m
        cast (var, val) = (label2ident var, Bash.literal <$> val)
-       ann stmt       = Bash.Annotated () stmt
-       stmt &&> stmt' = ann stmt `Bash.AndAnd`   ann stmt'
-       stmt ||> stmt' = ann stmt `Bash.OrOr`     ann stmt'
-       stmt >>> stmt' = ann stmt `Bash.Sequence` ann stmt'
-       sequenceStatements [    ] = Bash.NoOp ""
-       sequenceStatements [stmt] = stmt
-       sequenceStatements (h:t)  = h >>> sequenceStatements t
        -- This is fairly tricky. If the var is not set and there is no default,
        -- then it is an error; but if there is a default, we should use it and
        -- not call shift (which might result in script failure).
        set (var, val)          = maybe pop id (defaultTo <$> val)
-        where pop              = local var (Bash.ReadVar "$1") >>> shift
+        where pop              = local var (Bash.ReadVar "$1") --> shift
               defaultTo expr   = (Bash.IsSet "$1" &&> pop) ||> local var expr
               shift            = Bash.SimpleCommand "shift" []
               local ident expr = Bash.Local (Bash.Var ident expr)
@@ -147,6 +163,19 @@ compoundArgument All             = error "All is not implemented :("
 label2ident :: Label -> Bash.Identifier
 label2ident label = fromJust (Bash.identifier . ByteString.map f $ toStr label)
  where f c = if c == '-' then '_' else c
+
+ann :: Bash.Statement () -> Bash.Annotated ()
+ann stmt       = Bash.Annotated () stmt
+
+(&&>),(||>),(-->):: Bash.Statement () -> Bash.Statement () -> Bash.Statement ()
+stmt &&> stmt' = ann stmt `Bash.AndAnd`   ann stmt'
+stmt ||> stmt' = ann stmt `Bash.OrOr`     ann stmt'
+stmt --> stmt' = ann stmt `Bash.Sequence` ann stmt'
+
+statements :: [Bash.Statement ()] -> Bash.Statement ()
+statements [    ] = Bash.NoOp ""
+statements [stmt] = stmt
+statements (h:t)  = h --> statements t
 
  ---------------------- Work With Bindings & Request Lists --------------------
 
@@ -181,11 +210,6 @@ across defs (Node (task, args) forest) = do
         where merged = Map.toList $ Map.fromListWith (<>) (unForest things)
               unForest f = [ (a, b)   | Node a b <- f ]
               toForest l = [ Node a b | (a, b)   <- l ]
-
-commands :: Forest (Name, [ByteString]) -> [(ByteString, [ByteString])]
-commands forest = concatMap cmds forest
- where cmds (Node (t, bs) forest) = enter : commands forest ++ [try, leave]
-        where [enter,try,leave] = (, toStr t : bs) <$> ["enter","try","leave"]
 
 -- | Bind vector of arguments to variables and return leftover variables (if
 --   there are too few arguments) or arguments (if there are too few
@@ -326,4 +350,14 @@ graph map = (g, restore, v)
  where restore x = y where (y, _, _) = f x
        (g, f, v) = Graph.graphFromEdges
                    [ (main, main, deps) | (main, deps) <- unMap map ]
+
+-- | Number all the unique nodes labels of a forest, replacing them with their
+--   numbers and returning the mapping items to numbers.
+index :: forall t. (Ord t) => Forest t -> (Forest Int, Map t Int)
+index forest = State.runState (mapM (traverse number) forest) mempty
+ where number :: t -> State (Map t Int) Int
+       number t = maybe (insert t) return =<< State.gets (Map.lookup t)
+       insert t = do fresh <- State.gets Map.size
+                     State.modify (Map.insert t fresh)
+                     return fresh
 

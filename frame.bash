@@ -14,10 +14,9 @@ EOF
 
 
 function tasks {
-  local depth=0
-  : # Replace with worker body.
+  : Put plan in here.
 }
-
+# Put ARGVs here.
 
 ################################### Running raw commands: helpers and reporting
 
@@ -70,7 +69,7 @@ function curlx {
 # This portion of the code makes heavy use of "variable variables" to access
 # state local to a particular run, in particular: argument vectors for
 # individual calls and stored exit statuses. The $depth variable is also
-# shared among them (and should be set to 0 by the caller).
+# shared among them.
 
 # Print a message on entry to a task and set the indent level. If the task has
 # already been run, this procedure will simply repeat the message that
@@ -115,6 +114,8 @@ function stateful_status {
   esac
   status_line "${!stat_ptr}" "$depth" "${!argv_ptr}"
 }
+
+depth=0
 
 
 #################################################################### Formatting
