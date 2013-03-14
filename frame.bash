@@ -83,11 +83,11 @@ function enter {
 # Execute a task if it hasn't already been executed, storing its return code in
 # a shared variable.
 function try {
-  local exit_ptr="exit_$1"
-  local args_ptr="args_$1[@]"
+  local exit_ptr="exit$1"
+  local argv_ptr="argv$1[@]"
   if ! [[ ${!exit_ptr:-} ]]
   then
-    "${!args_ptr}" && local code=$? || local code=$?
+    "${!argv_ptr}" && local code=$? || local code=$?
     eval "$exit_ptr=$code"
   fi
 }
@@ -95,8 +95,8 @@ function try {
 # Report on the status of a task (but not if it's already been reported) and
 # restore the indent level.
 function leave {
-  local stat_ptr="stat_$1"
-  local exit_ptr="exit_$1"
+  local stat_ptr="stat$1"
+  local exit_ptr="exit$1"
   case "${!stat_ptr}" in
     '*') stateful_status "$@" ;;
   esac
@@ -105,15 +105,15 @@ function leave {
 }
 
 function stateful_status {
-  local stat_ptr="stat_$1"
-  local exit_ptr="exit_$1"
-  local args_ptr="args_$1[@]"
+  local stat_ptr="stat$1"
+  local exit_ptr="exit$1"
+  local argv_ptr="argv$1[@]"
   case "${!exit_ptr:-}" in
     '') eval "$stat_ptr='*'" ;;
     0)  eval "$stat_ptr='+'" ;;
     *)  eval "$stat_ptr='!'" ;;
   esac
-  status_line "${!stat_ptr}" "$depth" "${!args_ptr}"
+  status_line "${!stat_ptr}" "$depth" "${!argv_ptr}"
 }
 
 
@@ -147,6 +147,6 @@ then if [[ $1 ]] && declare -F | cut -d' ' -f3 | fgrep -qx -- "$1"
      then "$@"
      else err 'No such subcommand: `'"$1""'"
      fi
-else tasks "$@" # Unrecognized so use default function.
+else tasks
 fi
 
