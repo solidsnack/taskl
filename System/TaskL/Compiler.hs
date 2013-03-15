@@ -78,10 +78,6 @@ merge modules = return Module{ from = froms, defs = map }
        f (s, map) Module{..} = (if s == "" then from
                                            else s <> "\n" <> from, map <> defs)
 
---plan :: [(Name, [ByteString])] -> Module :~ [(ByteString, [ByteString])]
---plan requests Module{..} =
---  commands <$> lift (from <> ": ") (unify <=< mapM (down defs)) requests
-
 tasks :: [(Name, [ByteString])] -> Module :~ [Bash.Statement ()]
 tasks requests Module{..} = do
   expanded <- lift (from <> ": ") (unify <=< mapM (down defs)) requests
