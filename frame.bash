@@ -133,8 +133,10 @@ function status_line {
   local status="$1" ; shift
   local indent=$(( 10#$1 )) ; shift
   printf "%-${depth}s" "$status"
-  [[ $zero ]] && printf ' \0%s\0' "$@" || printf ' %s' "$@"
-  echo
+  if [[ $zero ]]
+  then printf ' \0%s\0' "$@" && printf '\0\0\n'
+  else printf ' %s'     "$@" && echo
+  fi
 }
 
 function bar {
@@ -147,6 +149,15 @@ function bar {
 
 
 ############################################### Arguments and options, dispatch
+
+function show {
+  local dry_run=true
+  tasks
+}
+
+function list {
+  declare -F | cut -d' ' -f3 | egrep ^//
+}
 
 if [[ $# -gt 0 ]]
 then if [[ $1 ]] && declare -F | cut -d' ' -f3 | fgrep -qx -- "$1"
