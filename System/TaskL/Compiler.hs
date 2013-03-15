@@ -131,8 +131,9 @@ script requests m = toB <$> ((<>) <$> bodies requests m <*> tasks requests m)
 body :: Name -> Task :- Bash.Statement ()
 body name (Task vars Knot{..}) = do
   fname <- Bash.funcName (toStr name) !? ("Bad function name: " <> toStr name)
-  return (Bash.Function fname (ann $ statements (initVars <> commands)))
- where initVars = set . cast <$> vars
+  return (Bash.Function fname (ann $ statements (save : initVars <> commands)))
+ where save     = Bash.Local (Bash.Array "___" [Bash.ARGVElements])
+       initVars = set . cast <$> vars
        commands = case code of
                     Commands [   ] -> [Bash.NoOp "This task had no commands."]
                     Commands argvs -> cmd <$> argvs
@@ -163,7 +164,7 @@ singleArgument pieces = joined (expr <$> pieces)
 compoundArgument :: Arg -> Bash.Expression ()
 compoundArgument (Scalar simple) = singleArgument simple
 compoundArgument Tail            = Bash.ARGVElements
-compoundArgument All             = error "All is not implemented :("
+compoundArgument All             = Bash.ElementsSafe "___"
 
 label2ident :: Label -> Bash.Identifier
 label2ident label = fromJust (Bash.identifier . ByteString.map f $ toStr label)
