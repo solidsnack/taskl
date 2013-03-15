@@ -4,6 +4,7 @@
            , TypeOperators
            , TypeFamilies
            , TupleSections
+           , TemplateHaskell
            , FlexibleInstances
            , FlexibleContexts
            , RecordWildCards
@@ -14,6 +15,7 @@ module System.TaskL.Compiler where
 import           Prelude hiding (catch, mapM, any, concatMap)
 import           Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as ByteString
+import qualified Data.ByteString.Lazy as Lazy
 import           Control.Arrow
 import           Control.Applicative
 import           Control.Exception
@@ -41,6 +43,8 @@ import           System.Exit
 import           System.IO
 
 import qualified Data.Aeson as Aeson
+import qualified Data.Binary.Builder as Builder
+import           Data.FileEmbed
 import           Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Text (Text)
@@ -79,6 +83,7 @@ merge modules = return Module{ from = froms, defs = map }
        f (s, map) Module{..} = (if s == "" then from
                                            else s <> "\n" <> from, map <> defs)
 
+-- | Generate the plan and ancilliary declarations.
 tasks :: [(Name, [ByteString])] -> Module :~ [Bash.Statement ()]
 tasks requests Module{..} = do
   expanded <- lift (from <> ": ") (unify <=< mapM (down defs)) requests
@@ -98,6 +103,7 @@ tasks requests Module{..} = do
        printf w i = ByteString.pack (Printf.printf strFormat i)
         where strFormat = "%0" <> show (length $ show w) <> "d"
 
+-- | Generate a function declaration for each task, containing its body.
 bodies :: [(Name, [ByteString])] -> Module :~ [Bash.Statement ()]
 bodies requests Module{..} = lift' $ do
   needed   <- if missing /= mempty
@@ -112,8 +118,12 @@ bodies requests Module{..} = lift' $ do
        map !? k  = maybe (Left ("Missing: " <> toStr k)) (Right . (k,))
                          (Map.lookup k map)
 
-bash :: [(Name, [ByteString])] -> Module :~ Bash.Annotated ()
-bash  = undefined
+script :: [(Name, [ByteString])] -> Module :~ ByteString
+script requests m = toB <$> ((<>) <$> bodies requests m <*> tasks requests m)
+ where toB    = mconcat . Lazy.toChunks . Builder.toLazyByteString . join
+       (a, z) = (Builder.fromByteString header, Builder.fromByteString footer)
+       sep    = mconcat . List.intersperse (Builder.fromByteString "\n\n")
+       join l = a <> sep (Bash.builder <$> l) <> z
 
  ------------------------------ Bash Generation -------------------------------
 
@@ -169,6 +179,13 @@ statements :: [Bash.Statement ()] -> Bash.Statement ()
 statements [    ] = Bash.NoOp ""
 statements [stmt] = stmt
 statements (h:t)  = h --> statements t
+
+frame, header, footer :: ByteString
+frame            = $(embedFile "frame.bash")
+(header, footer) = (ByteString.unlines *** ByteString.unlines)
+                 . second (drop 1 . dropWhile (/= "}"))
+                 . span (/= "function tasks {")
+                 $ ByteString.lines frame
 
  ---------------------- Work With Bindings & Request Lists --------------------
 
