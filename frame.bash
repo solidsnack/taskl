@@ -71,6 +71,9 @@ function curlx {
 # individual calls and stored exit statuses. The $depth variable is also
 # shared among them.
 
+dry_run=false
+depth=0
+
 # Print a message on entry to a task and set the indent level. If the task has
 # already been run, this procedure will simply repeat the message that
 # indicated how the task went the first time round.
@@ -82,6 +85,7 @@ function enter {
 # Execute a task if it hasn't already been executed, storing its return code in
 # a shared variable.
 function try {
+  [[ ! $dry_run ]] || return 0
   local exit_ptr="exit$1"
   local argv_ptr="argv$1[@]"
   if ! [[ ${!exit_ptr:-} ]]
@@ -97,10 +101,11 @@ function try {
 function leave {
   local stat_ptr="stat$1"
   local exit_ptr="exit$1"
+  depth=$(( $depth - 1 ))
+  [[ ! $dry_run ]] || return 0
   case "${!stat_ptr}" in
     '*') stateful_status "$@" ;;
   esac
-  depth=$(( $depth - 1 ))
   return "${!exit_ptr}"
 }
 
@@ -116,8 +121,6 @@ function stateful_status {
   status_line "${!stat_ptr}" "$depth" "${!argv_ptr}"
 }
 
-depth=0
-
 
 #################################################################### Formatting
 
@@ -125,11 +128,12 @@ function out { printf '%s\n' "$*" ;}
 function msg { printf '%79s\n' "$*" >&2 ;}
 function err { local x=$? ; msg "$*" ; return $(( $x == 0 ? 1 : $x )) ;}
 
+zero=true
 function status_line {
   local status="$1" ; shift
   local indent=$(( 10#$1 )) ; shift
   printf "%-${depth}s" "$status"
-  printf ' \0%s\0' "$@"
+  [[ $zero ]] && printf ' \0%s\0' "$@" || printf ' %s' "$@"
   echo
 }
 
