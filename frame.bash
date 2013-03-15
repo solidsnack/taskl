@@ -86,7 +86,8 @@ function try {
   local argv_ptr="argv$1[@]"
   if ! [[ ${!exit_ptr:-} ]]
   then
-    "${!argv_ptr}" && local code=$? || local code=$?
+    ( set -o errexit -o nounset -o pipefail ; "${!argv_ptr}" ) &&
+      local code=$? || local code=$?
     eval "$exit_ptr=$code"
   fi
 }
