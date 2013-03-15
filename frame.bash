@@ -159,8 +159,8 @@ function list {
   declare -F | cut -d' ' -f3 | egrep ^//
 }
 
-function version {
-  out "$version"
+function tag {
+  out "$tag"
 }
 
 if [[ $# -gt 0 ]]

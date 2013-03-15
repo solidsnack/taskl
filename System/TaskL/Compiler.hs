@@ -125,7 +125,7 @@ script tag reqs mod  =  toB . (v:)
        (a, z) = (Builder.fromByteString header, Builder.fromByteString footer)
        sep    = mconcat . List.intersperse (Builder.fromByteString "\n\n")
        join l = a <> sep (Bash.builder <$> l) <> z
-       v      = Bash.Assign (Bash.Var "version" (Bash.literal tag))
+       v      = Bash.Assign (Bash.Var "tag" (Bash.literal tag))
 
  ------------------------------ Bash Generation -------------------------------
 
