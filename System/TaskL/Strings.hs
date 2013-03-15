@@ -8,6 +8,7 @@
 module System.TaskL.Strings where
 
 import           Control.Applicative
+import           Control.Monad
 import           Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as ByteString
 import           Data.String
@@ -22,7 +23,8 @@ import qualified Data.Text.Encoding as Text
 newtype Name  = Name [Label] deriving (Eq, Ord, Show)
 instance IsString Name where fromString s = l where (Right l) = unStr s
 
--- | A string matching @[a-zA-Z0-9-]+@.
+-- | A string matching @[a-z]([a-zA-Z0-9_]*[a-zA-Z0-9])?@, a syntax
+--   compatible with variable names in many languages.
 newtype Label = Label ByteString deriving (Eq, Ord, Show)
 instance IsString Label where fromString s = l where (Right l) = unStr s
 
@@ -52,7 +54,11 @@ name  = Attoparsec.string "//" *> (Name <$> labels)
  where labels = Attoparsec.sepBy1 label (Attoparsec.char '.')
 
 label :: Attoparsec.Parser Label
-label  = Label <$> Attoparsec.takeWhile1 (Attoparsec.inClass "a-zA-Z0-9-")
+label  = Label <$> do
+  joined <- (<>) <$> scan "a-z" <*> Attoparsec.option "" (scan "a-zA-Z0-9_")
+  Attoparsec.endOfInput
+  joined <$ guard (ByteString.last joined /= '_')
+ where scan pattern = Attoparsec.takeWhile1 (Attoparsec.inClass pattern)
 
 utf8 :: Text -> ByteString
 utf8  = Text.encodeUtf8
