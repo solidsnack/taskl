@@ -56,7 +56,6 @@ name  = Attoparsec.string "//" *> (Name <$> labels)
 label :: Attoparsec.Parser Label
 label  = Label <$> do
   joined <- (<>) <$> scan "a-z" <*> Attoparsec.option "" (scan "a-zA-Z0-9_")
-  Attoparsec.endOfInput
   joined <$ guard (ByteString.last joined /= '_')
  where scan pattern = Attoparsec.takeWhile1 (Attoparsec.inClass pattern)
 
