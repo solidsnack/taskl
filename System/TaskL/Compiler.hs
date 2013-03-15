@@ -133,7 +133,9 @@ body name (Task vars Knot{..}) = do
   fname <- Bash.funcName (toStr name) !? ("Bad function name: " <> toStr name)
   return (Bash.Function fname (ann $ statements (initVars <> commands)))
  where initVars = set . cast <$> vars
-       commands = cmd <$> argvs where Commands argvs = code
+       commands = case code of
+                    Commands [   ] -> [Bash.NoOp "This task had no commands."]
+                    Commands argvs -> cmd <$> argvs
        (!?) :: Maybe t -> Text :- t
        (!?) m text = maybe (Left text) Right m
        cast (var, val) = (label2ident var, Bash.literal <$> val)
