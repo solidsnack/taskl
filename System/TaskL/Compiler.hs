@@ -36,6 +36,7 @@ import           Data.Set (Set)
 import qualified Data.Set as Set
 import           Data.Tree (Tree(..), Forest)
 import qualified Data.Tree as Tree
+import qualified Text.Printf as Printf
 import           System.Exit
 import           System.IO
 
@@ -83,22 +84,19 @@ tasks requests Module{..} = do
   expanded <- lift (from <> ": ") (unify <=< mapM (down defs)) requests
   let (numberedForest, mapping) = index expanded
       reformatted = [ printf (Map.size mapping) <$> t | t <- numberedForest ]
-      tasks = Bash.Function "tasks" (statements (concatMap plan reformatted))
-  return (tasks --> statements (arrays mapping))
+      tasks = ann (statements (concatMap plan reformatted))
+  return [Bash.Function "tasks" tasks, statements (arrays mapping)]
  where arrays :: Map (Name, [ByteString]) Int -> [Bash.Statement ()]
-       arrays m = uncurry argv <$> Map.toAscList m
-        where argv ((name, args), i) = Bash.Assign (Bash.Array var literals)
-               where Just var = Bash.identifier (printf (Map.size m) i)
-                     literals = Bash.literal <$> (toStr name : args)
+       arrays m = argv <$> Map.toAscList m
+        where argv ((name, args), i) = Bash.Assign (Bash.Array v lits)
+               where Just v = Bash.identifier ("argv" <> printf (Map.size m) i)
+                     lits   = Bash.literal <$> (toStr name : args)
        plan :: Tree ByteString -> [Bash.Statement ()]
        plan (Node b forest) = cmd "enter"
                             : concatMap plan forest ++ [cmd "try", cmd "leave"]
-        where cmd action = Bash.SimpleCommand action [b]
-       argv w i (name, args) = Bash.Assign (Bash.Array var literals)
-        where Just var = Bash.identifier (printf w i)
-              literals = Bash.literal <$> (toStr name : args)
+        where cmd action = Bash.SimpleCommand action [Bash.literal b]
        printf w i = ByteString.pack (Printf.printf strFormat i)
-        where strFormat = "argv%0" <> show (length $ show w) <> "d"
+        where strFormat = "%0" <> show (length $ show w) <> "d"
 
 bodies :: [(Name, [ByteString])] -> Module :~ [Bash.Statement ()]
 bodies requests Module{..} = lift' $ do
@@ -114,8 +112,7 @@ bodies requests Module{..} = lift' $ do
        map !? k  = maybe (Left ("Missing: " <> toStr k)) (Right . (k,))
                          (Map.lookup k map)
 
-bash :: Map Name (Bash.Annotated ()) -> [(ByteString, [ByteString])]
-     :- Bash.Annotated ()
+bash :: [(Name, [ByteString])] -> Module :~ Bash.Annotated ()
 bash  = undefined
 
  ------------------------------ Bash Generation -------------------------------
@@ -124,7 +121,7 @@ bash  = undefined
 body :: Name -> Task :- Bash.Statement ()
 body name (Task vars Knot{..}) = do
   fname <- Bash.funcName (toStr name) !? ("Bad function name: " <> toStr name)
-  return (Bash.Function fname (statements (initVars <> commands)))
+  return (Bash.Function fname (ann $ statements (initVars <> commands)))
  where initVars = set . cast <$> vars
        commands = cmd <$> argvs where Commands argvs = code
        (!?) :: Maybe t -> Text :- t
