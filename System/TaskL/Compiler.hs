@@ -152,8 +152,8 @@ body name (Task vars Knot{..}) = do
               local ident expr = Bash.Local (Bash.Var ident expr)
 
 cmd :: ([Either Label ByteString], [Arg]) -> Bash.Statement ()
-cmd (command, args) = Bash.SimpleCommand (singleArgument command)
-                                         [compoundArgument arg | arg <- args]
+cmd (command, args) = Bash.SimpleCommand (Bash.literal "run") argv
+ where argv = singleArgument command : (compoundArgument <$> args)
 
 singleArgument :: [Either Label ByteString] -> Bash.Expression ()
 singleArgument pieces = joined (expr <$> pieces)
