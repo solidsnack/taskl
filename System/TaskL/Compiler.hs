@@ -331,11 +331,12 @@ renderModule m@Module{..} = do when (from /= mempty) (out comment)
 -- | Ensure that edges in each tree are reflected in all trees.
 unify :: (Ord t) => Forest t :- Forest t
 unify forest | cyclic           = Left "Cycle detected."
-             | Just vs <- roots = Right [ f <$> tree | tree <- Graph.dfs g vs ]
+             | Just vs <- roots = Right [ f <$> tree | tree <- full vs ]
              | otherwise        = Left "Impossible error!"
  where (g, f, v) = graph . asMap $ concatMap adjacencies forest
        roots     = mapM v [ a | Node a _ <- forest ]
        cyclic    = any (/=[]) [ sub | Node _ sub <- Graph.scc g ]
+       full vs   = mconcat [ Graph.dfs g [v] | v <- vs ]
 
 -- | Transform a tree to an adjacency list representation of its edges.
 --   Duplicate edges are retained.
