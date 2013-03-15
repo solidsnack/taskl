@@ -12,11 +12,13 @@ cat <<EOF
 EOF
 }; function --help { -h ;}
 
+: Put implementations here.
 
 function tasks {
   : Put plan in here.
 }
-# Put ARGVs here.
+
+: Put ARGVs here.
 
 ################################### Running raw commands: helpers and reporting
 
