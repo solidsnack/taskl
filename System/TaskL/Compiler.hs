@@ -118,12 +118,14 @@ bodies requests Module{..} = lift' $ do
        map !? k  = maybe (Left ("Missing: " <> toStr k)) (Right . (k,))
                          (Map.lookup k map)
 
-script :: [(Name, [ByteString])] -> Module :~ ByteString
-script requests m = toB <$> ((<>) <$> bodies requests m <*> tasks requests m)
+script :: ByteString -> [(Name, [ByteString])] -> Module :~ ByteString
+script tag reqs mod  =  toB . (v:)
+                    <$> ((<>) <$> bodies reqs mod <*> tasks reqs mod)
  where toB    = mconcat . Lazy.toChunks . Builder.toLazyByteString . join
        (a, z) = (Builder.fromByteString header, Builder.fromByteString footer)
        sep    = mconcat . List.intersperse (Builder.fromByteString "\n\n")
        join l = a <> sep (Bash.builder <$> l) <> z
+       v      = Bash.Assign (Bash.Var "version" (Bash.literal tag))
 
  ------------------------------ Bash Generation -------------------------------
 

@@ -159,6 +159,10 @@ function list {
   declare -F | cut -d' ' -f3 | egrep ^//
 }
 
+function version {
+  out "$version"
+}
+
 if [[ $# -gt 0 ]]
 then if [[ $1 ]] && declare -F | cut -d' ' -f3 | fgrep -qx -- "$1"
      then "$@"
