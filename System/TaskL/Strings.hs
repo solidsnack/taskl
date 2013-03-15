@@ -10,6 +10,7 @@ module System.TaskL.Strings where
 import           Control.Applicative
 import           Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as ByteString
+import           Data.String
 import           Data.Monoid
 
 import qualified Data.Attoparsec.ByteString.Char8 as Attoparsec
@@ -19,9 +20,11 @@ import qualified Data.Text.Encoding as Text
 
 -- | Dots and labels.
 newtype Name  = Name [Label] deriving (Eq, Ord, Show)
+instance IsString Name where fromString s = l where (Right l) = unStr s
 
 -- | A string matching @[a-zA-Z0-9-]+@.
 newtype Label = Label ByteString deriving (Eq, Ord, Show)
+instance IsString Label where fromString s = l where (Right l) = unStr s
 
 class Str t s where
   unStr :: s -> Either String t
