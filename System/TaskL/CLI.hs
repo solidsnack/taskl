@@ -44,6 +44,7 @@ import qualified GHC.Exts
 import qualified Text.Printf as Printf
 import           System.Exit
 import           System.IO
+import qualified System.Posix.Env.ByteString as Posix
 
 import qualified Data.Aeson as Aeson
 import qualified Data.Binary.Builder as Builder
@@ -62,6 +63,29 @@ import           System.TaskL.Task
 import           System.TaskL.JSON
 import           System.TaskL.Compiler
 
+
+main = do
+  (mode, rest) <- modes =<< Posix.getArgs
+  case mode of Help    -> help    >> exitSuccess
+               Version -> version >> exitSuccess
+               Normal  -> when (rest==[]) (err "No tasks requested :(")
+  tasks <- lift "arguments:" parseTasks rest
+  mod   <- merge =<< load [("", stdin)]
+  script "(unversioned)" tasks mod >>= ByteString.putStr
+ where
+  help    = ByteString.putStr $(embedFile "README")
+  version = ByteString.putStrLn "(unversioned)"
+
+
+data Mode = Help | Version | Normal deriving (Eq, Ord, Show)
+
+modes :: [ByteString] :~ (Mode, [ByteString])
+modes  = mode' Normal
+ where mode' m [   ] = return (m, [])
+       mode' m (h:t) | "//" `ByteString.isPrefixOf` h    = return (m, h:t)
+                     | h `List.elem` ["-h", "--help"]    = mode' Help t
+                     | h `List.elem` ["-v", "--version"] = mode' Version t
+                     | otherwise                         = err "Bad argument."
 
 parseTasks :: [ByteString] :- [(Name, [ByteString])]
 parseTasks args = mapM parse . snd
