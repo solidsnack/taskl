@@ -1,4 +1,4 @@
-.PHONY: doc clean cabal ubuntu-build-deps tarballs
+.PHONY: doc clean cabal ubuntu-build-deps tarballs README
 
 # Prevents the .sha files from being deleted. Not sure what the story is.
 .SECONDARY:
@@ -65,4 +65,9 @@ cabal: version
 
 clean:
 	rm -rf tmp taskl dist/build
+
+README:
+	( cd doc && make man )
+	man doc/.build/man/taskl.1 | col -bx > doc/plain
+	sed -n '/SYNOPSIS/,/AUTHOR/ { /AUTHOR/d ; p ;}' < doc/plain > README
 
