@@ -71,7 +71,7 @@ main  = do
                Version -> version >> exitSuccess
                Normal  -> when (rest==[]) (err "No tasks requested :(")
   tasks <- lift "arguments:" parseTasks rest
-  mod   <- merge =<< load [("", stdin)]
+  mod   <- merge =<< load [("<stdin>", stdin)]
   script "(unversioned)" tasks mod >>= ByteString.putStr
  where
   help    = ByteString.putStr readme
