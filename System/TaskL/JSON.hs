@@ -2,6 +2,7 @@
            , TupleSections
            , RecordWildCards
            , FlexibleContexts
+           , PatternGuards
            , FlexibleInstances #-}
 module System.TaskL.JSON where
 

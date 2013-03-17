@@ -9,6 +9,7 @@
            , FlexibleContexts
            , RecordWildCards
            , NoMonomorphismRestriction
+           , PatternGuards
            , UndecidableInstances #-}
 module System.TaskL.Compiler where
 

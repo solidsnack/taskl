@@ -34,8 +34,11 @@ flag no-cli
 library
   default-language            : Haskell98
   build-depends               : base >= 2 && <= 5
+                              , binary >= 0.5.1.0
                               , bytestring >= 0.9
                               , containers
+                              , mtl >= 2.1
+                              , unix >= 2.5.1.1
                               , aeson >= 0.6
                               , attoparsec >= 0.10
                               , bash >= 0.1.6
@@ -47,8 +50,11 @@ library
                               , utf8-string >= 0.3.7
                               , vector >= 0.10
                               , yaml >= 0.8.1
-  exposed-modules             : System.TaskL
-                                System.TaskL.JSONTree
+  exposed-modules             : System.TaskL.CLI
+                                System.TaskL.Compiler
+                                System.TaskL.JSON
+                                System.TaskL.Strings
+                                System.TaskL.Task
 
 
 executable                      taskl
@@ -59,8 +65,11 @@ executable                      taskl
   else
     buildable                 : True
   build-depends               : base >= 2 && <= 5
+                              , binary >= 0.5.1.0
                               , bytestring >= 0.9
                               , containers
+                              , mtl >= 2.1
+                              , unix >= 2.5.1.1
                               , aeson >= 0.6
                               , attoparsec >= 0.10
                               , bash >= 0.1.6

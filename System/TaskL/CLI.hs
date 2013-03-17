@@ -64,7 +64,8 @@ import           System.TaskL.JSON
 import           System.TaskL.Compiler
 
 
-main = do
+main :: IO ()
+main  = do
   (mode, rest) <- modes =<< Posix.getArgs
   case mode of Help    -> help    >> exitSuccess
                Version -> version >> exitSuccess
@@ -73,7 +74,7 @@ main = do
   mod   <- merge =<< load [("", stdin)]
   script "(unversioned)" tasks mod >>= ByteString.putStr
  where
-  help    = ByteString.putStr $(embedFile "README")
+  help    = ByteString.putStr readme
   version = ByteString.putStrLn "(unversioned)"
 
 
@@ -102,4 +103,7 @@ parseTasks args = mapM parse . snd
               order   = GHC.Exts.sortWith
        parse (b, bs)  = (,bs) <$> left Text.pack (unStr b)
        left f = either (Left . f) Right
+
+readme :: ByteString
+readme  = $(embedFile "README")
 
