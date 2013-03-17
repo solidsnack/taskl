@@ -86,7 +86,7 @@ function enter {
 # Execute a task if it hasn't already been executed, storing its return code in
 # a shared variable.
 function try {
-  [[ ! $dry_run ]] || return 0
+  ! $dry_run || return 0
   local exit_ptr="exit$1"
   local argv_ptr="argv$1[@]"
   if ! [[ ${!exit_ptr:-} ]]
@@ -103,7 +103,7 @@ function leave {
   local stat_ptr="stat$1"
   local exit_ptr="exit$1"
   depth=$(( $depth - 1 ))
-  [[ ! $dry_run ]] || return 0
+  ! $dry_run || return 0
   case "${!stat_ptr}" in
     '*') stateful_status "$@" ;;
   esac
@@ -134,7 +134,7 @@ function status_line {
   local status="$1" ; shift
   local indent=$(( 10#$1 )) ; shift
   printf "%-${depth}s" "$status"
-  if [[ $zero ]]
+  if $zero
   then printf ' \0%s\0' "$@" && printf '\0\0\n'
   else printf ' %s'     "$@" && echo
   fi
