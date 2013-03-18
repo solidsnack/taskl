@@ -2,12 +2,19 @@
 set -o errexit -o nounset -o pipefail
 function -h {
 cat <<EOF
- USAGE: $0
+ USAGE: $0 (--no-null)?
+        $0 show (--no-null)?
         $0 //<task> <arg>*
-        $0 <internal function>
+        $0 list
 
-  In the first form, runs all the top-level tasks and their dependencies. The
-  remaining forms are for debugging.
+  In the first form, runs all the top-level tasks and their dependencies. In
+  the second form, shows what would be run. The remaining forms are for
+  debugging.
+
+  The output of the task listing and status commands contains nulls, to
+  separate the list of tasks and arguments, to facilitate unambiguous parsing.
+  With \`--no-null', these nulls do not appear. (You might want this if you're
+  emailing the results of task runs or putting them directly in web pages.)
 
 EOF
 }; function --help { -h ;}
@@ -135,7 +142,7 @@ function status_line {
   local indent=$(( 10#$1 )) ; shift
   printf "%-${depth}s" "$status"
   if $zero
-  then printf ' \0%s\0' "$@" && printf '\0\0\n'
+  then printf ' \0%s\0' "$@" && printf '\0\n'
   else printf ' %s'     "$@" && echo
   fi
 }
@@ -152,6 +159,9 @@ function bar {
 ############################################### Arguments and options, dispatch
 
 function show {
+  if [[ ${1:+true} ]]
+  then [[ $1 = --no-null ]] && local zero=false || err "Bad option."
+  fi
   local dry_run=true
   tasks
 }
@@ -164,11 +174,21 @@ function tag {
   out "$tag"
 }
 
+
 if [[ $# -gt 0 ]]
-then if [[ $1 ]] && declare -F | cut -d' ' -f3 | fgrep -qx -- "$1"
-     then "$@"
-     else err 'No such subcommand: `'"$1""'"
-     fi
-else tasks
+then
+  if [[ $1 = --no-null ]]
+  then
+    [[ $# = 1 ]] || err "Bad arguments."
+    zero=false
+    tasks
+  else
+    if [[ $1 ]] && declare -F | cut -d' ' -f3 | fgrep -qx -- "$1"
+    then "$@"
+    else err 'No such subcommand: `'"$1""'"
+    fi
+  fi
+else
+  tasks
 fi
 
