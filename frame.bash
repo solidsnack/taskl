@@ -11,10 +11,9 @@ cat <<EOF
   the second form, shows what would be run. The remaining forms are for
   debugging.
 
-  The output of the task listing and status commands contains nulls, to
-  separate the list of tasks and arguments, to facilitate unambiguous parsing.
-  With \`--no-null', these nulls do not appear. (You might want this if you're
-  emailing the results of task runs or putting them directly in web pages.)
+  With -0, the output of the task listing and the main command use ASCII null
+  to separate the status, the task head word and each argument in the argument
+  list, to facilitate unambiguous parsing. Each line ends with two nulls.
 
 EOF
 }; function --help { -h ;}

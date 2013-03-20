@@ -48,6 +48,15 @@ debugging), to show the plan and to show the subtasks that were compiled in.
 
   chmod ug+x nginx.bash
 
+  # Show help for installer script.
+  ./nginx.bash -h
+   USAGE: ./nginx.bash (-0)?
+          ./nginx.bash show (-0)?
+          ./nginx.bash //<task> <arg>*
+          ./nginx.bash list
+
+    ...
+
   ./nginx.bash show
   * //nginx
   *  //apt -y install nginx-extras
@@ -55,10 +64,27 @@ debugging), to show the plan and to show the subtasks that were compiled in.
   *    //apt.ppa.setup
   *   //apt.up
 
+  # Null separated variant of the above.
+  ./nginx.bash show -0
+
   ./nginx.bash list
   //apt
   //apt.ppa
   //apt.ppa.setup
   //apt.up
   //nginx
+
+  # Perform installation, displaying success (or failure) of each task as it
+  # is completed.
+  ./nginx.bash
+  * //nginx
+  *  //apt -y install nginx-extras
+  *   //apt.ppa nginx/stable
+  *    //apt.ppa.setup
+  +    //apt.ppa.setup
+  +   //apt.ppa nginx/stable
+  *   //apt.up
+  +   //apt.up
+  +  //apt -y install nginx-extras
+  + //nginx
 
