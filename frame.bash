@@ -2,8 +2,8 @@
 set -o errexit -o nounset -o pipefail
 function -h {
 cat <<EOF
- USAGE: $0 (--no-null)?
-        $0 show (--no-null)?
+ USAGE: $0 (-0)?
+        $0 show (-0)?
         $0 //<task> <arg>*
         $0 list
 
@@ -140,7 +140,7 @@ function out { printf '%s\n' "$*" ;}
 function msg { printf '%79s\n' "$*" >&2 ;}
 function err { local x=$? ; msg "$*" ; return $(( $x == 0 ? 1 : $x )) ;}
 
-zero=true
+zero=false
 function status_line {
   local status="$1" ; shift
   local indent=$(( 10#$1 )) ; shift
@@ -164,7 +164,7 @@ function bar {
 
 function show {
   if [[ ${1:+true} ]]
-  then [[ $1 = --no-null ]] && local zero=false || err "Bad option."
+  then [[ $1 = -0 ]] && local zero=true || err "Bad option."
   fi
   local dry_run=true
   tasks
@@ -181,10 +181,10 @@ function tag {
 
 if [[ $# -gt 0 ]]
 then
-  if [[ $1 = --no-null ]]
+  if [[ $1 = -0 ]]
   then
     [[ $# = 1 ]] || err "Bad arguments."
-    zero=false
+    zero=true
     tasks
   else
     if [[ $1 ]] && declare -F | cut -d' ' -f3 | fgrep -qx -- "$1"
