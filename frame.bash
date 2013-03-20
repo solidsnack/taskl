@@ -109,12 +109,16 @@ function try {
 function leave {
   local stat_ptr="stat$1"
   local exit_ptr="exit$1"
-  depth=$(( $depth - 1 ))
-  ! $dry_run || return 0
-  case "${!stat_ptr}" in
-    '*') stateful_status "$@" ;;
-  esac
-  return "${!exit_ptr}"
+  if $dry_run
+  then
+    depth=$(( $depth - 1 ))
+  else
+    case "${!stat_ptr}" in
+      '*') stateful_status "$@" ;;
+    esac
+    depth=$(( $depth - 1 ))
+    return "${!exit_ptr}"
+  fi
 }
 
 function stateful_status {
