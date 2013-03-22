@@ -39,7 +39,7 @@ library
                               , containers
                               , mtl >= 2.1
                               , unix >= 2.5.1.1
-                              , aeson >= 0.6
+                              , aeson >= 0.6.1
                               , attoparsec >= 0.10
                               , bash >= 0.1.8
                               , file-embed >= 0.0.4
