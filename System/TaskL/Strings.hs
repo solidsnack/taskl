@@ -32,10 +32,10 @@ class Str t s where
   unStr :: s -> Either String t
   toStr :: t -> s
 instance Str Name ByteString where
-  unStr = Attoparsec.parseOnly name
+  unStr = parseCompletely name
   toStr (Name labels) = "//" <> ByteString.intercalate "." (toStr <$> labels)
 instance Str Label ByteString where
-  unStr = Attoparsec.parseOnly label
+  unStr = parseCompletely label
   toStr (Label b) = b
 instance Str t ByteString => Str t String where
   unStr = unStr . ByteString.pack
@@ -43,6 +43,10 @@ instance Str t ByteString => Str t String where
 instance Str t ByteString => Str t Text where
   unStr = unStr . Text.encodeUtf8
   toStr = Text.decodeUtf8 . toStr
+
+-- | Completely parse the input 'ByteString' using the given parser.
+parseCompletely :: Attoparsec.Parser a -> ByteString -> Either String a
+parseCompletely p = Attoparsec.parseOnly (p <* Attoparsec.endOfInput)
 
 
 url :: Attoparsec.Parser ByteString
